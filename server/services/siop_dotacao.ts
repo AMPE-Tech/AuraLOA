@@ -162,7 +162,10 @@ export async function fetchDotacaoFromSIOP(
     return results;
   }
 
-  evidencePack.log(`orcamento.dados.gov.br had no data for ${anoExercicio}, trying SIOP SPARQL fallback`);
+  if (anoExercicio > 2016) {
+    evidencePack.log(`orcamento.dados.gov.br has data only up to ~2016, year ${anoExercicio} not available in public SPARQL`);
+  }
+  evidencePack.log(`trying SIOP SPARQL fallback for ${anoExercicio}`);
 
   for (const acao of ACOES_PRECATORIOS_UNIAO) {
     const siopQuery = buildSiopSparqlQuery(anoExercicio, acao.codigo_acao);
@@ -206,9 +209,9 @@ export async function fetchDotacaoFromSIOP(
 
       evidencePack.log(`fetched dotacao via SIOP action=${acao.codigo_acao} records=${bindings.length}`);
     } else {
-      const reason = !siopResult.ok
-        ? `Endpoints SPARQL indisponiveis ou sem dados para exercicio ${anoExercicio}. O orcamento.dados.gov.br pode nao ter dados para anos recentes (disponiveis ate ~2016). O SIOP SPARQL pode estar bloqueado por firewall.`
-        : `Nenhum dado encontrado para acao ${acao.codigo_acao} no exercicio ${anoExercicio} em nenhum endpoint SPARQL.`;
+      const reason = anoExercicio > 2016
+        ? `Dados de dotacao indisponiveis para ${anoExercicio}. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.`
+        : `Nenhum dado encontrado para acao ${acao.codigo_acao} no exercicio ${anoExercicio} em nenhum endpoint SPARQL disponivel.`;
 
       results.push({
         codigo_acao: acao.codigo_acao,

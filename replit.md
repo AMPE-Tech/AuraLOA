@@ -11,9 +11,9 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 
 ### Backend (Express)
 - `server/routes/loa_uniao_a2.ts` - Main endpoint `POST /api/loa/uniao/a2` and history/catalog endpoints
-- `server/catalog/acoes_precatorios_uniao.ts` - Fixed catalog of precatório actions (0005, 0EC7, 0EC8)
-- `server/services/transparencia_execucao.ts` - Portal da Transparência CSV/API integration
-- `server/services/siop_dotacao.ts` - SIOP SPARQL endpoint integration
+- `server/catalog/acoes_precatorios_uniao.ts` - Catalog of 7 precatório actions (0005, 0EC7, 0EC8, 0625, 00WU, 00G5, 0022)
+- `server/services/transparencia_execucao.ts` - Portal da Transparência REST API integration (`/api-de-dados/despesas/por-funcional-programatica`)
+- `server/services/siop_dotacao.ts` - Dotação via SPARQL (orcamento.dados.gov.br + SIOP fallback)
 - `server/services/evidence_pack.ts` - Evidence pack system (SHA-256 hashes, file saving)
 - `server/services/validate_output.ts` - Output validation
 
@@ -30,8 +30,21 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `GET /api/loa/uniao/a2/history` - Get recent consultation history
 - `GET /api/loa/uniao/a2/catalog` - Get catalog of precatório actions
 
+## Data Sources
+- **Execução (Empenho/Liquidação/Pagamento)**: Portal da Transparência REST API - requires API key (env: PORTAL_TRANSPARENCIA_API_KEY). Uses endpoint `/api-de-dados/despesas/por-funcional-programatica` with `chave-api-dados` header.
+- **Dotação (Orçamento LOA)**: SPARQL endpoints - orcamento.dados.gov.br (public, data up to ~2016) and SIOP SPARQL (blocked by Cloudflare from external environments). Dotação for years >2016 currently unavailable via automated query.
+
+## Precatório Actions Catalog (2025)
+- 0005 - Sentenças Judiciais Transitadas em Julgado (Precatórios)
+- 0EC7 - Precatórios Relativos à Complementação da União ao FUNDEF
+- 0EC8 - Precatórios Parcelados ou Objetos de Acordos
+- 0625 - Sentenças Judiciais de Pequeno Valor (RPV) - **has significant execution data**
+- 00WU - Precatórios Excedentes ao Sublimite
+- 00G5 - Contribuição Previdenciária sobre Pagamento de Precatórios/RPV
+- 0022 - Sentenças Judiciais Devidas por Empresas Estatais - **has execution data**
+
 ## Key Decisions
-- Portal da Transparência requires API key for programmatic access (env: PORTAL_TRANSPARENCIA_API_KEY)
-- SIOP SPARQL endpoint may require authentication from external environments
+- Portal da Transparência REST API is the primary source for execution data (replaces CSV download which is blocked by CDN)
+- SIOP SPARQL endpoint is blocked by Cloudflare WAF from external environments; orcamento.dados.gov.br only has data up to ~2016
 - System gracefully degrades to PARCIAL/NAO_LOCALIZADO status when sources are unavailable
 - No mock data - all values come from real government sources or are explicitly marked as unavailable

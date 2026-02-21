@@ -4,19 +4,43 @@ export const ACOES_PRECATORIOS_UNIAO: AcaoPrecatorio[] = [
   {
     codigo_acao: "0005",
     descricao:
-      "Cumprimento de Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios)",
     planos_orcamentarios: ["0001", "0002", "0003", "0004"],
   },
   {
     codigo_acao: "0EC7",
     descricao:
-      "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Precatorios - EC 114/2021)",
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios Relativos a Complementacao da Uniao ao FUNDEF)",
     planos_orcamentarios: [],
   },
   {
     codigo_acao: "0EC8",
     descricao:
-      "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Requisicoes de Pequeno Valor - RPV)",
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios Parcelados ou Objetos de Acordos)",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "0625",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado de Pequeno Valor (RPV)",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "00WU",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios) - Excedentes ao Sublimite",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "00G5",
+    descricao:
+      "Contribuicao da Uniao para Custeio do Regime de Previdencia Decorrente do Pagamento de Precatorios e RPV",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "0022",
+    descricao:
+      "Sentencas Judiciais Devidas por Empresas Estatais",
     planos_orcamentarios: [],
   },
 ];
