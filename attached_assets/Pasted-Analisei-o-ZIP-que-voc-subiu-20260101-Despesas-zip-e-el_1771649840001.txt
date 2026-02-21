@@ -1,0 +1,115 @@
+Analisei o ZIP que você subiu (20260101_Despesas.zip) e ele tem sim as chaves para cruzar com dotação por Ação e PO, mas não é pelo Pagamento.csv direto (ele não traz “Código Ação”). O caminho correto é usar o Empenho como “tabela mestre” e ligar pagamento/liquidação pelos arquivos “_EmpenhosImpactados”.
+
+1) O que existe dentro do seu ZIP (11 arquivos)
+
+20260101_Despesas_Empenho.csv
+
+20260101_Despesas_ItemEmpenho.csv
+
+20260101_Despesas_ItemEmpenhoHistorico.csv
+
+20260101_Despesas_Liquidacao.csv
+
+20260101_Despesas_Liquidacao_EmpenhosImpactados.csv
+
+20260101_Despesas_Pagamento.csv
+
+20260101_Despesas_Pagamento_EmpenhosImpactados.csv
+
+20260101_Despesas_Pagamento_FavorecidosFinais.csv
+
+20260101_Despesas_Pagamento_ListaBancos.csv
+
+20260101_Despesas_Pagamento_ListaFaturas.csv
+
+20260101_Despesas_Pagamento_ListaPrecatorios.csv
+
+2) Por que vocês “não conseguem cruzar a dotação”
+
+Porque o arquivo de pagamento principal (20260101_Despesas_Pagamento.csv) não tem “Código Ação” nem “Código Programa”. Ele tem PO, mas não Ação.
+
+✅ Onde estão Ação/Programa/PO de forma clara?
+No 20260101_Despesas_Empenho.csv, que contém:
+
+Código Programa, Programa
+
+Código Ação, Ação
+
+Código Plano Orçamentário, Plano Orçamentário
+(além de Órgão/Unidade etc.)
+
+✅ Onde está o valor pago ligado ao empenho?
+No 20260101_Despesas_Pagamento_EmpenhosImpactados.csv, que contém:
+
+Código Pagamento
+
+Código Empenho
+
+Valor Pago (R$)
+(mais campos de restos a pagar)
+
+✅ Onde está o valor liquidado ligado ao empenho?
+No 20260101_Despesas_Liquidacao_EmpenhosImpactados.csv, que contém:
+
+Código Liquidação
+
+Código Empenho
+
+Valor Liquidado (R$)
+
+3) Join correto (determinístico) para chegar em “Pago por Ação/PO”
+
+Você faz assim:
+
+Pago por Ação/PO (recomendado)
+
+Carrega Empenho.csv (mestre) pegando, no mínimo:
+
+Código Empenho
+
+Código Ação
+
+Código Plano Orçamentário
+
+(opcional) Código Órgão, Código Unidade Orçamentária, Grupo de Despesa etc.
+
+Carrega Pagamento_EmpenhosImpactados.csv e agrega:
+
+SUM(Valor Pago (R$)) por Código Empenho
+
+Join
+
+Pagamento_EmpenhosImpactados.Código Empenho
+→ Empenho.Código Empenho
+
+Agora você consegue agregar execução por:
+
+Código Ação + Código Plano Orçamentário (PO)
+
+ou só por Código Ação (se quiser simplificar)
+
+Liquidado por Ação/PO (opcional)
+
+Mesma lógica com Liquidacao_EmpenhosImpactados.csv + join no Empenho.csv.
+
+4) Como isso destrava a “dotação”
+
+A dotação (SIOP/LOA) geralmente é consultável por:
+
+Ação (ex.: 0005, 0EC7, 0EC8)
+
+e muitas vezes por Plano Orçamentário (PO)
+
+Ou seja: agora você consegue produzir a execução com a mesma chave (ação + PO) e o cruzamento passa a bater.
+
+5) Sugestão prática para o MVP (sem complicar)
+
+Se sua dotação estiver só por Ação (sem PO):
+
+agregue execução por Ação (ignore PO na execução)
+
+Se sua dotação estiver por Ação+PO:
+
+agregue execução por Ação+PO
+
+Isso evita o erro clássico: tentar cruzar dotação por Ação+PO com execução que você agregou sem PO (ou vice-versa).

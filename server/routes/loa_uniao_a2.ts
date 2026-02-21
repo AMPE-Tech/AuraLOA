@@ -6,6 +6,7 @@ import type {
   KPIItem,
   SourceInfo,
   A2HistoryEntry,
+  CruzamentoAcaoItem,
 } from "../../shared/loa_types";
 import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
 import { fetchExecucaoFromTransparencia } from "../services/transparencia_execucao";
@@ -100,26 +101,31 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       `fetched execution count=${execucaoResults.length} dotation count=${dotacaoResults.length}`
     );
 
-    const zipPagoByAcao = new Map<string, number>();
+    const zipByAcao = new Map<string, { pago: number; empenhado: number; liquidado: number; qtd: number }>();
     if (zipExecucaoResult) {
-      for (const row of zipExecucaoResult.pago_por_acao_po) {
-        const prev = zipPagoByAcao.get(row.codigo_acao) ?? 0;
-        zipPagoByAcao.set(row.codigo_acao, prev + row.pago);
+      for (const ea of zipExecucaoResult.execucao_por_acao) {
+        zipByAcao.set(ea.codigo_acao, {
+          pago: ea.total_pago,
+          empenhado: ea.total_empenhado,
+          liquidado: ea.total_liquidado,
+          qtd: ea.qtd_empenhos,
+        });
       }
-      evidencePack.log(`ZIP pago aggregated by acao: ${Array.from(zipPagoByAcao.entries()).map(([k, v]) => `${k}=${v.toFixed(2)}`).join(', ')}`);
+      evidencePack.log(`ZIP execucao by acao: ${Array.from(zipByAcao.entries()).map(([k, v]) => `${k}: emp=${v.empenhado.toFixed(2)} liq=${v.liquidado.toFixed(2)} pago=${v.pago.toFixed(2)}`).join(', ')}`);
     }
 
     const kpis: KPIItem[] = ACOES_PRECATORIOS_UNIAO.map((acao) => {
       const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
       const dot = dotacaoResults.find((d) => d.codigo_acao === acao.codigo_acao);
+      const zipData = zipByAcao.get(acao.codigo_acao);
 
       const dotacaoAtual = dot?.dotacao_atual ?? null;
-      const empenhado = exec?.empenhado ?? null;
-      const liquidado = exec?.liquidado ?? null;
+      const empenhado = exec?.empenhado ?? (zipData?.empenhado || null);
+      const liquidado = exec?.liquidado ?? (zipData?.liquidado || null);
 
       const apiPago = exec?.pago ?? null;
-      const zipPago = zipPagoByAcao.get(acao.codigo_acao) ?? null;
-      const pago = apiPago ?? zipPago;
+      const zipPago = zipData?.pago ?? null;
+      const pago = apiPago ?? (zipPago && zipPago > 0 ? zipPago : null);
 
       let percentualExecucao: number | null = null;
       if (dotacaoAtual && dotacaoAtual > 0 && pago !== null) {
@@ -131,7 +137,8 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       let status: "OK" | "PARCIAL" | "NAO_LOCALIZADO" = "OK";
       if (
         exec?.status === "NAO_LOCALIZADO" &&
-        dot?.status === "NAO_LOCALIZADO"
+        dot?.status === "NAO_LOCALIZADO" &&
+        !zipData
       ) {
         status = "NAO_LOCALIZADO";
       } else if (
@@ -152,6 +159,68 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
         status,
       };
     });
+
+    const cruzamento: CruzamentoAcaoItem[] = ACOES_PRECATORIOS_UNIAO.map((acao) => {
+      const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
+      const dot = dotacaoResults.find((d) => d.codigo_acao === acao.codigo_acao);
+      const zipData = zipByAcao.get(acao.codigo_acao);
+
+      const dotInicial = dot?.dotacao_inicial ?? null;
+      const dotAtual = dot?.dotacao_atual ?? null;
+
+      const empApi = exec?.empenhado ?? null;
+      const liqApi = exec?.liquidado ?? null;
+      const pagApi = exec?.pago ?? null;
+
+      const empZip = zipData?.empenhado ?? null;
+      const liqZip = zipData?.liquidado ?? null;
+      const pagZip = zipData?.pago ?? null;
+
+      const empFinal = empApi ?? (empZip && empZip > 0 ? empZip : null);
+      const liqFinal = liqApi ?? (liqZip && liqZip > 0 ? liqZip : null);
+      const pagFinal = pagApi ?? (pagZip && pagZip > 0 ? pagZip : null);
+
+      let pctExec: number | null = null;
+      if (dotAtual && dotAtual > 0 && pagFinal !== null) {
+        pctExec = (pagFinal / dotAtual) * 100;
+      } else if (empFinal && empFinal > 0 && pagFinal !== null) {
+        pctExec = (pagFinal / empFinal) * 100;
+      }
+
+      const fonteDot = dotAtual !== null ? (dot?.observacoes?.includes("SIOP") ? "SIOP SPARQL" : "Orcamento SPARQL") : "Indisponivel";
+      let fonteExec = "Indisponivel";
+      if (empApi !== null || pagApi !== null) fonteExec = "API REST Portal Transparencia";
+      else if (empZip !== null || pagZip !== null) fonteExec = "ZIP CSV Portal Transparencia";
+
+      let status: "OK" | "PARCIAL" | "NAO_LOCALIZADO" = "OK";
+      const hasDot = dotAtual !== null;
+      const hasExec = empFinal !== null || pagFinal !== null;
+      if (!hasDot && !hasExec) status = "NAO_LOCALIZADO";
+      else if (!hasDot || !hasExec) status = "PARCIAL";
+
+      return {
+        codigo_acao: acao.codigo_acao,
+        descricao_acao: acao.descricao,
+        dotacao_inicial: dotInicial,
+        dotacao_atual: dotAtual,
+        empenhado_api: empApi,
+        liquidado_api: liqApi,
+        pago_api: pagApi,
+        empenhado_zip: empZip && empZip > 0 ? empZip : null,
+        liquidado_zip: liqZip && liqZip > 0 ? liqZip : null,
+        pago_zip: pagZip && pagZip > 0 ? pagZip : null,
+        empenhado_final: empFinal,
+        liquidado_final: liqFinal,
+        pago_final: pagFinal,
+        percentual_execucao: pctExec,
+        fonte_dotacao: fonteDot,
+        fonte_execucao: fonteExec,
+        status,
+        qtd_empenhos_zip: zipData?.qtd ?? 0,
+      };
+    });
+
+    evidencePack.log(`cruzamento built: ${cruzamento.filter(c => c.status === 'OK').length} OK, ${cruzamento.filter(c => c.status === 'PARCIAL').length} PARCIAL, ${cruzamento.filter(c => c.status === 'NAO_LOCALIZADO').length} NAO_LOCALIZADO`);
 
     const allNAO =
       execucaoResults.every((e) => e.status === "NAO_LOCALIZADO") &&
@@ -219,6 +288,7 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
         dotacao: dotacaoResults,
         execucao: execucaoResults,
         kpis,
+        cruzamento,
         ...(zipExecucaoResult ? { execucao_zip: zipExecucaoResult } : {}),
       },
       ...(zipDownloadResult ? { zip_download: zipDownloadResult } : {}),

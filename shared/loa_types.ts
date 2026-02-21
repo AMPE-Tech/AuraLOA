@@ -80,14 +80,76 @@ export interface ZipExecucaoRow {
   moeda: "BRL";
 }
 
+export interface ZipEmpenhoDetalhe {
+  codigo_empenho: string;
+  data_emissao: string;
+  codigo_orgao_superior: string;
+  orgao_superior: string;
+  codigo_orgao: string;
+  orgao: string;
+  codigo_ug: string;
+  unidade_gestora: string;
+  codigo_favorecido: string;
+  favorecido: string;
+  codigo_acao: string;
+  acao: string;
+  codigo_po: string | null;
+  plano_orcamentario: string | null;
+  codigo_programa: string;
+  programa: string;
+  codigo_subfuncao: string;
+  subfuncao: string;
+  codigo_subtitulo: string;
+  subtitulo: string;
+  processo: string;
+  valor_empenho: number;
+  valor_pago: number;
+  valor_liquidado: number;
+}
+
+export interface ZipExecucaoByAcao {
+  codigo_acao: string;
+  descricao_acao: string;
+  total_empenhado: number;
+  total_liquidado: number;
+  total_pago: number;
+  qtd_empenhos: number;
+  planos_orcamentarios: { codigo_po: string; pago: number; empenhado: number; liquidado: number }[];
+}
+
 export interface ZipExecucaoStats {
   empenhos_com_pagamento: number;
   chaves_acao_po: number;
+  total_empenhos_zip: number;
+  total_liquidacoes_zip: number;
 }
 
 export interface ZipExecucaoResult {
   pago_por_acao_po: ZipExecucaoRow[];
+  empenhos_detalhe: ZipEmpenhoDetalhe[];
+  execucao_por_acao: ZipExecucaoByAcao[];
   stats: ZipExecucaoStats;
+}
+
+export interface CruzamentoAcaoItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  dotacao_inicial: number | null;
+  dotacao_atual: number | null;
+  empenhado_api: number | null;
+  liquidado_api: number | null;
+  pago_api: number | null;
+  empenhado_zip: number | null;
+  liquidado_zip: number | null;
+  pago_zip: number | null;
+  empenhado_final: number | null;
+  liquidado_final: number | null;
+  pago_final: number | null;
+  percentual_execucao: number | null;
+  fonte_dotacao: string;
+  fonte_execucao: string;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  qtd_empenhos_zip: number;
 }
 
 export interface A2Response {
@@ -103,6 +165,7 @@ export interface A2Response {
     execucao: ExecucaoItem[];
     kpis: KPIItem[];
     execucao_zip?: ZipExecucaoResult;
+    cruzamento?: CruzamentoAcaoItem[];
   };
   zip_download?: ZipDownloadInfo;
   evidencias_count: number;

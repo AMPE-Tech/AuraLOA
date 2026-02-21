@@ -5,6 +5,7 @@ import { PassThrough } from "node:stream";
 import unzipper from "unzipper";
 import iconv from "iconv-lite";
 import { parse } from "csv-parse";
+import type { ZipEmpenhoDetalhe, ZipExecucaoByAcao, ZipExecucaoRow } from "../../shared/loa_types";
 
 type Evidence = {
   source_name: string;
@@ -58,6 +59,14 @@ function normCol(s: string): string {
     .replace(/[^\w ]/g, "");
 }
 
+function getCol(r: Record<string, string>, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = r[k];
+    if (v !== undefined && v !== null) return v.trim();
+  }
+  return "";
+}
+
 async function extractEntryToRawAndParseCSV(params: {
   zipPath: string;
   entryNameEndsWith: string;
@@ -65,7 +74,7 @@ async function extractEntryToRawAndParseCSV(params: {
   encoding: "latin1" | "utf8";
   delimiter: ";" | ",";
   onRecord: (row: Record<string, string>) => void | Promise<void>;
-}): Promise<{ bytes: number }> {
+}): Promise<{ bytes: number; found: boolean }> {
   const zipStream = fs.createReadStream(params.zipPath).pipe(unzipper.Parse({ forceStream: true }));
 
   for await (const entry of zipStream as any) {
@@ -127,10 +136,10 @@ async function extractEntryToRawAndParseCSV(params: {
     await new Promise<void>((resolve) => out.on("finish", resolve));
     out.end();
 
-    return { bytes };
+    return { bytes, found: true };
   }
 
-  throw new Error(`[A2] CSV nao encontrado no ZIP: termina com ${params.entryNameEndsWith}`);
+  return { bytes: 0, found: false };
 }
 
 export async function computeExecucaoPagoPorAcaoPoFromZip(params: {
@@ -165,71 +174,133 @@ export async function computeExecucaoPagoPorAcaoPoFromZip(params: {
   ];
 
   const pagoByEmpenho = new Map<string, number>();
+  const liquidadoByEmpenho = new Map<string, number>();
 
   const rawPagamentoImpactados = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Pagamento_EmpenhosImpactados.csv"));
-  const pagamentoImpactadosBytes = await extractEntryToRawAndParseCSV({
+  const pagamentoImpactadosResult = await extractEntryToRawAndParseCSV({
     zipPath: params.zipPath,
     entryNameEndsWith: "_Despesas_Pagamento_EmpenhosImpactados.csv",
     rawOutPath: rawPagamentoImpactados,
     encoding: "latin1",
     delimiter: ";",
     onRecord: (r) => {
-      const codEmp = (r["codigo empenho"] ?? "").trim();
+      const codEmp = getCol(r, "codigo empenho");
       if (!codEmp) return;
-
-      const valorPago = parseBRL(r["valor pago r"] ?? r["valor pago"] ?? "0");
+      const valorPago = parseBRL(getCol(r, "valor pago r", "valor pago"));
       const prev = pagoByEmpenho.get(codEmp) ?? 0;
       pagoByEmpenho.set(codEmp, prev + valorPago);
     },
   });
 
-  evidences.push({
-    source_name: "PortalTransparencia.DespostasZip.PagamentoEmpenhosImpactados",
-    source_url: params.sourceUrlZip ?? null,
-    captured_at_iso,
-    raw_payload_path: rawPagamentoImpactados,
-    raw_payload_sha256: sha256File(rawPagamentoImpactados),
-    bytes: pagamentoImpactadosBytes.bytes,
-    note: "Usado para obter Valor Pago por Codigo Empenho (join).",
+  if (pagamentoImpactadosResult.found) {
+    evidences.push({
+      source_name: "PortalTransparencia.DespostasZip.PagamentoEmpenhosImpactados",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: rawPagamentoImpactados,
+      raw_payload_sha256: sha256File(rawPagamentoImpactados),
+      bytes: pagamentoImpactadosResult.bytes,
+      note: "Usado para obter Valor Pago por Codigo Empenho (join).",
+    });
+  }
+
+  const rawLiquidacaoImpactados = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Liquidacao_EmpenhosImpactados.csv"));
+  let totalLiquidacoes = 0;
+  const liquidacaoResult = await extractEntryToRawAndParseCSV({
+    zipPath: params.zipPath,
+    entryNameEndsWith: "_Despesas_Liquidacao_EmpenhosImpactados.csv",
+    rawOutPath: rawLiquidacaoImpactados,
+    encoding: "latin1",
+    delimiter: ";",
+    onRecord: (r) => {
+      totalLiquidacoes++;
+      const codEmp = getCol(r, "codigo empenho");
+      if (!codEmp) return;
+      const valorLiq = parseBRL(getCol(r, "valor liquidado r", "valor liquidado"));
+      const prev = liquidadoByEmpenho.get(codEmp) ?? 0;
+      liquidadoByEmpenho.set(codEmp, prev + valorLiq);
+    },
   });
 
+  if (liquidacaoResult.found) {
+    evidences.push({
+      source_name: "PortalTransparencia.DespostasZip.LiquidacaoEmpenhosImpactados",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: rawLiquidacaoImpactados,
+      raw_payload_sha256: sha256File(rawLiquidacaoImpactados),
+      bytes: liquidacaoResult.bytes,
+      note: "Usado para obter Valor Liquidado por Codigo Empenho (join).",
+    });
+  }
+
   const pagoPorAcaoPo = new Map<string, number>();
+  const empenhosDetalhe: ZipEmpenhoDetalhe[] = [];
+  let totalEmpenhos = 0;
 
   const rawEmpenho = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Empenho.csv"));
-  const empenhoBytes = await extractEntryToRawAndParseCSV({
+  const empenhoResult = await extractEntryToRawAndParseCSV({
     zipPath: params.zipPath,
     entryNameEndsWith: "_Despesas_Empenho.csv",
     rawOutPath: rawEmpenho,
     encoding: "latin1",
     delimiter: ";",
     onRecord: (r) => {
-      const codEmp = (r["codigo empenho"] ?? "").trim();
+      totalEmpenhos++;
+      const codEmp = getCol(r, "codigo empenho");
       if (!codEmp) return;
 
-      const pago = pagoByEmpenho.get(codEmp);
-      if (!pago || pago === 0) return;
+      const acao = getCol(r, "codigo acao");
+      const po = getCol(r, "codigo plano orcamentario") || null;
+      const valorEmpenho = parseBRL(getCol(r, "valor original do empenho", "valor do empenho convertido pra r"));
+      const pago = pagoByEmpenho.get(codEmp) ?? 0;
+      const liquidado = liquidadoByEmpenho.get(codEmp) ?? 0;
 
-      const acao = (r["codigo acao"] ?? "").trim();
-      const po = (r["codigo plano orcamentario"] ?? "").trim() || null;
+      empenhosDetalhe.push({
+        codigo_empenho: codEmp,
+        data_emissao: getCol(r, "data emissao"),
+        codigo_orgao_superior: getCol(r, "codigo orgao superior"),
+        orgao_superior: getCol(r, "orgao superior"),
+        codigo_orgao: getCol(r, "codigo orgao"),
+        orgao: getCol(r, "orgao"),
+        codigo_ug: getCol(r, "codigo unidade gestora"),
+        unidade_gestora: getCol(r, "unidade gestora"),
+        codigo_favorecido: getCol(r, "codigo favorecido"),
+        favorecido: getCol(r, "favorecido"),
+        codigo_acao: acao,
+        acao: getCol(r, "acao"),
+        codigo_po: po,
+        plano_orcamentario: getCol(r, "plano orcamentario") || null,
+        codigo_programa: getCol(r, "codigo programa"),
+        programa: getCol(r, "programa"),
+        codigo_subfuncao: getCol(r, "codigo subfuncao"),
+        subfuncao: getCol(r, "subfuncao"),
+        codigo_subtitulo: getCol(r, "codigo subtitulo localizador"),
+        subtitulo: getCol(r, "subtitulo localizador"),
+        processo: getCol(r, "processo"),
+        valor_empenho: valorEmpenho,
+        valor_pago: pago,
+        valor_liquidado: liquidado,
+      });
 
-      if (!acao) {
-        return;
+      if (pago > 0 && acao) {
+        const key = `${acao}||${po ?? ""}`;
+        pagoPorAcaoPo.set(key, (pagoPorAcaoPo.get(key) ?? 0) + pago);
       }
-
-      const key = `${acao}||${po ?? ""}`;
-      pagoPorAcaoPo.set(key, (pagoPorAcaoPo.get(key) ?? 0) + pago);
     },
   });
 
-  evidences.push({
-    source_name: "PortalTransparencia.DespostasZip.Empenho",
-    source_url: params.sourceUrlZip ?? null,
-    captured_at_iso,
-    raw_payload_path: rawEmpenho,
-    raw_payload_sha256: sha256File(rawEmpenho),
-    bytes: empenhoBytes.bytes,
-    note: "Tabela mestre que contem Codigo Acao + Codigo PO por Codigo Empenho.",
-  });
+  if (empenhoResult.found) {
+    evidences.push({
+      source_name: "PortalTransparencia.DespostasZip.Empenho",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: rawEmpenho,
+      raw_payload_sha256: sha256File(rawEmpenho),
+      bytes: empenhoResult.bytes,
+      note: "Tabela mestre que contem Codigo Acao + Codigo PO por Codigo Empenho.",
+    });
+  }
 
   const rows: ExecucaoPagoPorAcaoPoRow[] = [];
   for (const [key, pago] of Array.from(pagoPorAcaoPo.entries())) {
@@ -248,14 +319,84 @@ export async function computeExecucaoPagoPorAcaoPoFromZip(params: {
     return (a.codigo_po ?? "").localeCompare(b.codigo_po ?? "");
   });
 
+  const execucaoPorAcao = buildExecucaoPorAcao(empenhosDetalhe);
+
   return {
     result: {
       pago_por_acao_po: rows,
+      empenhos_detalhe: empenhosDetalhe,
+      execucao_por_acao: execucaoPorAcao,
       stats: {
         empenhos_com_pagamento: pagoByEmpenho.size,
         chaves_acao_po: rows.length,
+        total_empenhos_zip: totalEmpenhos,
+        total_liquidacoes_zip: totalLiquidacoes,
       },
     },
     evidences,
   };
+}
+
+function buildExecucaoPorAcao(empenhos: ZipEmpenhoDetalhe[]): ZipExecucaoByAcao[] {
+  const byAcao = new Map<string, {
+    descricao: string;
+    empenhado: number;
+    liquidado: number;
+    pago: number;
+    qtd: number;
+    poMap: Map<string, { pago: number; empenhado: number; liquidado: number }>;
+  }>();
+
+  for (const emp of empenhos) {
+    const acao = emp.codigo_acao;
+    if (!acao) continue;
+
+    let entry = byAcao.get(acao);
+    if (!entry) {
+      entry = {
+        descricao: emp.acao || acao,
+        empenhado: 0,
+        liquidado: 0,
+        pago: 0,
+        qtd: 0,
+        poMap: new Map(),
+      };
+      byAcao.set(acao, entry);
+    }
+
+    entry.empenhado += emp.valor_empenho;
+    entry.liquidado += emp.valor_liquidado;
+    entry.pago += emp.valor_pago;
+    entry.qtd++;
+
+    const poKey = emp.codigo_po ?? "-";
+    let poEntry = entry.poMap.get(poKey);
+    if (!poEntry) {
+      poEntry = { pago: 0, empenhado: 0, liquidado: 0 };
+      entry.poMap.set(poKey, poEntry);
+    }
+    poEntry.pago += emp.valor_pago;
+    poEntry.empenhado += emp.valor_empenho;
+    poEntry.liquidado += emp.valor_liquidado;
+  }
+
+  const result: ZipExecucaoByAcao[] = [];
+  for (const [codigo, entry] of Array.from(byAcao.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+    result.push({
+      codigo_acao: codigo,
+      descricao_acao: entry.descricao,
+      total_empenhado: entry.empenhado,
+      total_liquidado: entry.liquidado,
+      total_pago: entry.pago,
+      qtd_empenhos: entry.qtd,
+      planos_orcamentarios: Array.from(entry.poMap.entries()).map(([po, v]) => ({
+        codigo_po: po,
+        pago: v.pago,
+        empenhado: v.empenhado,
+        liquidado: v.liquidado,
+      })),
+    });
+  }
+
+  return result;
 }

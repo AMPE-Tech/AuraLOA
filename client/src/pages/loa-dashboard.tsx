@@ -44,6 +44,8 @@ import type {
   ZipDownloadInfo,
   ZipExecucaoResult,
   ZipExecucaoRow,
+  ZipEmpenhoDetalhe,
+  CruzamentoAcaoItem,
 } from "../../shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -419,10 +421,229 @@ function ZipExecucaoTable({ data }: { data: ZipExecucaoResult }) {
   );
 }
 
+function FonteBadge({ fonte }: { fonte: string }) {
+  if (fonte === "Indisponivel") {
+    return <Badge variant="destructive" className="text-[10px]">Indisponivel</Badge>;
+  }
+  if (fonte.includes("API")) {
+    return <Badge variant="default" className="bg-blue-600 text-[10px]">API REST</Badge>;
+  }
+  if (fonte.includes("ZIP")) {
+    return <Badge variant="default" className="bg-violet-600 text-[10px]">ZIP/CSV</Badge>;
+  }
+  if (fonte.includes("SPARQL")) {
+    return <Badge variant="default" className="bg-teal-600 text-[10px]">SPARQL</Badge>;
+  }
+  return <Badge variant="secondary" className="text-[10px]">{fonte}</Badge>;
+}
+
+function CruzamentoDetalhado({ items }: { items: CruzamentoAcaoItem[] }) {
+  if (!items || items.length === 0) return null;
+
+  const totalEmp = items.reduce((s, i) => s + (i.empenhado_final || 0), 0);
+  const totalLiq = items.reduce((s, i) => s + (i.liquidado_final || 0), 0);
+  const totalPag = items.reduce((s, i) => s + (i.pago_final || 0), 0);
+  const totalDot = items.reduce((s, i) => s + (i.dotacao_atual || 0), 0);
+  const acoesCom = items.filter(i => i.empenhado_final !== null || i.pago_final !== null).length;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Scale className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Cruzamento Dotacao x Execucao por Acao (DPO)</span>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Badge variant="secondary" className="text-xs">{acoesCom}/{items.length} acoes com dados</Badge>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-xs border-collapse" data-testid="table-cruzamento">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-2 font-medium text-muted-foreground">Acao</th>
+              <th className="text-left p-2 font-medium text-muted-foreground max-w-[200px]">Descricao</th>
+              <th className="text-right p-2 font-medium text-muted-foreground">Dotacao Atual</th>
+              <th className="text-right p-2 font-medium text-muted-foreground">Empenhado</th>
+              <th className="text-right p-2 font-medium text-muted-foreground">Liquidado</th>
+              <th className="text-right p-2 font-medium text-muted-foreground">Pago</th>
+              <th className="text-right p-2 font-medium text-muted-foreground">% Exec</th>
+              <th className="text-center p-2 font-medium text-muted-foreground">Fonte Exec</th>
+              <th className="text-center p-2 font-medium text-muted-foreground">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.codigo_acao} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-cruzamento-${item.codigo_acao}`}>
+                <td className="p-2 font-mono font-semibold">{item.codigo_acao}</td>
+                <td className="p-2 max-w-[200px] truncate" title={item.descricao_acao}>{item.descricao_acao}</td>
+                <td className="p-2 text-right font-mono">{formatCurrency(item.dotacao_atual)}</td>
+                <td className="p-2 text-right font-mono text-blue-600 dark:text-blue-400">{formatCurrency(item.empenhado_final)}</td>
+                <td className="p-2 text-right font-mono text-amber-600 dark:text-amber-400">{formatCurrency(item.liquidado_final)}</td>
+                <td className="p-2 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(item.pago_final)}</td>
+                <td className="p-2 text-right font-mono">{formatPercent(item.percentual_execucao)}</td>
+                <td className="p-2 text-center"><FonteBadge fonte={item.fonte_execucao} /></td>
+                <td className="p-2 text-center"><StatusBadge status={item.status} /></td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 bg-muted/30 font-semibold">
+              <td className="p-2" colSpan={2}>TOTAL</td>
+              <td className="p-2 text-right font-mono">{formatCurrency(totalDot || null)}</td>
+              <td className="p-2 text-right font-mono text-blue-700 dark:text-blue-300">{formatCurrency(totalEmp || null)}</td>
+              <td className="p-2 text-right font-mono text-amber-700 dark:text-amber-300">{formatCurrency(totalLiq || null)}</td>
+              <td className="p-2 text-right font-mono text-emerald-700 dark:text-emerald-300">{formatCurrency(totalPag || null)}</td>
+              <td className="p-2 text-right font-mono">
+                {totalEmp > 0 ? formatPercent((totalPag / totalEmp) * 100) : "N/D"}
+              </td>
+              <td className="p-2" colSpan={2}></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {items.filter(i => i.empenhado_api !== null || i.pago_zip !== null).map((item) => (
+          <Card key={item.codigo_acao} className="hover-elevate">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-2 mb-3 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-mono text-xs">{item.codigo_acao}</Badge>
+                  <StatusBadge status={item.status} />
+                </div>
+                {item.qtd_empenhos_zip > 0 && (
+                  <Badge variant="secondary" className="text-[10px]">{item.qtd_empenhos_zip} empenhos ZIP</Badge>
+                )}
+              </div>
+              <p className="text-xs font-medium mb-3 text-muted-foreground">{item.descricao_acao}</p>
+
+              <div className="space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="p-2 bg-muted/40 rounded-md">
+                    <p className="text-muted-foreground">Dotacao Atual</p>
+                    <p className="font-semibold">{formatCurrency(item.dotacao_atual)}</p>
+                    <FonteBadge fonte={item.fonte_dotacao} />
+                  </div>
+                  <div className="p-2 bg-muted/40 rounded-md">
+                    <p className="text-muted-foreground">% Execucao</p>
+                    <p className="font-semibold text-lg">{formatPercent(item.percentual_execucao)}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-2 bg-blue-50 dark:bg-blue-950/30 rounded-md">
+                    <p className="text-blue-600 dark:text-blue-400">Empenhado</p>
+                    <p className="font-semibold text-blue-700 dark:text-blue-300">{formatCurrency(item.empenhado_final)}</p>
+                    {item.empenhado_api !== null && item.empenhado_zip !== null && (
+                      <p className="text-[10px] text-muted-foreground mt-1">API: {formatCurrency(item.empenhado_api)} | ZIP: {formatCurrency(item.empenhado_zip)}</p>
+                    )}
+                  </div>
+                  <div className="p-2 bg-amber-50 dark:bg-amber-950/30 rounded-md">
+                    <p className="text-amber-600 dark:text-amber-400">Liquidado</p>
+                    <p className="font-semibold text-amber-700 dark:text-amber-300">{formatCurrency(item.liquidado_final)}</p>
+                  </div>
+                  <div className="p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-md">
+                    <p className="text-emerald-600 dark:text-emerald-400">Pago</p>
+                    <p className="font-semibold text-emerald-700 dark:text-emerald-300">{formatCurrency(item.pago_final)}</p>
+                    {item.pago_api !== null && item.pago_zip !== null && (
+                      <p className="text-[10px] text-muted-foreground mt-1">API: {formatCurrency(item.pago_api)} | ZIP: {formatCurrency(item.pago_zip)}</p>
+                    )}
+                  </div>
+                </div>
+
+                {item.empenhado_final !== null && item.pago_final !== null && item.empenhado_final > 0 && (
+                  <Progress value={Math.min((item.pago_final / item.empenhado_final) * 100, 100)} className="h-2" />
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function EmpenhoDetalheTable({ empenhos }: { empenhos: ZipEmpenhoDetalhe[] }) {
+  if (!empenhos || empenhos.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <FileText className="w-8 h-8 mb-2 opacity-50" />
+        <p className="text-sm">Nenhum empenho detalhado disponivel</p>
+        <p className="text-xs">Selecione um mes para extrair dados do ZIP</p>
+      </div>
+    );
+  }
+
+  const empenhosComValor = empenhos.filter(e => e.valor_empenho > 0 || e.valor_pago > 0);
+  const totalEmp = empenhosComValor.reduce((s, e) => s + e.valor_empenho, 0);
+  const totalPago = empenhosComValor.reduce((s, e) => s + e.valor_pago, 0);
+  const totalLiq = empenhosComValor.reduce((s, e) => s + e.valor_liquidado, 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <FileCheck className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Empenhos Detalhados (Fonte: ZIP CSV)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">{empenhos.length} empenhos</Badge>
+          <Badge variant="secondary" className="text-xs">{empenhosComValor.length} com valores</Badge>
+        </div>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-[11px] border-collapse" data-testid="table-empenhos">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-1.5 font-medium text-muted-foreground">Empenho</th>
+              <th className="text-left p-1.5 font-medium text-muted-foreground">Data</th>
+              <th className="text-left p-1.5 font-medium text-muted-foreground">Acao</th>
+              <th className="text-left p-1.5 font-medium text-muted-foreground">PO</th>
+              <th className="text-left p-1.5 font-medium text-muted-foreground">Orgao</th>
+              <th className="text-left p-1.5 font-medium text-muted-foreground">UG</th>
+              <th className="text-left p-1.5 font-medium text-muted-foreground max-w-[150px]">Favorecido</th>
+              <th className="text-right p-1.5 font-medium text-muted-foreground">Empenhado</th>
+              <th className="text-right p-1.5 font-medium text-muted-foreground">Liquidado</th>
+              <th className="text-right p-1.5 font-medium text-muted-foreground">Pago</th>
+            </tr>
+          </thead>
+          <tbody>
+            {empenhosComValor.map((emp, idx) => (
+              <tr key={emp.codigo_empenho || idx} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-empenho-${idx}`}>
+                <td className="p-1.5 font-mono">{emp.codigo_empenho?.slice(-15) || "-"}</td>
+                <td className="p-1.5">{emp.data_emissao || "-"}</td>
+                <td className="p-1.5 font-mono font-semibold">{emp.codigo_acao}</td>
+                <td className="p-1.5 font-mono text-muted-foreground">{emp.codigo_po || "-"}</td>
+                <td className="p-1.5" title={emp.orgao}>{emp.codigo_orgao}</td>
+                <td className="p-1.5" title={emp.unidade_gestora}>{emp.codigo_ug}</td>
+                <td className="p-1.5 max-w-[150px] truncate" title={emp.favorecido}>{emp.favorecido || "-"}</td>
+                <td className="p-1.5 text-right font-mono text-blue-600 dark:text-blue-400">{formatCurrency(emp.valor_empenho)}</td>
+                <td className="p-1.5 text-right font-mono text-amber-600 dark:text-amber-400">{formatCurrency(emp.valor_liquidado || null)}</td>
+                <td className="p-1.5 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(emp.valor_pago || null)}</td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 bg-muted/30 font-semibold text-xs">
+              <td className="p-1.5" colSpan={7}>TOTAL ({empenhosComValor.length} empenhos)</td>
+              <td className="p-1.5 text-right font-mono text-blue-700 dark:text-blue-300">{formatCurrency(totalEmp)}</td>
+              <td className="p-1.5 text-right font-mono text-amber-700 dark:text-amber-300">{formatCurrency(totalLiq)}</td>
+              <td className="p-1.5 text-right font-mono text-emerald-700 dark:text-emerald-300">{formatCurrency(totalPago)}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function ResultPanel({ data }: { data: A2Response }) {
-  const totalPago = data.data.execucao.reduce((sum, e) => sum + (e.pago || 0), 0);
-  const totalEmpenhado = data.data.execucao.reduce((sum, e) => sum + (e.empenhado || 0), 0);
-  const totalDotacao = data.data.dotacao.reduce((sum, d) => sum + (d.dotacao_atual || 0), 0);
+  const totalPago = data.data.execucao.reduce((sum: number, e: ExecucaoItem) => sum + (e.pago || 0), 0);
+  const totalEmpenhado = data.data.execucao.reduce((sum: number, e: ExecucaoItem) => sum + (e.empenhado || 0), 0);
+  const totalDotacao = data.data.dotacao.reduce((sum: number, d: DotacaoItem) => sum + (d.dotacao_atual || 0), 0);
   const pctExec = totalEmpenhado > 0 ? (totalPago / totalEmpenhado) * 100 : null;
 
   return (
@@ -512,19 +733,25 @@ function ResultPanel({ data }: { data: A2Response }) {
         </Card>
       )}
 
-      <Tabs defaultValue="execucao" className="w-full">
-        <TabsList className="w-full justify-start">
+      <Tabs defaultValue="cruzamento" className="w-full">
+        <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
+          <TabsTrigger value="cruzamento" data-testid="tab-cruzamento">
+            <Scale className="w-4 h-4 mr-1.5" />
+            Cruzamento
+          </TabsTrigger>
+          {data.data.execucao_zip?.empenhos_detalhe && data.data.execucao_zip.empenhos_detalhe.length > 0 && (
+            <TabsTrigger value="empenhos" data-testid="tab-empenhos">
+              <FileCheck className="w-4 h-4 mr-1.5" />
+              Empenhos
+            </TabsTrigger>
+          )}
           <TabsTrigger value="execucao" data-testid="tab-execucao">
             <BarChart3 className="w-4 h-4 mr-1.5" />
-            Execucao
+            Execucao API
           </TabsTrigger>
           <TabsTrigger value="dotacao" data-testid="tab-dotacao">
             <Database className="w-4 h-4 mr-1.5" />
             Dotacao
-          </TabsTrigger>
-          <TabsTrigger value="kpis" data-testid="tab-kpis">
-            <TrendingUp className="w-4 h-4 mr-1.5" />
-            KPIs
           </TabsTrigger>
           {data.data.execucao_zip && (
             <TabsTrigger value="execucao_zip" data-testid="tab-execucao-zip">
@@ -537,6 +764,24 @@ function ResultPanel({ data }: { data: A2Response }) {
             Evidencias
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="cruzamento" className="mt-4">
+          {data.data.cruzamento ? (
+            <CruzamentoDetalhado items={data.data.cruzamento} />
+          ) : (
+            <KPISummaryTable items={data.data.kpis} />
+          )}
+        </TabsContent>
+
+        {data.data.execucao_zip?.empenhos_detalhe && data.data.execucao_zip.empenhos_detalhe.length > 0 && (
+          <TabsContent value="empenhos" className="mt-4">
+            <Card>
+              <CardContent className="p-4">
+                <EmpenhoDetalheTable empenhos={data.data.execucao_zip.empenhos_detalhe} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="execucao" className="mt-4">
           <ExecucaoTable items={data.data.execucao} />
@@ -554,10 +799,6 @@ function ResultPanel({ data }: { data: A2Response }) {
 
         <TabsContent value="dotacao" className="mt-4">
           <DotacaoTable items={data.data.dotacao} />
-        </TabsContent>
-
-        <TabsContent value="kpis" className="mt-4">
-          <KPISummaryTable items={data.data.kpis} />
         </TabsContent>
 
         <TabsContent value="evidencias" className="mt-4">
@@ -592,7 +833,7 @@ function ResultPanel({ data }: { data: A2Response }) {
               <div>
                 <p className="text-xs text-muted-foreground mb-2">Fontes consultadas</p>
                 <div className="flex flex-wrap gap-2">
-                  {data.sources.map((src, idx) => (
+                  {data.sources.map((src: { name: string; url: string; type: string }, idx: number) => (
                     <a
                       key={idx}
                       href={src.url}
