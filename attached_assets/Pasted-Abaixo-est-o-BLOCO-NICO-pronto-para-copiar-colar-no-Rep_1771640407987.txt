@@ -1,0 +1,202 @@
+Abaixo está o **BLOCO ÚNICO** (pronto para copiar/colar no Replit) com instruções **sem margem para alucinação**, exigindo **evidência real** (links, prints, logs, hashes) e **controle anti-regressão**.
+
+---
+
+## BLOCO PARA REPLIT — MVP A2 (UNIÃO) “Dotação + Execução” com evidências reais (sem alucinação)
+
+**Contexto (obrigatório ler antes):**
+Vamos implementar o MVP A2 para União: **cruzar DOTAÇÃO (SIOP) + EXECUÇÃO (Portal da Transparência)** para **ações de precatórios** usando **códigos de ação** (ex.: 0005, 0EC7, 0EC8). A entrega tem que ser **determinística** e **auditável**, com evidência verificável.
+
+### 0) Regras anti-alucinação (hard rules)
+
+1. **Proibido inventar valores, totais ou “conclusões”** se não houver evidência obtida por fonte oficial consultada no runtime.
+2. **Toda informação numérica** (dotação/empenhado/liquidado/pago) deve ter:
+
+   * `source_url` (link exato da consulta ou arquivo oficial)
+   * `captured_at_iso` (timestamp)
+   * `raw_payload_path` (arquivo JSON/HTML/CSV salvo)
+3. Se o dado não estiver disponível: retornar explicitamente `status="NAO_LOCALIZADO"` e justificar em `observacoes`.
+4. **Sem scraping frágil de tela** como solução principal. Prioridade:
+
+   * Execução: **API/CSV do Portal da Transparência**
+   * Dotação: SIOP Acesso Público (se for necessário, implementar conector **com evidência e fallback**; caso não seja viável no MVP, registrar como “pendente” e não inventar).
+5. **Nada de “parece que” / “provavelmente”**. Tudo tem que ser “encontrei / não encontrei” com evidência.
+
+---
+
+## 1) Entregáveis (exatos)
+
+### 1.1 Endpoint único
+
+Criar endpoint HTTP:
+
+* `POST /api/loa/uniao/a2`
+* Input JSON mínimo:
+
+```json
+{ "ano_exercicio": 2026 }
+```
+
+### 1.2 Saída única (JSON auditável)
+
+Retornar um JSON no schema:
+
+* `schema_version: "br.gov.orcamento.precatorios.uniao.a2.v1"`
+* `process_id_uuid` (UUID v4 gerado no início)
+* `sources[]` com URLs oficiais (SIOP, Portal da Transparência, MTO PDF)
+* `data.dotacao[]`, `data.execucao[]`, `data.kpis[]`
+* `evidencias[]` por item com:
+
+  * `source_name`
+  * `source_url`
+  * `captured_at_iso`
+  * `raw_payload_sha256`
+  * `raw_payload_path`
+* `hashes.output_sha256`
+
+**Se não conseguir dotação via SIOP no MVP**, o sistema deve:
+
+* preencher dotação como `null`
+* marcar KPI como `PARCIAL`
+* e **ainda assim retornar execução** (que é mais fácil por CSV/API) com evidência real
+
+---
+
+## 2) Catálogo determinístico de ações (MTO 2026) — sem inventar
+
+Criar módulo `catalog/acoes_precatorios_uniao.ts` com lista fixa inicial:
+
+* `0005` (com POs `0001..0004`)
+* `0EC7`
+* `0EC8`
+
+**Importante:** não extrapolar para outras ações sem base documental. Se no futuro for ampliar, deve existir um passo explícito “atualizar catálogo” com evidência.
+
+---
+
+## 3) Evidência real e rastreabilidade (obrigatório)
+
+### 3.1 Evidence Pack por execução do endpoint
+
+A cada chamada, salvar em disco (ex.: `./Saida/evidence/{process_id_uuid}/`):
+
+* `request.json` (input recebido)
+* `response.json` (output final)
+* `raw/` com:
+
+  * payload bruto de execução (CSV baixado ou resposta da API)
+  * payload bruto de dotação (se houver)
+* `hashes.json` com SHA-256 de cada arquivo
+* `run.log` com logs INFO (sem dados sensíveis)
+
+### 3.2 Logs
+
+Logar sempre:
+
+* `[A2] start process_id=... year=...`
+* `[A2] fetched execution source=... bytes=... sha256=...`
+* `[A2] fetched dotation source=... bytes=... sha256=...` (ou “skipped/not available”)
+* `[A2] end status=OK|PARCIAL|NAO_LOCALIZADO`
+
+---
+
+## 4) Execução (Portal da Transparência) — implementação obrigatória no MVP
+
+Implementar execução via **uma das duas rotas** (preferir a que for mais estável no ambiente Replit):
+
+### Rota 1 (preferida): Download CSV oficial de despesas
+
+* Baixar dataset de despesas (empenho/liquidação/pagamento) do Portal e filtrar por:
+
+  * ano
+  * ação (se o CSV permitir)
+  * ou, se não houver ação explícita no CSV, filtrar por campos correlatos e **registrar limitação**
+* Agregar totais: empenhado, liquidado, pago
+
+### Rota 2: API do Portal da Transparência
+
+* Consumir API com chave (se necessário)
+* Guardar payload bruto
+* Agregar totais
+
+**Qualquer rota escolhida deve:**
+
+* salvar o arquivo bruto
+* registrar `source_url` de onde veio
+* calcular `sha256` do bruto
+
+---
+
+## 5) Dotação (SIOP) — implementar se viável; se não, “PARCIAL” sem inventar
+
+* Tentar conector SIOP Acesso Público (consulta por ação e ano).
+* Se o SIOP exigir autenticação/token e isso atrasar:
+
+  * entregar MVP com execução completa
+  * e dotação como `null` com status `PARCIAL`
+  * registrando claramente: “Dotação SIOP pendente por dependência técnica (token/API)”.
+
+---
+
+## 6) Validação e anti-regressão (obrigatório)
+
+### 6.1 validate_output()
+
+Criar validador que falha se:
+
+* `process_id_uuid` ausente
+* `sources` ausente
+* qualquer item numérico sem `evidencias[]`
+* `raw_payload_path` não existir no disco
+* `sha256` não bater com o arquivo salvo
+
+### 6.2 Teste mínimo
+
+Criar 1 teste de integração que:
+
+* chama o endpoint com `ano_exercicio=2026`
+* verifica que gerou pasta `evidence/{uuid}/`
+* verifica que `response.json` existe e tem `output_sha256`
+* verifica que pelo menos 1 `raw_payload` foi salvo (execução)
+
+---
+
+## 7) Demonstração obrigatória (prova de que foi feito)
+
+Ao finalizar, você (Replit) deve entregar nesta ordem:
+
+1. **Link do PR/commit** com os arquivos criados/alterados
+2. **Print/Screenshot** do endpoint respondendo (ou curl)
+3. **Árvore de arquivos** gerada em `./Saida/evidence/{uuid}/`
+4. **Trecho de log** mostrando sha256 e paths reais
+5. **Exemplo do response.json** (somente os metadados + 1 item de execução, sem colar tudo)
+
+Se qualquer item acima faltar, considero “não entregue”.
+
+---
+
+## 8) Arquivos a criar (estrutura sugerida)
+
+* `server/routes/loa_uniao_a2.ts` (endpoint)
+* `catalog/acoes_precatorios_uniao.ts` (catálogo fixo)
+* `services/transparencia_execucao.ts` (CSV/API + evidência)
+* `services/siop_dotacao.ts` (opcional no MVP; pode stub com status PARCIAL)
+* `services/evidence_pack.ts` (salvar arquivos + hash)
+* `services/validate_output.ts`
+* `tests/loa_uniao_a2.test.ts`
+
+---
+
+## 9) Definição de pronto (DoD)
+
+Só está pronto se:
+
+* endpoint funciona
+* gera evidence pack com hashes reais
+* nenhum número sai sem evidência
+* status `OK|PARCIAL|NAO_LOCALIZADO` coerente
+* teste passa
+
+---
+
+Se você quiser, eu também posso te devolver **um “prompt de verificação”** para você colar no Replit depois da entrega, obrigando ele a **provar** que não “chutou” nada (checando presença de arquivos e hashes).
