@@ -42,6 +42,8 @@ import type {
   KPIItem,
   EvidenciaItem,
   ZipDownloadInfo,
+  ZipExecucaoResult,
+  ZipExecucaoRow,
 } from "../../shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -355,6 +357,68 @@ function KPISummaryTable({ items }: { items: KPIItem[] }) {
   );
 }
 
+function ZipExecucaoTable({ data }: { data: ZipExecucaoResult }) {
+  if (!data || !data.pago_por_acao_po || data.pago_por_acao_po.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+        <FileText className="w-8 h-8 mb-2 opacity-50" />
+        <p className="text-sm">Nenhum dado de execucao encontrado no ZIP</p>
+      </div>
+    );
+  }
+
+  const totalPago = data.pago_por_acao_po.reduce((sum: number, r: ZipExecucaoRow) => sum + r.pago, 0);
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2">
+          <FileText className="w-4 h-4 text-primary" />
+          <span className="text-sm font-medium">Execucao extraida do ZIP (Pagamento x Empenho)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            {data.stats.empenhos_com_pagamento} empenhos
+          </Badge>
+          <Badge variant="secondary" className="text-xs">
+            {data.stats.chaves_acao_po} acoes/PO
+          </Badge>
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="border-b bg-muted/50">
+              <th className="text-left p-2.5 font-medium text-muted-foreground">Acao</th>
+              <th className="text-left p-2.5 font-medium text-muted-foreground">PO</th>
+              <th className="text-right p-2.5 font-medium text-muted-foreground">Pago (BRL)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.pago_por_acao_po.map((row: ZipExecucaoRow, idx: number) => (
+              <tr key={`${row.codigo_acao}-${row.codigo_po ?? 'null'}-${idx}`} className="border-b hover:bg-muted/30 transition-colors">
+                <td className="p-2.5 font-mono text-xs" data-testid={`zip-acao-${idx}`}>{row.codigo_acao}</td>
+                <td className="p-2.5 font-mono text-xs text-muted-foreground">{row.codigo_po || "-"}</td>
+                <td className="p-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400" data-testid={`zip-pago-${idx}`}>
+                  {formatCurrency(row.pago)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="border-t-2 bg-muted/30">
+              <td className="p-2.5 font-semibold" colSpan={2}>Total</td>
+              <td className="p-2.5 text-right font-bold text-emerald-700 dark:text-emerald-300" data-testid="zip-total-pago">
+                {formatCurrency(totalPago)}
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 function ResultPanel({ data }: { data: A2Response }) {
   const totalPago = data.data.execucao.reduce((sum, e) => sum + (e.pago || 0), 0);
   const totalEmpenhado = data.data.execucao.reduce((sum, e) => sum + (e.empenhado || 0), 0);
@@ -462,6 +526,12 @@ function ResultPanel({ data }: { data: A2Response }) {
             <TrendingUp className="w-4 h-4 mr-1.5" />
             KPIs
           </TabsTrigger>
+          {data.data.execucao_zip && (
+            <TabsTrigger value="execucao_zip" data-testid="tab-execucao-zip">
+              <FileText className="w-4 h-4 mr-1.5" />
+              Execucao ZIP
+            </TabsTrigger>
+          )}
           <TabsTrigger value="evidencias" data-testid="tab-evidencias">
             <Shield className="w-4 h-4 mr-1.5" />
             Evidencias
@@ -471,6 +541,16 @@ function ResultPanel({ data }: { data: A2Response }) {
         <TabsContent value="execucao" className="mt-4">
           <ExecucaoTable items={data.data.execucao} />
         </TabsContent>
+
+        {data.data.execucao_zip && (
+          <TabsContent value="execucao_zip" className="mt-4">
+            <Card>
+              <CardContent className="p-4">
+                <ZipExecucaoTable data={data.data.execucao_zip} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
 
         <TabsContent value="dotacao" className="mt-4">
           <DotacaoTable items={data.data.dotacao} />

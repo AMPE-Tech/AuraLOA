@@ -11,6 +11,8 @@ import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
 import { fetchExecucaoFromTransparencia } from "../services/transparencia_execucao";
 import { fetchDotacaoFromSIOP } from "../services/siop_dotacao";
 import { buildDespesasZipUrl, downloadZipToEvidencePack, buildZipEvidencia } from "../services/transparencia_download";
+import { computeExecucaoPagoPorAcaoPoFromZip } from "../services/a2_execucao_from_zip";
+import type { ExecucaoPagoPorAcaoPoRow } from "../services/a2_execucao_from_zip";
 import { validateOutput } from "../services/validate_output";
 import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
 import { downloadAllMonths, startMonthlyCron, stopMonthlyCron, getCronStatus } from "../services/cron_download";
@@ -37,6 +39,9 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
     evidencePack.saveRequest(req.body);
 
     let zipDownloadResult: import("../../shared/loa_types").ZipDownloadInfo | undefined;
+    let zipExecucaoResult: import("../../shared/loa_types").ZipExecucaoResult | undefined;
+    let zipEvidences: { source_name: string; source_url: string | null; captured_at_iso: string; raw_payload_path: string; raw_payload_sha256: string; bytes: number; note?: string }[] = [];
+
     if (mes) {
       const zipUrl = buildDespesasZipUrl(ano_exercicio, mes);
       evidencePack.log(`downloading ZIP from ${zipUrl}`);
@@ -55,6 +60,21 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
         };
         if (!dl.ok) {
           evidencePack.log(`ZIP download FAILED (HTTP ${dl.status}) - will NOT parse execution values from ZIP`);
+        } else {
+          evidencePack.log(`parsing CSV from ZIP for execution data (Pagamento_EmpenhosImpactados + Empenho join)`);
+          try {
+            const zipExec = await computeExecucaoPagoPorAcaoPoFromZip({
+              processId,
+              zipPath: dl.filePath,
+              sourceUrlZip: dl.url,
+              ano: ano_exercicio,
+            });
+            zipExecucaoResult = zipExec.result;
+            zipEvidences = zipExec.evidences;
+            evidencePack.log(`ZIP parse OK: ${zipExec.result.stats.empenhos_com_pagamento} empenhos com pagamento, ${zipExec.result.stats.chaves_acao_po} chaves acao/PO`);
+          } catch (parseErr: any) {
+            evidencePack.log(`ZIP CSV parse error: ${parseErr.message} - falling back to API-only execution data`);
+          }
         }
       } catch (err: any) {
         evidencePack.log(`ZIP download error: ${err.message}`);
@@ -80,6 +100,15 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       `fetched execution count=${execucaoResults.length} dotation count=${dotacaoResults.length}`
     );
 
+    const zipPagoByAcao = new Map<string, number>();
+    if (zipExecucaoResult) {
+      for (const row of zipExecucaoResult.pago_por_acao_po) {
+        const prev = zipPagoByAcao.get(row.codigo_acao) ?? 0;
+        zipPagoByAcao.set(row.codigo_acao, prev + row.pago);
+      }
+      evidencePack.log(`ZIP pago aggregated by acao: ${Array.from(zipPagoByAcao.entries()).map(([k, v]) => `${k}=${v.toFixed(2)}`).join(', ')}`);
+    }
+
     const kpis: KPIItem[] = ACOES_PRECATORIOS_UNIAO.map((acao) => {
       const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
       const dot = dotacaoResults.find((d) => d.codigo_acao === acao.codigo_acao);
@@ -87,7 +116,10 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       const dotacaoAtual = dot?.dotacao_atual ?? null;
       const empenhado = exec?.empenhado ?? null;
       const liquidado = exec?.liquidado ?? null;
-      const pago = exec?.pago ?? null;
+
+      const apiPago = exec?.pago ?? null;
+      const zipPago = zipPagoByAcao.get(acao.codigo_acao) ?? null;
+      const pago = apiPago ?? zipPago;
 
       let percentualExecucao: number | null = null;
       if (dotacaoAtual && dotacaoAtual > 0 && pago !== null) {
@@ -150,6 +182,14 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       },
     ];
 
+    const zipEvidenciasAsItems: import("../../shared/loa_types").EvidenciaItem[] = zipEvidences.map((ev) => ({
+      source_name: ev.source_name,
+      source_url: ev.source_url ?? "",
+      captured_at_iso: ev.captured_at_iso,
+      raw_payload_sha256: ev.raw_payload_sha256,
+      raw_payload_path: ev.raw_payload_path,
+    }));
+
     const allEvidencias = [
       ...execucaoResults.flatMap((e) => e.evidencias),
       ...dotacaoResults.flatMap((d) => d.evidencias),
@@ -164,6 +204,7 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
         captured_at_iso: zipDownloadResult.captured_at_iso,
         contentType: zipDownloadResult.contentType,
       })] : []),
+      ...zipEvidenciasAsItems,
     ];
 
     const responseObj: A2Response = {
@@ -178,6 +219,7 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
         dotacao: dotacaoResults,
         execucao: execucaoResults,
         kpis,
+        ...(zipExecucaoResult ? { execucao_zip: zipExecucaoResult } : {}),
       },
       ...(zipDownloadResult ? { zip_download: zipDownloadResult } : {}),
       evidencias_count: allEvidencias.length,

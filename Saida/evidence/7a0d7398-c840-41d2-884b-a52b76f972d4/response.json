@@ -1,0 +1,347 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "7a0d7398-c840-41d2-884b-a52b76f972d4",
+  "ano_exercicio": 2022,
+  "generated_at_iso": "2026-02-21T04:10:02.019Z",
+  "status_geral": "PARCIAL",
+  "sources": [
+    {
+      "name": "Portal da Transparencia",
+      "url": "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+      "type": "CSV"
+    },
+    {
+      "name": "SIOP Acesso Publico",
+      "url": "https://www1.siop.planejamento.gov.br/acessopublico/",
+      "type": "SPARQL"
+    }
+  ],
+  "data": {
+    "dotacao": [
+      {
+        "codigo_acao": "0005",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:56.971Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC7",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Relativos a Complementacao da Uniao ao FUNDEF)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:57.011Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC8",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Parcelados ou Objetos de Acordos)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:57.057Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0625",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado de Pequeno Valor (RPV)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:57.114Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "00WU",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios) - Excedentes ao Sublimite",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:57.170Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "00G5",
+        "descricao_acao": "Contribuicao da Uniao para Custeio do Regime de Previdencia Decorrente do Pagamento de Precatorios e RPV",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:57.231Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0022",
+        "descricao_acao": "Sentencas Judiciais Devidas por Empresas Estatais",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "Dados de dotacao indisponiveis para 2022. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.",
+        "evidencias": [
+          {
+            "source_name": "SPARQL Endpoints",
+            "source_url": "http://orcamento.dados.gov.br/sparql",
+            "captured_at_iso": "2026-02-21T04:09:57.280Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      }
+    ],
+    "execucao": [
+      {
+        "codigo_acao": "0005",
+        "descricao_acao": "SENTENCAS JUDICIAIS TRANSITADAS EM JULGADO (PRECATORIOS)",
+        "empenhado": 0,
+        "liquidado": 0,
+        "pago": 0,
+        "status": "OK",
+        "observacoes": "Dados obtidos via API REST do Portal da Transparencia. 1 registros agregados.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=0005&pagina=1",
+            "captured_at_iso": "2026-02-21T04:09:57.233Z",
+            "raw_payload_sha256": "12aef3d58482cce2251450f69d661faee0023b86a21ed452ba2f518dc35c8645",
+            "raw_payload_path": "raw/execucao_api_0005.json"
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC7",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Relativos a Complementacao da Uniao ao FUNDEF)",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "API nao retornou dados para acao 0EC7 no exercicio 2022.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=0EC7&pagina=1",
+            "captured_at_iso": "2026-02-21T04:09:58.087Z",
+            "raw_payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "raw_payload_path": "raw/execucao_api_0EC7.json"
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC8",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Parcelados ou Objetos de Acordos)",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "API nao retornou dados para acao 0EC8 no exercicio 2022.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=0EC8&pagina=1",
+            "captured_at_iso": "2026-02-21T04:09:58.872Z",
+            "raw_payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "raw_payload_path": "raw/execucao_api_0EC8.json"
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0625",
+        "descricao_acao": "SENTENCAS JUDICIAIS TRANSITADAS EM JULGADO DE PEQUENO VALOR",
+        "empenhado": 1107297286.59,
+        "liquidado": 1071454571.35,
+        "pago": 1071338051.4,
+        "status": "OK",
+        "observacoes": "Dados obtidos via API REST do Portal da Transparencia. 1 registros agregados.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=0625&pagina=1",
+            "captured_at_iso": "2026-02-21T04:09:59.695Z",
+            "raw_payload_sha256": "80fb605282b2b415e622f65440ce40ea03f8b2f27041c531452424f48d729fb5",
+            "raw_payload_path": "raw/execucao_api_0625.json"
+          }
+        ]
+      },
+      {
+        "codigo_acao": "00WU",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios) - Excedentes ao Sublimite",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "API nao retornou dados para acao 00WU no exercicio 2022.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=00WU&pagina=1",
+            "captured_at_iso": "2026-02-21T04:10:00.460Z",
+            "raw_payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "raw_payload_path": "raw/execucao_api_00WU.json"
+          }
+        ]
+      },
+      {
+        "codigo_acao": "00G5",
+        "descricao_acao": "Contribuicao da Uniao para Custeio do Regime de Previdencia Decorrente do Pagamento de Precatorios e RPV",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "API nao retornou dados para acao 00G5 no exercicio 2022.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=00G5&pagina=1",
+            "captured_at_iso": "2026-02-21T04:10:01.243Z",
+            "raw_payload_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "raw_payload_path": "raw/execucao_api_00G5.json"
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0022",
+        "descricao_acao": "SENTENCAS JUDICIAIS DEVIDAS POR EMPRESAS ESTATAIS",
+        "empenhado": 793456807.1,
+        "liquidado": 786454802.5,
+        "pago": 785940255.8,
+        "status": "OK",
+        "observacoes": "Dados obtidos via API REST do Portal da Transparencia. 1 registros agregados.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia API REST",
+            "source_url": "https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=2022&acao=0022&pagina=1",
+            "captured_at_iso": "2026-02-21T04:10:02.019Z",
+            "raw_payload_sha256": "e00a2f4d5441c3dbd11e6526138bdc3ca68873d501f62ce814c8cb363ab52f77",
+            "raw_payload_path": "raw/execucao_api_0022.json"
+          }
+        ]
+      }
+    ],
+    "kpis": [
+      {
+        "codigo_acao": "0005",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+        "dotacao_atual": null,
+        "empenhado": 0,
+        "liquidado": 0,
+        "pago": 0,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "0EC7",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Relativos a Complementacao da Uniao ao FUNDEF)",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "0EC8",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Parcelados ou Objetos de Acordos)",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "0625",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado de Pequeno Valor (RPV)",
+        "dotacao_atual": null,
+        "empenhado": 1107297286.59,
+        "liquidado": 1071454571.35,
+        "pago": 1071338051.4,
+        "percentual_execucao": 96.7525220529765,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "00WU",
+        "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios) - Excedentes ao Sublimite",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "00G5",
+        "descricao_acao": "Contribuicao da Uniao para Custeio do Regime de Previdencia Decorrente do Pagamento de Precatorios e RPV",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "0022",
+        "descricao_acao": "Sentencas Judiciais Devidas por Empresas Estatais",
+        "dotacao_atual": null,
+        "empenhado": 793456807.1,
+        "liquidado": 786454802.5,
+        "pago": 785940255.8,
+        "percentual_execucao": 99.05268299008331,
+        "status": "PARCIAL"
+      }
+    ]
+  },
+  "evidencias_count": 14,
+  "hashes": {
+    "output_sha256": "37e2f8bb18bc8d5b7d98313f9cb1bc9929632891857ca0b9b9cd2cacc96cedb9"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/7a0d7398-c840-41d2-884b-a52b76f972d4"
+}

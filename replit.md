@@ -14,6 +14,7 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `server/catalog/acoes_precatorios_uniao.ts` - Catalog of 7 precatório actions (0005, 0EC7, 0EC8, 0625, 00WU, 00G5, 0022)
 - `server/services/transparencia_execucao.ts` - Portal da Transparência REST API integration (`/api-de-dados/despesas/por-funcional-programatica`)
 - `server/services/transparencia_download.ts` - ZIP download from Portal da Transparência (`dadosabertos-download.cgu.gov.br`)
+- `server/services/a2_execucao_from_zip.ts` - **DPO block**: parses execution (PAGO) from ZIP CSVs via join Pagamento_EmpenhosImpactados + Empenho
 - `server/services/siop_dotacao.ts` - Dotação via SPARQL (orcamento.dados.gov.br + SIOP fallback)
 - `server/services/cron_download.ts` - Automatic monthly batch download scheduler (runs day 1 at 03:00)
 - `server/services/evidence_pack.ts` - Evidence pack system (SHA-256 hashes, file saving)

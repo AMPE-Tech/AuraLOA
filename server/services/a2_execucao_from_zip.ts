@@ -1,0 +1,261 @@
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { PassThrough } from "node:stream";
+import unzipper from "unzipper";
+import iconv from "iconv-lite";
+import { parse } from "csv-parse";
+
+type Evidence = {
+  source_name: string;
+  source_url: string | null;
+  captured_at_iso: string;
+  raw_payload_path: string;
+  raw_payload_sha256: string;
+  bytes: number;
+  note?: string;
+};
+
+export type ExecucaoPagoPorAcaoPoRow = {
+  ano: number | null;
+  codigo_acao: string;
+  codigo_po: string | null;
+  pago: number;
+  moeda: "BRL";
+};
+
+function sha256File(filePath: string): string {
+  const hash = crypto.createHash("sha256");
+  const data = fs.readFileSync(filePath);
+  hash.update(data);
+  return hash.digest("hex");
+}
+
+function ensureDir(p: string) {
+  fs.mkdirSync(p, { recursive: true });
+}
+
+function parseBRL(v: string): number {
+  const s = (v ?? "").toString().trim();
+  if (!s) return 0;
+  const cleaned = s
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .replace(/[^0-9.-]/g, "");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normCol(s: string): string {
+  return (s ?? "")
+    .trim()
+    .replace(/^\uFEFF/, "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[^\w ]/g, "");
+}
+
+async function extractEntryToRawAndParseCSV(params: {
+  zipPath: string;
+  entryNameEndsWith: string;
+  rawOutPath: string;
+  encoding: "latin1" | "utf8";
+  delimiter: ";" | ",";
+  onRecord: (row: Record<string, string>) => void | Promise<void>;
+}): Promise<{ bytes: number }> {
+  const zipStream = fs.createReadStream(params.zipPath).pipe(unzipper.Parse({ forceStream: true }));
+
+  for await (const entry of zipStream as any) {
+    const fileName: string = entry.path;
+    const type: string = entry.type;
+
+    if (type !== "File") {
+      entry.autodrain();
+      continue;
+    }
+
+    if (!fileName.endsWith(params.entryNameEndsWith)) {
+      entry.autodrain();
+      continue;
+    }
+
+    ensureDir(path.dirname(params.rawOutPath));
+    const out = fs.createWriteStream(params.rawOutPath);
+
+    const tee = new PassThrough();
+    let bytes = 0;
+
+    entry.on("data", (chunk: Buffer) => {
+      bytes += chunk.length;
+    });
+
+    entry.pipe(tee);
+
+    tee.pipe(out);
+
+    const decoder = params.encoding === "latin1" ? iconv.decodeStream("latin1") : iconv.decodeStream("utf8");
+    const parser = parse({
+      delimiter: params.delimiter,
+      columns: (header: string[]) => header.map(normCol),
+      relax_quotes: true,
+      relax_column_count: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+
+    const parsePromise = new Promise<void>((resolve, reject) => {
+      parser.on("readable", async () => {
+        try {
+          let record;
+          while ((record = parser.read())) {
+            await params.onRecord(record);
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+      parser.on("error", reject);
+      parser.on("end", resolve);
+    });
+
+    tee.pipe(decoder).pipe(parser);
+    await parsePromise;
+
+    await new Promise<void>((resolve) => out.on("finish", resolve));
+    out.end();
+
+    return { bytes };
+  }
+
+  throw new Error(`[A2] CSV nao encontrado no ZIP: termina com ${params.entryNameEndsWith}`);
+}
+
+export async function computeExecucaoPagoPorAcaoPoFromZip(params: {
+  processId: string;
+  zipPath: string;
+  evidenceBaseDir?: string;
+  sourceUrlZip?: string | null;
+  ano?: number | null;
+}) {
+  const evidenceBaseDir = params.evidenceBaseDir ?? path.join(".", "Saida", "evidence");
+  const captured_at_iso = new Date().toISOString();
+
+  const evRawDir = path.join(evidenceBaseDir, params.processId, "raw");
+  ensureDir(evRawDir);
+
+  if (!fs.existsSync(params.zipPath)) {
+    throw new Error(`[A2] zipPath nao existe: ${params.zipPath}`);
+  }
+  const zipSha = sha256File(params.zipPath);
+  const zipBytes = fs.statSync(params.zipPath).size;
+
+  const evidences: Evidence[] = [
+    {
+      source_name: "PortalTransparencia.DespostasZip.Raw",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: params.zipPath,
+      raw_payload_sha256: zipSha,
+      bytes: zipBytes,
+      note: "ZIP bruto usado como fonte primaria para execucao (anti-alucinacao).",
+    },
+  ];
+
+  const pagoByEmpenho = new Map<string, number>();
+
+  const rawPagamentoImpactados = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Pagamento_EmpenhosImpactados.csv"));
+  const pagamentoImpactadosBytes = await extractEntryToRawAndParseCSV({
+    zipPath: params.zipPath,
+    entryNameEndsWith: "_Despesas_Pagamento_EmpenhosImpactados.csv",
+    rawOutPath: rawPagamentoImpactados,
+    encoding: "latin1",
+    delimiter: ";",
+    onRecord: (r) => {
+      const codEmp = (r["codigo empenho"] ?? "").trim();
+      if (!codEmp) return;
+
+      const valorPago = parseBRL(r["valor pago r"] ?? r["valor pago"] ?? "0");
+      const prev = pagoByEmpenho.get(codEmp) ?? 0;
+      pagoByEmpenho.set(codEmp, prev + valorPago);
+    },
+  });
+
+  evidences.push({
+    source_name: "PortalTransparencia.DespostasZip.PagamentoEmpenhosImpactados",
+    source_url: params.sourceUrlZip ?? null,
+    captured_at_iso,
+    raw_payload_path: rawPagamentoImpactados,
+    raw_payload_sha256: sha256File(rawPagamentoImpactados),
+    bytes: pagamentoImpactadosBytes.bytes,
+    note: "Usado para obter Valor Pago por Codigo Empenho (join).",
+  });
+
+  const pagoPorAcaoPo = new Map<string, number>();
+
+  const rawEmpenho = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Empenho.csv"));
+  const empenhoBytes = await extractEntryToRawAndParseCSV({
+    zipPath: params.zipPath,
+    entryNameEndsWith: "_Despesas_Empenho.csv",
+    rawOutPath: rawEmpenho,
+    encoding: "latin1",
+    delimiter: ";",
+    onRecord: (r) => {
+      const codEmp = (r["codigo empenho"] ?? "").trim();
+      if (!codEmp) return;
+
+      const pago = pagoByEmpenho.get(codEmp);
+      if (!pago || pago === 0) return;
+
+      const acao = (r["codigo acao"] ?? "").trim();
+      const po = (r["codigo plano orcamentario"] ?? "").trim() || null;
+
+      if (!acao) {
+        return;
+      }
+
+      const key = `${acao}||${po ?? ""}`;
+      pagoPorAcaoPo.set(key, (pagoPorAcaoPo.get(key) ?? 0) + pago);
+    },
+  });
+
+  evidences.push({
+    source_name: "PortalTransparencia.DespostasZip.Empenho",
+    source_url: params.sourceUrlZip ?? null,
+    captured_at_iso,
+    raw_payload_path: rawEmpenho,
+    raw_payload_sha256: sha256File(rawEmpenho),
+    bytes: empenhoBytes.bytes,
+    note: "Tabela mestre que contem Codigo Acao + Codigo PO por Codigo Empenho.",
+  });
+
+  const rows: ExecucaoPagoPorAcaoPoRow[] = [];
+  for (const [key, pago] of Array.from(pagoPorAcaoPo.entries())) {
+    const [acao, po] = key.split("||");
+    rows.push({
+      ano: params.ano ?? null,
+      codigo_acao: acao,
+      codigo_po: po ? po : null,
+      pago,
+      moeda: "BRL",
+    });
+  }
+
+  rows.sort((a, b) => {
+    if (a.codigo_acao !== b.codigo_acao) return a.codigo_acao.localeCompare(b.codigo_acao);
+    return (a.codigo_po ?? "").localeCompare(b.codigo_po ?? "");
+  });
+
+  return {
+    result: {
+      pago_por_acao_po: rows,
+      stats: {
+        empenhos_com_pagamento: pagoByEmpenho.size,
+        chaves_acao_po: rows.length,
+      },
+    },
+    evidences,
+  };
+}

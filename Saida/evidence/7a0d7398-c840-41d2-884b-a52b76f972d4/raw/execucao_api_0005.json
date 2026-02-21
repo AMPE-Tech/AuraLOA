@@ -1,0 +1,16 @@
+[
+  {
+    "ano": 2022,
+    "funcao": "Encargos especiais",
+    "codigoFuncao": "28",
+    "subfuncao": "Outros encargos especiais",
+    "codigoSubfuncao": "846",
+    "programa": "OPERACOES ESPECIAIS: CUMPRIMENTO DE SENTENCAS JUDICIAIS",
+    "codigoPrograma": "0901",
+    "acao": "SENTENCAS JUDICIAIS TRANSITADAS EM JULGADO (PRECATORIOS)",
+    "codigoAcao": "0005",
+    "empenhado": "0,00",
+    "liquidado": "0,00",
+    "pago": "0,00"
+  }
+]

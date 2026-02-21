@@ -72,6 +72,24 @@ export interface ZipDownloadInfo {
   captured_at_iso: string;
 }
 
+export interface ZipExecucaoRow {
+  ano: number | null;
+  codigo_acao: string;
+  codigo_po: string | null;
+  pago: number;
+  moeda: "BRL";
+}
+
+export interface ZipExecucaoStats {
+  empenhos_com_pagamento: number;
+  chaves_acao_po: number;
+}
+
+export interface ZipExecucaoResult {
+  pago_por_acao_po: ZipExecucaoRow[];
+  stats: ZipExecucaoStats;
+}
+
 export interface A2Response {
   schema_version: string;
   process_id_uuid: string;
@@ -84,6 +102,7 @@ export interface A2Response {
     dotacao: DotacaoItem[];
     execucao: ExecucaoItem[];
     kpis: KPIItem[];
+    execucao_zip?: ZipExecucaoResult;
   };
   zip_download?: ZipDownloadInfo;
   evidencias_count: number;
