@@ -31,6 +31,8 @@ import {
   FolderOpen,
   RefreshCw,
   Info,
+  Download,
+  Calendar,
 } from "lucide-react";
 import type {
   A2Response,
@@ -39,6 +41,7 @@ import type {
   ExecucaoItem,
   KPIItem,
   EvidenciaItem,
+  ZipDownloadInfo,
 } from "../../shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -412,6 +415,39 @@ function ResultPanel({ data }: { data: A2Response }) {
         />
       </div>
 
+      {data.zip_download && (
+        <Card className={data.zip_download.ok ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"}>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <Download className={`w-4 h-4 ${data.zip_download.ok ? "text-emerald-600" : "text-red-500"}`} />
+                <span className="text-sm font-medium">ZIP Despesas - Mes {data.mes}</span>
+                <Badge variant={data.zip_download.ok ? "default" : "destructive"} className={data.zip_download.ok ? "bg-emerald-600" : ""}>
+                  {data.zip_download.ok ? "Baixado" : `Falhou (${data.zip_download.status})`}
+                </Badge>
+              </div>
+              {data.zip_download.ok && (
+                <span className="text-xs text-muted-foreground font-mono">
+                  {(data.zip_download.bytes / 1048576).toFixed(1)} MB
+                </span>
+              )}
+            </div>
+            {data.zip_download.ok && (
+              <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="p-2 bg-muted/40 rounded-md">
+                  <p className="text-muted-foreground">SHA-256</p>
+                  <p className="font-mono break-all" data-testid="text-zip-sha256">{data.zip_download.sha256}</p>
+                </div>
+                <div className="p-2 bg-muted/40 rounded-md">
+                  <p className="text-muted-foreground">Arquivo</p>
+                  <p className="font-mono break-all">{data.zip_download.filePath}</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Tabs defaultValue="execucao" className="w-full">
         <TabsList className="w-full justify-start">
           <TabsTrigger value="execucao" data-testid="tab-execucao">
@@ -500,8 +536,14 @@ function ResultPanel({ data }: { data: A2Response }) {
   );
 }
 
+const MONTH_NAMES = [
+  "Janeiro", "Fevereiro", "Marco", "Abril", "Maio", "Junho",
+  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+];
+
 export default function LOADashboard() {
   const [selectedYear, setSelectedYear] = useState("2025");
+  const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [currentResult, setCurrentResult] = useState<A2Response | null>(null);
   const { toast } = useToast();
 
@@ -513,18 +555,21 @@ export default function LOADashboard() {
   });
 
   const mutation = useMutation({
-    mutationFn: async (ano: number) => {
-      const res = await apiRequest("POST", "/api/loa/uniao/a2", {
-        ano_exercicio: ano,
-      });
+    mutationFn: async ({ ano, mes }: { ano: number; mes?: number }) => {
+      const body: Record<string, number> = { ano_exercicio: ano };
+      if (mes) body.mes = mes;
+      const res = await apiRequest("POST", "/api/loa/uniao/a2", body);
       return res.json();
     },
     onSuccess: (data: A2Response) => {
       setCurrentResult(data);
       queryClient.invalidateQueries({ queryKey: ["/api/loa/uniao/a2/history"] });
+      const zipMsg = data.zip_download
+        ? ` | ZIP: ${data.zip_download.ok ? `${(data.zip_download.bytes / 1048576).toFixed(1)}MB` : 'falhou'}`
+        : '';
       toast({
         title: "Consulta concluida",
-        description: `Status: ${data.status_geral} | ${data.evidencias_count} evidencias`,
+        description: `Status: ${data.status_geral} | ${data.evidencias_count} evidencias${zipMsg}`,
       });
     },
     onError: (error: Error) => {
@@ -536,8 +581,35 @@ export default function LOADashboard() {
     },
   });
 
+  const batchMutation = useMutation({
+    mutationFn: async (ano: number) => {
+      const res = await apiRequest("POST", "/api/loa/uniao/a2/batch-download", {
+        ano_exercicio: ano,
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      toast({
+        title: "Batch download concluido",
+        description: `${data.summary.downloaded}/12 ZIPs baixados com sucesso`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro no batch download",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConsulta = () => {
-    mutation.mutate(parseInt(selectedYear));
+    const mes = selectedMonth && selectedMonth !== "none" ? parseInt(selectedMonth) : undefined;
+    mutation.mutate({ ano: parseInt(selectedYear), mes });
+  };
+
+  const handleBatchDownload = () => {
+    batchMutation.mutate(parseInt(selectedYear));
   };
 
   return (
@@ -569,7 +641,7 @@ export default function LOADashboard() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-end gap-3 flex-wrap">
-              <div className="flex-1 min-w-[160px]">
+              <div className="min-w-[140px]">
                 <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
                   Exercicio (Ano)
                 </label>
@@ -581,6 +653,24 @@ export default function LOADashboard() {
                     {years.map((y) => (
                       <SelectItem key={y} value={y}>
                         {y}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="min-w-[160px]">
+                <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
+                  Mes (ZIP download)
+                </label>
+                <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+                  <SelectTrigger data-testid="select-month" className="w-full">
+                    <SelectValue placeholder="Opcional" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Sem download</SelectItem>
+                    {MONTH_NAMES.map((name, idx) => (
+                      <SelectItem key={idx + 1} value={String(idx + 1)}>
+                        {String(idx + 1).padStart(2, "0")} - {name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -599,16 +689,47 @@ export default function LOADashboard() {
                 ) : (
                   <>
                     <Search className="w-4 h-4 mr-1.5" />
-                    Consultar Precatorios
+                    Consultar
                   </>
                 )}
               </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={handleBatchDownload}
+                    disabled={batchMutation.isPending}
+                    data-testid="button-batch-download"
+                  >
+                    {batchMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                        Baixando...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-4 h-4 mr-1.5" />
+                        12 meses
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Baixar ZIPs de todos os 12 meses do ano selecionado</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
-            {mutation.isPending && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Calendar className="w-3 h-3" />
+              Download automatico agendado para dia 1 de cada mes
+            </div>
+            {(mutation.isPending || batchMutation.isPending) && (
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Buscando dados do Portal da Transparencia e SIOP...
+                  {batchMutation.isPending
+                    ? "Baixando ZIPs de 12 meses (pode levar alguns minutos)..."
+                    : "Buscando dados do Portal da Transparencia e SIOP..."}
                 </div>
                 <Progress value={undefined} className="h-1.5" />
               </div>

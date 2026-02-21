@@ -10,8 +10,10 @@ import type {
 import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
 import { fetchExecucaoFromTransparencia } from "../services/transparencia_execucao";
 import { fetchDotacaoFromSIOP } from "../services/siop_dotacao";
+import { buildDespesasZipUrl, downloadZipToEvidencePack, buildZipEvidencia } from "../services/transparencia_download";
 import { validateOutput } from "../services/validate_output";
 import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
+import { downloadAllMonths, startMonthlyCron, stopMonthlyCron, getCronStatus } from "../services/cron_download";
 
 const router = Router();
 
@@ -30,9 +32,44 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       });
     }
 
-    const { ano_exercicio } = parsed.data;
-    evidencePack.log(`start process_id=${processId} year=${ano_exercicio}`);
+    const { ano_exercicio, mes } = parsed.data;
+    evidencePack.log(`start process_id=${processId} year=${ano_exercicio}${mes ? ` mes=${mes}` : ''}`);
     evidencePack.saveRequest(req.body);
+
+    let zipDownloadResult: import("../../shared/loa_types").ZipDownloadInfo | undefined;
+    if (mes) {
+      const zipUrl = buildDespesasZipUrl(ano_exercicio, mes);
+      evidencePack.log(`downloading ZIP from ${zipUrl}`);
+      try {
+        const dl = await downloadZipToEvidencePack({ processId, url: zipUrl });
+        evidencePack.log(`ZIP download status=${dl.status} bytes=${dl.bytes} sha256=${dl.sha256}`);
+        zipDownloadResult = {
+          url: dl.url,
+          status: dl.status,
+          ok: dl.ok,
+          sha256: dl.sha256,
+          bytes: dl.bytes,
+          filePath: dl.filePath,
+          contentType: dl.contentType,
+          captured_at_iso: dl.captured_at_iso,
+        };
+        if (!dl.ok) {
+          evidencePack.log(`ZIP download FAILED (HTTP ${dl.status}) - will NOT parse execution values from ZIP`);
+        }
+      } catch (err: any) {
+        evidencePack.log(`ZIP download error: ${err.message}`);
+        zipDownloadResult = {
+          url: zipUrl,
+          status: 0,
+          ok: false,
+          sha256: "",
+          bytes: 0,
+          filePath: "",
+          contentType: null,
+          captured_at_iso: new Date().toISOString(),
+        };
+      }
+    }
 
     const [execucaoResults, dotacaoResults] = await Promise.all([
       fetchExecucaoFromTransparencia(ano_exercicio, evidencePack),
@@ -116,12 +153,24 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
     const allEvidencias = [
       ...execucaoResults.flatMap((e) => e.evidencias),
       ...dotacaoResults.flatMap((d) => d.evidencias),
+      ...(zipDownloadResult ? [buildZipEvidencia({
+        ok: zipDownloadResult.ok,
+        status: zipDownloadResult.status,
+        statusText: String(zipDownloadResult.status),
+        url: zipDownloadResult.url,
+        filePath: zipDownloadResult.filePath,
+        sha256: zipDownloadResult.sha256,
+        bytes: zipDownloadResult.bytes,
+        captured_at_iso: zipDownloadResult.captured_at_iso,
+        contentType: zipDownloadResult.contentType,
+      })] : []),
     ];
 
     const responseObj: A2Response = {
       schema_version: SCHEMA_VERSION,
       process_id_uuid: processId,
       ano_exercicio,
+      ...(mes ? { mes } : {}),
       generated_at_iso: new Date().toISOString(),
       status_geral: statusGeral,
       sources,
@@ -130,6 +179,7 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
         execucao: execucaoResults,
         kpis,
       },
+      ...(zipDownloadResult ? { zip_download: zipDownloadResult } : {}),
       evidencias_count: allEvidencias.length,
       hashes: {
         output_sha256: "PLACEHOLDER",
@@ -168,11 +218,13 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       id: processId,
       process_id_uuid: processId,
       ano_exercicio,
+      ...(mes ? { mes } : {}),
       status_geral: statusGeral,
       generated_at_iso: responseObj.generated_at_iso,
       evidencias_count: allEvidencias.length,
       execucao_total_pago: totalPago || null,
       dotacao_total: totalDot || null,
+      ...(zipDownloadResult ? { zip_downloaded: zipDownloadResult.ok } : {}),
     });
 
     if (history.length > 50) history.pop();
@@ -200,5 +252,50 @@ router.get("/api/loa/uniao/a2/catalog", (_req: Request, res: Response) => {
     total: ACOES_PRECATORIOS_UNIAO.length,
   });
 });
+
+router.post("/api/loa/uniao/a2/batch-download", async (req: Request, res: Response) => {
+  try {
+    const { ano_exercicio } = req.body;
+    const ano = Number(ano_exercicio) || new Date().getFullYear();
+
+    const result = await downloadAllMonths(ano);
+
+    const okCount = result.results.filter(r => r.ok).length;
+    const failCount = result.results.filter(r => !r.ok).length;
+
+    return res.json({
+      process_id: result.processId,
+      ano_exercicio: ano,
+      summary: {
+        total: 12,
+        downloaded: okCount,
+        failed: failCount,
+      },
+      results: result.results,
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      error: "Erro no batch download",
+      message: error.message,
+    });
+  }
+});
+
+router.get("/api/loa/uniao/a2/cron/status", (_req: Request, res: Response) => {
+  return res.json(getCronStatus());
+});
+
+router.post("/api/loa/uniao/a2/cron/start", (req: Request, res: Response) => {
+  const ano = req.body?.ano_exercicio ? Number(req.body.ano_exercicio) : undefined;
+  startMonthlyCron(ano);
+  return res.json({ status: "started", message: "Download automatico agendado para dia 1 de cada mes as 03:00" });
+});
+
+router.post("/api/loa/uniao/a2/cron/stop", (_req: Request, res: Response) => {
+  stopMonthlyCron();
+  return res.json({ status: "stopped" });
+});
+
+startMonthlyCron();
 
 export default router;
