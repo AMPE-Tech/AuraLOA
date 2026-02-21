@@ -84,9 +84,6 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       };
     });
 
-    const hasAnyOK =
-      execucaoResults.some((e) => e.status === "OK") ||
-      dotacaoResults.some((d) => d.status === "OK");
     const allNAO =
       execucaoResults.every((e) => e.status === "NAO_LOCALIZADO") &&
       dotacaoResults.every((d) => d.status === "NAO_LOCALIZADO");
@@ -135,13 +132,16 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
       },
       evidencias_count: allEvidencias.length,
       hashes: {
-        output_sha256: "",
+        output_sha256: "PLACEHOLDER",
       },
       evidence_pack_path: evidencePack.getBasePath(),
     };
 
-    const outputHash = evidencePack.saveResponse(responseObj);
+    const preHashContent = JSON.stringify(responseObj, null, 2);
+    const outputHash = computeSHA256(preHashContent);
     responseObj.hashes.output_sha256 = outputHash;
+
+    evidencePack.saveResponse(responseObj);
 
     const allHashes: Record<string, string> = {
       output: outputHash,

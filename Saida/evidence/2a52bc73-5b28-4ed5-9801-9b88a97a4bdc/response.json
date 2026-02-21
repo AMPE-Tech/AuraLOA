@@ -1,0 +1,167 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "2a52bc73-5b28-4ed5-9801-9b88a97a4bdc",
+  "ano_exercicio": 2025,
+  "generated_at_iso": "2026-02-21T02:41:12.762Z",
+  "status_geral": "PARCIAL",
+  "sources": [
+    {
+      "name": "Portal da Transparencia",
+      "url": "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+      "type": "CSV"
+    },
+    {
+      "name": "SIOP Acesso Publico",
+      "url": "https://www1.siop.planejamento.gov.br/acessopublico/",
+      "type": "SPARQL"
+    }
+  ],
+  "data": {
+    "dotacao": [
+      {
+        "codigo_acao": "0005",
+        "descricao_acao": "Cumprimento de Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "SIOP SPARQL indisponivel (HTTP 403). Dotacao pendente por dependencia tecnica.",
+        "evidencias": [
+          {
+            "source_name": "SIOP SPARQL Endpoint",
+            "source_url": "http://www1.siop.planejamento.gov.br/sparql/",
+            "captured_at_iso": "2026-02-21T02:41:00.409Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC7",
+        "descricao_acao": "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Precatorios - EC 114/2021)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "SIOP SPARQL indisponivel (HTTP 403). Dotacao pendente por dependencia tecnica.",
+        "evidencias": [
+          {
+            "source_name": "SIOP SPARQL Endpoint",
+            "source_url": "http://www1.siop.planejamento.gov.br/sparql/",
+            "captured_at_iso": "2026-02-21T02:41:00.457Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC8",
+        "descricao_acao": "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Requisicoes de Pequeno Valor - RPV)",
+        "dotacao_inicial": null,
+        "dotacao_atual": null,
+        "status": "PARCIAL",
+        "observacoes": "SIOP SPARQL indisponivel (HTTP 403). Dotacao pendente por dependencia tecnica.",
+        "evidencias": [
+          {
+            "source_name": "SIOP SPARQL Endpoint",
+            "source_url": "http://www1.siop.planejamento.gov.br/sparql/",
+            "captured_at_iso": "2026-02-21T02:41:00.513Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      }
+    ],
+    "execucao": [
+      {
+        "codigo_acao": "0005",
+        "descricao_acao": "Cumprimento de Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "Nenhuma fonte de dados de execucao disponivel. CSV download e API falharam para o ano 2025. Verifique se o ano possui dados publicados no Portal da Transparencia.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia",
+            "source_url": "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+            "captured_at_iso": "2026-02-21T02:41:12.761Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC7",
+        "descricao_acao": "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Precatorios - EC 114/2021)",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "Nenhuma fonte de dados de execucao disponivel. CSV download e API falharam para o ano 2025. Verifique se o ano possui dados publicados no Portal da Transparencia.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia",
+            "source_url": "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+            "captured_at_iso": "2026-02-21T02:41:12.761Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      },
+      {
+        "codigo_acao": "0EC8",
+        "descricao_acao": "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Requisicoes de Pequeno Valor - RPV)",
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "status": "NAO_LOCALIZADO",
+        "observacoes": "Nenhuma fonte de dados de execucao disponivel. CSV download e API falharam para o ano 2025. Verifique se o ano possui dados publicados no Portal da Transparencia.",
+        "evidencias": [
+          {
+            "source_name": "Portal da Transparencia",
+            "source_url": "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+            "captured_at_iso": "2026-02-21T02:41:12.761Z",
+            "raw_payload_sha256": null,
+            "raw_payload_path": null
+          }
+        ]
+      }
+    ],
+    "kpis": [
+      {
+        "codigo_acao": "0005",
+        "descricao_acao": "Cumprimento de Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "0EC7",
+        "descricao_acao": "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Precatorios - EC 114/2021)",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      },
+      {
+        "codigo_acao": "0EC8",
+        "descricao_acao": "Cumprimento de Sentenca Judicial Transitada em Julgado devida pela Uniao, Autarquias e Fundacoes Publicas Federais (Requisicoes de Pequeno Valor - RPV)",
+        "dotacao_atual": null,
+        "empenhado": null,
+        "liquidado": null,
+        "pago": null,
+        "percentual_execucao": null,
+        "status": "PARCIAL"
+      }
+    ]
+  },
+  "evidencias_count": 6,
+  "hashes": {
+    "output_sha256": "ce087014db05fbedb6731ea4b726057b5054f35032c1422df8c252883868480d"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/2a52bc73-5b28-4ed5-9801-9b88a97a4bdc"
+}

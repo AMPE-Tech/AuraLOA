@@ -32,11 +32,12 @@ function parseCSVLine(line: string): string[] {
   return result;
 }
 
-function parseBRNumber(val: string): number {
-  if (!val || val === "--" || val === "") return 0;
-  const cleaned = val.replace(/"/g, "").replace(/\./g, "").replace(",", ".");
+function parseBRNumber(val: string): number | null {
+  if (!val || val === "--" || val === "" || val === '""') return null;
+  const cleaned = val.replace(/"/g, "").replace(/\./g, "").replace(",", ".").trim();
+  if (!cleaned) return null;
   const num = parseFloat(cleaned);
-  return isNaN(num) ? 0 : num;
+  return isNaN(num) ? null : num;
 }
 
 function findColumnIndex(headers: string[], ...candidates: string[]): number {
@@ -208,7 +209,7 @@ export async function fetchExecucaoFromTransparencia(
     const colLiquidado = findColumnIndex(headers, "valor liquidado", "valorliquidado");
     const colPago = findColumnIndex(headers, "valor pago", "valorpago");
 
-    const aggregated: Record<string, { empenhado: number; liquidado: number; pago: number; nome: string }> = {};
+    const aggregated: Record<string, { empenhado: number | null; liquidado: number | null; pago: number | null; nome: string; hasData: boolean }> = {};
 
     for (let i = 1; i < lines.length; i++) {
       if (!lines[i].trim()) continue;
@@ -218,15 +219,20 @@ export async function fetchExecucaoFromTransparencia(
       if (codigosAlvo.includes(codigoAcao)) {
         if (!aggregated[codigoAcao]) {
           aggregated[codigoAcao] = {
-            empenhado: 0,
-            liquidado: 0,
-            pago: 0,
+            empenhado: null,
+            liquidado: null,
+            pago: null,
             nome: (cols[colNomeAcao] || "").replace(/"/g, "").trim(),
+            hasData: false,
           };
         }
-        aggregated[codigoAcao].empenhado += colEmpenhado >= 0 ? parseBRNumber(cols[colEmpenhado]) : 0;
-        aggregated[codigoAcao].liquidado += colLiquidado >= 0 ? parseBRNumber(cols[colLiquidado]) : 0;
-        aggregated[codigoAcao].pago += colPago >= 0 ? parseBRNumber(cols[colPago]) : 0;
+        const emp = colEmpenhado >= 0 ? parseBRNumber(cols[colEmpenhado]) : null;
+        const liq = colLiquidado >= 0 ? parseBRNumber(cols[colLiquidado]) : null;
+        const pg = colPago >= 0 ? parseBRNumber(cols[colPago]) : null;
+
+        if (emp !== null) { aggregated[codigoAcao].empenhado = (aggregated[codigoAcao].empenhado || 0) + emp; aggregated[codigoAcao].hasData = true; }
+        if (liq !== null) { aggregated[codigoAcao].liquidado = (aggregated[codigoAcao].liquidado || 0) + liq; aggregated[codigoAcao].hasData = true; }
+        if (pg !== null) { aggregated[codigoAcao].pago = (aggregated[codigoAcao].pago || 0) + pg; aggregated[codigoAcao].hasData = true; }
       }
     }
 
@@ -240,7 +246,7 @@ export async function fetchExecucaoFromTransparencia(
 
     for (const acao of ACOES_PRECATORIOS_UNIAO) {
       const agg = aggregated[acao.codigo_acao];
-      if (agg) {
+      if (agg && agg.hasData) {
         results.push({
           codigo_acao: acao.codigo_acao,
           descricao_acao: agg.nome || acao.descricao,
@@ -249,6 +255,17 @@ export async function fetchExecucaoFromTransparencia(
           pago: agg.pago,
           status: "OK",
           observacoes: `Dados extraidos de CSV do Portal da Transparencia`,
+          evidencias: [evidencia],
+        });
+      } else if (agg && !agg.hasData) {
+        results.push({
+          codigo_acao: acao.codigo_acao,
+          descricao_acao: agg.nome || acao.descricao,
+          empenhado: null,
+          liquidado: null,
+          pago: null,
+          status: "PARCIAL",
+          observacoes: `Acao ${acao.codigo_acao} encontrada no CSV mas sem valores numericos extraiveis`,
           evidencias: [evidencia],
         });
       } else {

@@ -142,7 +142,7 @@ function EvidenciaPanel({ evidencias }: { evidencias: EvidenciaItem[] }) {
               href={ev.source_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary underline flex items-center gap-1 break-all"
+              className="underline flex items-center gap-1 break-all text-foreground"
               data-testid={`link-evidence-${idx}`}
             >
               <ExternalLink className="w-3 h-3 shrink-0" />
