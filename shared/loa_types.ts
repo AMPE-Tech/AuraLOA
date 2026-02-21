@@ -4,6 +4,7 @@ export const SCHEMA_VERSION = "br.gov.orcamento.precatorios.uniao.a2.v1";
 
 export const a2RequestSchema = z.object({
   ano_exercicio: z.number().int().min(2000).max(2100),
+  mes: z.number().int().min(1).max(12).optional(),
 });
 
 export type A2Request = z.infer<typeof a2RequestSchema>;
@@ -60,10 +61,22 @@ export interface SourceInfo {
   type: "API" | "CSV" | "SPARQL" | "WEB";
 }
 
+export interface ZipDownloadInfo {
+  url: string;
+  status: number;
+  ok: boolean;
+  sha256: string;
+  bytes: number;
+  filePath: string;
+  contentType: string | null;
+  captured_at_iso: string;
+}
+
 export interface A2Response {
   schema_version: string;
   process_id_uuid: string;
   ano_exercicio: number;
+  mes?: number;
   generated_at_iso: string;
   status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
   sources: SourceInfo[];
@@ -72,6 +85,7 @@ export interface A2Response {
     execucao: ExecucaoItem[];
     kpis: KPIItem[];
   };
+  zip_download?: ZipDownloadInfo;
   evidencias_count: number;
   hashes: {
     output_sha256: string;
@@ -83,9 +97,11 @@ export interface A2HistoryEntry {
   id: string;
   process_id_uuid: string;
   ano_exercicio: number;
+  mes?: number;
   status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
   generated_at_iso: string;
   evidencias_count: number;
   execucao_total_pago: number | null;
   dotacao_total: number | null;
+  zip_downloaded?: boolean;
 }

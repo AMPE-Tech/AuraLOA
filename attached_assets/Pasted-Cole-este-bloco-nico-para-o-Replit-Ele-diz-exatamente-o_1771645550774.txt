@@ -1,0 +1,152 @@
+Cole este **bloco único** para o Replit. Ele diz exatamente **onde** implementar, **como** baixar o ZIP automaticamente (server-side), e **como** registrar evidência real (arquivo bruto + SHA-256 + logs + paths). Zero espaço para “alucinação”.
+
+---
+
+## BLOCO PARA REPLIT — Programar download automático do ZIP (Portal da Transparência) com Evidence Pack
+
+**Objetivo:** No endpoint `POST /api/loa/uniao/a2`, ao receber `{ "ano_exercicio": 2025, "mes": 1 }`, o sistema deve **baixar automaticamente** o ZIP oficial de despesas do mês no runtime, salvar no Evidence Pack e registrar hashes.
+
+### 1) Input do endpoint (MVP)
+
+Atualizar o endpoint para aceitar:
+
+```json
+{ "ano_exercicio": 2025, "mes": 1 }
+```
+
+Regras:
+
+* `mes` obrigatório (1–12).
+* Formato do arquivo alvo (para janeiro/2025):
+  `https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/despesas/20250101_Despesas.zip`
+
+### 2) Construção determinística da URL do ZIP (sem “chute”)
+
+Implementar função:
+
+* `buildDespesasZipUrl(ano, mes)` → retorna `YYYYMM01_Despesas.zip`
+  Ex.: `2025, 1` → `20250101_Despesas.zip`
+
+⚠️ Se o download retornar 404, **não inventar**: marcar `status="NAO_LOCALIZADO"` e registrar a evidência do 404 (headers + body).
+
+### 3) Implementar download server-side (obrigatório) + hash + armazenamento
+
+Criar arquivo `services/transparencia_download.ts` com a função abaixo (copiar igual):
+
+```ts
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+
+export function buildDespesasZipUrl(ano: number, mes: number) {
+  const mm = String(mes).padStart(2, "0");
+  // padrão observado via DevTools Network: YYYYMM01_Despesas.zip
+  return `https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/despesas/${ano}${mm}01_Despesas.zip`;
+}
+
+export async function downloadZipToEvidencePack(params: {
+  processId: string;
+  url: string;
+  outBaseDir?: string; // default: ./Saida/evidence
+}) {
+  const outBaseDir = params.outBaseDir ?? path.join(".", "Saida", "evidence");
+  const captured_at_iso = new Date().toISOString();
+
+  const rawDir = path.join(outBaseDir, params.processId, "raw");
+  fs.mkdirSync(rawDir, { recursive: true });
+
+  const filename = path.basename(new URL(params.url).pathname) || "download.zip";
+  const filePath = path.join(rawDir, filename);
+
+  const res = await fetch(params.url, { redirect: "follow" });
+
+  // salvar evidência mínima mesmo em falha
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(filePath, buf);
+  const sha256 = crypto.createHash("sha256").update(buf).digest("hex");
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    url: params.url,
+    filePath,
+    sha256,
+    bytes: buf.length,
+    captured_at_iso,
+    contentType: res.headers.get("content-type"),
+  };
+}
+```
+
+### 4) Integrar no endpoint `/api/loa/uniao/a2`
+
+No handler do endpoint:
+
+* gerar `process_id_uuid`
+* construir URL via `buildDespesasZipUrl(ano_exercicio, mes)`
+* baixar com `downloadZipToEvidencePack`
+* registrar evidência no JSON de saída
+
+Exemplo de uso (copiar igual):
+
+```ts
+import { buildDespesasZipUrl, downloadZipToEvidencePack } from "../services/transparencia_download";
+
+const url = buildDespesasZipUrl(body.ano_exercicio, body.mes);
+const dl = await downloadZipToEvidencePack({ processId: process_id_uuid, url });
+
+const evidenciaExecucao = {
+  source_name: "PortalTransparencia.DownloadDespesas",
+  source_url: dl.url,
+  captured_at_iso: dl.captured_at_iso,
+  raw_payload_path: dl.filePath,
+  raw_payload_sha256: dl.sha256,
+  http_status: dl.status,
+  content_type: dl.contentType,
+  bytes: dl.bytes
+};
+
+if (!dl.ok) {
+  // anti-alucinação: não segue para parsing/valores
+  // retorna status NAO_LOCALIZADO ou PARCIAL com evidência do download falho
+}
+```
+
+### 5) Evidência obrigatória no disco (DoD)
+
+Ao finalizar a request, deve existir:
+
+* `./Saida/evidence/{UUID}/raw/<YYYYMM01_Despesas.zip>` (mesmo que seja HTML de erro)
+* `sha256` registrado no `response.json`
+* logs INFO com: URL + bytes + sha256 + status
+
+### 6) Prova obrigatória (Replit deve apresentar)
+
+1. Print/saída do `curl` chamando o endpoint
+2. `ls -la ./Saida/evidence/{UUID}/raw/` mostrando o ZIP baixado
+3. `sha256sum <arquivo>` batendo com o JSON
+
+### 7) Anti-alucinação (hard)
+
+* Proibido preencher `empenhado/liquidado/pago` se o download falhar.
+* Se baixar ok, só então (fase seguinte) parse do ZIP/CSV e agregação — sempre com evidência do arquivo de origem.
+
+---
+
+### Comando de teste (você, Replit, deve rodar e colar a saída)
+
+```bash
+curl -s -X POST http://localhost:<PORT>/api/loa/uniao/a2 \
+  -H "Content-Type: application/json" \
+  -d '{"ano_exercicio": 2025, "mes": 1}' | head -c 2000
+```
+
+---
+
+Se você quiser que o Replit já deixe “programado” para **baixar os 12 meses (2025 inteiro)**, eu te mando um segundo bloco que:
+
+* itera `mes=1..12`
+* baixa cada ZIP
+* registra `OK/404`
+* salva evidência e hashes para cada mês (batch reprodutível).
