@@ -7,17 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import {
-  ArrowLeft,
-  Upload,
   Search,
   Scale,
   Shield,
-  Clock,
   Hash,
   ExternalLink,
   Loader2,
@@ -30,6 +29,9 @@ import {
   Info,
   Download,
   Zap,
+  Upload,
+  TrendingUp,
+  Clock,
 } from "lucide-react";
 import type { SpA2Result, SpImportResult, SpTjspResult, TjspItem } from "../../shared/loa_types";
 
@@ -42,10 +44,55 @@ function formatCurrency(value: number | null | undefined): string {
   }).format(value);
 }
 
+function formatPercent(value: number | null | undefined): string {
+  if (value === null || value === undefined) return "N/D";
+  return `${Number(value).toFixed(1)}%`;
+}
+
+function KPICard({
+  title,
+  value,
+  icon: Icon,
+  subtitle,
+  trend,
+}: {
+  title: string;
+  value: string;
+  icon: typeof Banknote;
+  subtitle?: string;
+  trend?: string;
+}) {
+  return (
+    <Card className="hover-elevate">
+      <CardContent className="p-5">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 min-w-0 flex-1">
+            <p className="text-sm text-muted-foreground truncate">{title}</p>
+            <p className="text-xl font-semibold tracking-tight truncate" data-testid={`kpi-${title.toLowerCase().replace(/\s+/g, '-')}`}>
+              {value}
+            </p>
+            {subtitle && (
+              <p className="text-xs text-muted-foreground">{subtitle}</p>
+            )}
+          </div>
+          <div className="p-2 rounded-md bg-primary/10 shrink-0">
+            <Icon className="w-4 h-4 text-primary" />
+          </div>
+        </div>
+        {trend && (
+          <div className="flex items-center gap-1 mt-2">
+            <TrendingUp className="w-3 h-3 text-emerald-500" />
+            <span className="text-xs text-emerald-600 dark:text-emerald-400">{trend}</span>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export default function SpDashboard() {
   const { toast } = useToast();
   const [selectedYear, setSelectedYear] = useState("2025");
-  const [activeTab, setActiveTab] = useState("importar");
 
   const [loaCsvText, setLoaCsvText] = useState("");
   const [despesasCsvText, setDespesasCsvText] = useState("");
@@ -53,8 +100,10 @@ export default function SpDashboard() {
 
   const [a2Orgao, setA2Orgao] = useState("");
   const [a2Uo, setA2Uo] = useState("");
+  const [activeView, setActiveView] = useState<"results" | "tjsp" | null>(null);
 
-  const years = ["2026", "2025", "2024", "2023", "2022"];
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 6 }, (_, i) => String(currentYear + 1 - i));
 
   const statusQuery = useQuery<any>({
     queryKey: ["/api/sp/status"],
@@ -106,8 +155,8 @@ export default function SpDashboard() {
     onSuccess: (data: any) => {
       if (data.ok) {
         toast({
-          title: "Execucao SP Importada Automaticamente",
-          description: `${data.total_linhas} linhas baixadas, ${data.precatorios_encontrados} precatorios encontrados.`,
+          title: "Execucao SP importada",
+          description: `${data.total_linhas} linhas | ${data.precatorios_encontrados} precatorios`,
         });
       } else {
         toast({
@@ -133,8 +182,8 @@ export default function SpDashboard() {
     onSuccess: (data: any) => {
       if (data.ok) {
         toast({
-          title: "Dotacao SP Importada Automaticamente",
-          description: `${data.total_linhas} linhas baixadas, ${data.precatorios_encontrados} precatorios encontrados.`,
+          title: "Dotacao SP importada",
+          description: `${data.total_linhas} linhas | ${data.precatorios_encontrados} precatorios`,
         });
       } else {
         toast({
@@ -156,6 +205,9 @@ export default function SpDashboard() {
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
     },
+    onSuccess: () => {
+      setActiveView("tjsp");
+    },
     onError: (err: any) => {
       toast({ title: "Erro TJSP", description: err?.message || "Falha ao consultar TJSP.", variant: "destructive" });
     },
@@ -166,6 +218,9 @@ export default function SpDashboard() {
       const res = await fetch(`/api/sp/tjsp/pagamentos?entidade=${encodeURIComponent(tjspEntidade)}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       return res.json();
+    },
+    onSuccess: () => {
+      setActiveView("tjsp");
     },
     onError: (err: any) => {
       toast({ title: "Erro TJSP", description: err?.message || "Falha ao consultar TJSP.", variant: "destructive" });
@@ -181,6 +236,9 @@ export default function SpDashboard() {
       });
       return res.json();
     },
+    onSuccess: () => {
+      setActiveView("results");
+    },
     onError: (err: any) => {
       toast({ title: "Erro A2 SP", description: err?.message || "Falha na conciliacao.", variant: "destructive" });
     },
@@ -190,106 +248,62 @@ export default function SpDashboard() {
   const tjspPendentesResult = tjspPendentesMutation.data as SpTjspResult | undefined;
   const tjspPagamentosResult = tjspPagamentosMutation.data as SpTjspResult | undefined;
 
+  const isAnyPending = autoExecucaoMutation.isPending || autoDotacaoMutation.isPending || a2Mutation.isPending || tjspPendentesMutation.isPending || tjspPagamentosMutation.isPending;
+
+  const totalDotacao = a2Result?.summary?.dotacao_atual_total ?? 0;
+  const totalExecucao = a2Result?.summary?.execucao_total ?? 0;
+  const saldoEstimado = a2Result?.summary?.saldo_estimado ?? 0;
+  const pctExec = totalDotacao > 0 ? (totalExecucao / totalDotacao) * 100 : null;
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <Link href="/">
-                <Button variant="ghost" size="sm" data-testid="button-voltar-dashboard">
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Dashboard Uniao
-                </Button>
-              </Link>
-              <Separator orientation="vertical" className="h-6" />
               <div className="p-2 rounded-md bg-amber-500/10">
                 <Scale className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight" data-testid="text-sp-title">
-                  Precatorios LOA - Estado de Sao Paulo
+                  AuraLOA
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  Modulo SP: LOA Sefaz + Execucao Transparencia SP + Estoque TJSP/DEPRE
+                  Precatorios LOA - Estado de Sao Paulo
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <Link href="/">
+                <Button variant="outline" size="sm" data-testid="link-federal" className="border-blue-400 text-blue-700 dark:text-blue-400">
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  Federal
+                </Button>
+              </Link>
+              <Link href="/sp">
+                <Button variant="outline" size="sm" data-testid="link-sp" className="border-amber-400 text-amber-700 dark:text-amber-400">
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  SP (Estado)
+                </Button>
+              </Link>
+              <Link href="/pendentes">
+                <Button variant="outline" size="sm" data-testid="link-pendentes">
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  Pendentes
+                </Button>
+              </Link>
               <Link href="/contrato">
-                <Button variant="outline" size="sm" data-testid="link-contrato-sp">
+                <Button variant="outline" size="sm" data-testid="link-contrato">
                   <Shield className="w-3.5 h-3.5 mr-1" />
                   Contrato DPO
                 </Button>
               </Link>
-              <Badge variant="outline" className="text-[10px] font-mono border-amber-400 text-amber-700 dark:text-amber-400">
-                MVP SP - Ente Estado
-              </Badge>
             </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        {statusQuery.data && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Card className="hover-elevate">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">LOA SP Importada</p>
-                    <p className="text-xl font-semibold" data-testid="kpi-loa-sp-count">
-                      {statusQuery.data.dados_importados?.loa?.total_registros ?? 0} registros
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Anos: {(statusQuery.data.dados_importados?.loa?.anos ?? []).join(", ") || "Nenhum"}
-                    </p>
-                  </div>
-                  <div className="p-2 rounded-md bg-primary/10">
-                    <FileText className="w-4 h-4 text-primary" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="hover-elevate">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Despesas SP Importadas</p>
-                    <p className="text-xl font-semibold" data-testid="kpi-despesas-sp-count">
-                      {statusQuery.data.dados_importados?.despesas?.total_registros ?? 0} registros
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Anos: {(statusQuery.data.dados_importados?.despesas?.anos ?? []).join(", ") || "Nenhum"}
-                    </p>
-                  </div>
-                  <div className="p-2 rounded-md bg-primary/10">
-                    <Banknote className="w-4 h-4 text-primary" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="hover-elevate">
-              <CardContent className="p-5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Status Modulo</p>
-                    <p className="text-xl font-semibold" data-testid="kpi-sp-status">
-                      {statusQuery.data.status}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      Ente: {statusQuery.data.ente}
-                    </p>
-                  </div>
-                  <div className="p-2 rounded-md bg-emerald-500/10">
-                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
         <Card>
           <CardContent className="p-5">
             <div className="flex items-end gap-3 flex-wrap">
@@ -308,161 +322,566 @@ export default function SpDashboard() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="importar" data-testid="tab-importar">
-              <Upload className="w-3.5 h-3.5 mr-1" />
-              Importar Dados
-            </TabsTrigger>
-            <TabsTrigger value="tjsp" data-testid="tab-tjsp">
-              <Scale className="w-3.5 h-3.5 mr-1" />
-              Estoque TJSP
-            </TabsTrigger>
-            <TabsTrigger value="conciliacao" data-testid="tab-conciliacao">
-              <BarChart3 className="w-3.5 h-3.5 mr-1" />
-              Conciliacao A2
-            </TabsTrigger>
-            <TabsTrigger value="fontes" data-testid="tab-fontes">
-              <ExternalLink className="w-3.5 h-3.5 mr-1" />
-              Fontes Oficiais
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="importar" className="space-y-4">
-            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/20">
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-blue-600" />
-                  Importacao Automatica (Sefaz/SP - dworcamento.fazenda.sp.gov.br)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
-                  <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
-                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    Baixa automaticamente os CSVs oficiais da Sefaz/SP com dados de dotacao e execucao orcamentaria. Os registros de precatorios sao identificados e importados com evidencia SHA-256. Dados de 2011 ate o ano corrente.
-                  </p>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
                     onClick={() => autoExecucaoMutation.mutate()}
-                    disabled={autoExecucaoMutation.isPending || autoDotacaoMutation.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    disabled={isAnyPending}
                     data-testid="button-auto-execucao"
                   >
                     {autoExecucaoMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                        Importando...
+                      </>
                     ) : (
-                      <Download className="w-4 h-4 mr-2" />
+                      <>
+                        <Download className="w-4 h-4 mr-1.5" />
+                        Execucao
+                      </>
                     )}
-                    Baixar Execucao ({selectedYear})
                   </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Baixar CSV de execucao orcamentaria da Sefaz/SP</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
                   <Button
+                    variant="outline"
                     onClick={() => autoDotacaoMutation.mutate()}
-                    disabled={autoDotacaoMutation.isPending || autoExecucaoMutation.isPending}
-                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    disabled={isAnyPending}
                     data-testid="button-auto-dotacao"
                   >
                     {autoDotacaoMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                        Importando...
+                      </>
                     ) : (
-                      <Download className="w-4 h-4 mr-2" />
+                      <>
+                        <Download className="w-4 h-4 mr-1.5" />
+                        Dotacao
+                      </>
                     )}
-                    Baixar Dotacao ({selectedYear})
                   </Button>
-                </div>
-                {autoExecucaoMutation.data && (
-                  <div className={`p-3 rounded-md ${(autoExecucaoMutation.data as any).ok ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
-                    {(autoExecucaoMutation.data as any).ok ? (
-                      <>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Execucao {(autoExecucaoMutation.data as any).ano}: {(autoExecucaoMutation.data as any).total_linhas} linhas, {(autoExecucaoMutation.data as any).precatorios_encontrados} precatorios identificados
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-mono" data-testid="text-auto-exec-sha">
-                          <Hash className="w-3 h-3 inline mr-1" />
-                          CSV: {(autoExecucaoMutation.data as any).evidence?.csv_sha256?.slice(0, 24)}...
-                        </p>
-                        {(autoExecucaoMutation.data as any).precatorios?.map((p: any, i: number) => (
-                          <p key={i} className="text-[11px] mt-1 text-foreground/80" data-testid={`text-prec-exec-${i}`}>
-                            {p.desc_projeto}: Dot. {formatCurrency(p.dotacao_inicial)} | Liq. {formatCurrency(p.valor_liquidado)}
-                          </p>
-                        ))}
-                      </>
-                    ) : (
-                      <p className="text-xs text-red-700 dark:text-red-300 flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        {(autoExecucaoMutation.data as any).note}
-                      </p>
-                    )}
-                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Baixar CSV de dotacao inicial da Sefaz/SP</p>
+                </TooltipContent>
+              </Tooltip>
+              <Separator orientation="vertical" className="h-8" />
+              <Button
+                onClick={() => a2Mutation.mutate()}
+                disabled={isAnyPending}
+                data-testid="button-a2-sp"
+              >
+                {a2Mutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    Conciliando...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-1.5" />
+                    Conciliar A2
+                  </>
                 )}
-                {autoDotacaoMutation.data && (
-                  <div className={`p-3 rounded-md ${(autoDotacaoMutation.data as any).ok ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
-                    {(autoDotacaoMutation.data as any).ok ? (
+              </Button>
+              <Separator orientation="vertical" className="h-8" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={() => tjspPendentesMutation.mutate()}
+                    disabled={isAnyPending || !tjspEntidade.trim()}
+                    data-testid="button-tjsp-pendentes"
+                  >
+                    {tjspPendentesMutation.isPending ? (
                       <>
-                        <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                          <CheckCircle2 className="w-3.5 h-3.5" />
-                          Dotacao {(autoDotacaoMutation.data as any).ano}: {(autoDotacaoMutation.data as any).total_linhas} linhas, {(autoDotacaoMutation.data as any).precatorios_encontrados} precatorios identificados
-                        </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-mono" data-testid="text-auto-dot-sha">
-                          <Hash className="w-3 h-3 inline mr-1" />
-                          CSV: {(autoDotacaoMutation.data as any).evidence?.csv_sha256?.slice(0, 24)}...
-                        </p>
-                        {(autoDotacaoMutation.data as any).precatorios?.map((p: any, i: number) => (
-                          <p key={i} className="text-[11px] mt-1 text-foreground/80" data-testid={`text-prec-dot-${i}`}>
-                            {p.desc_projeto}: Dot. Inicial {formatCurrency(p.dotacao_inicial)}
-                          </p>
-                        ))}
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                        TJSP...
                       </>
                     ) : (
-                      <p className="text-xs text-red-700 dark:text-red-300 flex items-center gap-1.5">
-                        <AlertTriangle className="w-3.5 h-3.5" />
-                        {(autoDotacaoMutation.data as any).note}
-                      </p>
+                      <>
+                        <Scale className="w-4 h-4 mr-1.5" />
+                        Estoque TJSP
+                      </>
                     )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Consultar precatorios pendentes no TJSP/DEPRE</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+            <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+              <Zap className="w-3 h-3" />
+              Dados importados automaticamente de dworcamento.fazenda.sp.gov.br
+            </div>
+            {isAnyPending && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {autoExecucaoMutation.isPending
+                    ? "Baixando CSV de execucao da Sefaz/SP..."
+                    : autoDotacaoMutation.isPending
+                    ? "Baixando CSV de dotacao da Sefaz/SP..."
+                    : a2Mutation.isPending
+                    ? "Executando conciliacao A2 (Dotacao x Execucao)..."
+                    : tjspPendentesMutation.isPending
+                    ? "Consultando TJSP pendentes..."
+                    : "Consultando TJSP pagamentos..."}
+                </div>
+                <Progress value={undefined} className="h-1.5" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {statusQuery.data && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <Card className="hover-elevate">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <p className="text-sm text-muted-foreground truncate">LOA SP Importada</p>
+                    <p className="text-xl font-semibold tracking-tight truncate" data-testid="kpi-loa-sp-count">
+                      {statusQuery.data.dados_importados?.loa?.total_registros ?? 0} registros
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Anos: {(statusQuery.data.dados_importados?.loa?.anos ?? []).join(", ") || "Nenhum"}
+                    </p>
                   </div>
+                  <div className="p-2 rounded-md bg-primary/10 shrink-0">
+                    <FileText className="w-4 h-4 text-primary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover-elevate">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <p className="text-sm text-muted-foreground truncate">Despesas SP Importadas</p>
+                    <p className="text-xl font-semibold tracking-tight truncate" data-testid="kpi-despesas-sp-count">
+                      {statusQuery.data.dados_importados?.despesas?.total_registros ?? 0} registros
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Anos: {(statusQuery.data.dados_importados?.despesas?.anos ?? []).join(", ") || "Nenhum"}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-md bg-primary/10 shrink-0">
+                    <Banknote className="w-4 h-4 text-primary" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="hover-elevate">
+              <CardContent className="p-5">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="space-y-1 min-w-0 flex-1">
+                    <p className="text-sm text-muted-foreground truncate">Status Modulo</p>
+                    <p className="text-xl font-semibold tracking-tight truncate" data-testid="kpi-sp-status">
+                      {statusQuery.data.status}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Ente: {statusQuery.data.ente}
+                    </p>
+                  </div>
+                  <div className="p-2 rounded-md bg-emerald-500/10 shrink-0">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeView === "results" && a2Result && (
+          <ResultsPanel
+            a2Result={a2Result}
+            selectedYear={selectedYear}
+            totalDotacao={totalDotacao}
+            totalExecucao={totalExecucao}
+            saldoEstimado={saldoEstimado}
+            pctExec={pctExec}
+            autoExecData={autoExecucaoMutation.data as any}
+            autoDotData={autoDotacaoMutation.data as any}
+            loaCsvText={loaCsvText}
+            setLoaCsvText={setLoaCsvText}
+            despesasCsvText={despesasCsvText}
+            setDespesasCsvText={setDespesasCsvText}
+            loaImportMutation={loaImportMutation}
+            despesasImportMutation={despesasImportMutation}
+          />
+        )}
+
+        {activeView === "tjsp" && (
+          <TJSPPanel
+            tjspPendentesResult={tjspPendentesResult}
+            tjspPagamentosResult={tjspPagamentosResult}
+            tjspEntidade={tjspEntidade}
+            setTjspEntidade={setTjspEntidade}
+            tjspPagamentosMutation={tjspPagamentosMutation}
+          />
+        )}
+
+        {activeView !== null && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {a2Result && activeView !== "results" && (
+              <Button variant="ghost" size="sm" onClick={() => setActiveView("results")} data-testid="button-view-results">
+                <BarChart3 className="w-3 h-3 mr-1" />
+                Ver Conciliacao A2
+              </Button>
+            )}
+            {(tjspPendentesResult || tjspPagamentosResult) && activeView !== "tjsp" && (
+              <Button variant="ghost" size="sm" onClick={() => setActiveView("tjsp")} data-testid="button-view-tjsp">
+                <Scale className="w-3 h-3 mr-1" />
+                Ver Estoque TJSP
+              </Button>
+            )}
+          </div>
+        )}
+
+        {activeView === null && !isAnyPending && (
+          <Card>
+            <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+              <div className="p-4 rounded-full bg-muted/50 mb-4">
+                <BarChart3 className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-1" data-testid="text-empty-state">
+                Consulte Precatorios da LOA SP
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Importe dados de execucao e dotacao da Sefaz/SP, depois execute a conciliacao A2 para cruzar dotacao x execucao.
+              </p>
+              <div className="flex items-center gap-3 mt-4 flex-wrap">
+                <Badge variant="outline" className="text-[10px]">
+                  <Zap className="w-3 h-3 mr-1" />
+                  Import Automatico Sefaz/SP
+                </Badge>
+                <Badge variant="outline" className="text-[10px]">
+                  <Scale className="w-3 h-3 mr-1" />
+                  Estoque TJSP/DEPRE
+                </Badge>
+                <Badge variant="outline" className="text-[10px]">
+                  <BarChart3 className="w-3 h-3 mr-1" />
+                  Conciliacao A2
+                </Badge>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {activeView === null && !isAnyPending && (
+          <ImportAndFontesPanel
+            autoExecData={autoExecucaoMutation.data as any}
+            autoDotData={autoDotacaoMutation.data as any}
+            loaCsvText={loaCsvText}
+            setLoaCsvText={setLoaCsvText}
+            despesasCsvText={despesasCsvText}
+            setDespesasCsvText={setDespesasCsvText}
+            loaImportMutation={loaImportMutation}
+            despesasImportMutation={despesasImportMutation}
+          />
+        )}
+      </main>
+    </div>
+  );
+}
+
+function ResultsPanel({
+  a2Result,
+  selectedYear,
+  totalDotacao,
+  totalExecucao,
+  saldoEstimado,
+  pctExec,
+  autoExecData,
+  autoDotData,
+  loaCsvText,
+  setLoaCsvText,
+  despesasCsvText,
+  setDespesasCsvText,
+  loaImportMutation,
+  despesasImportMutation,
+}: {
+  a2Result: SpA2Result;
+  selectedYear: string;
+  totalDotacao: number;
+  totalExecucao: number;
+  saldoEstimado: number;
+  pctExec: number | null;
+  autoExecData: any;
+  autoDotData: any;
+  loaCsvText: string;
+  setLoaCsvText: (v: string) => void;
+  despesasCsvText: string;
+  setDespesasCsvText: (v: string) => void;
+  loaImportMutation: any;
+  despesasImportMutation: any;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold" data-testid="text-results-title">
+            Resultado A2 — SP {selectedYear}
+          </h2>
+          <Badge variant="outline" className="font-mono text-[10px] border-amber-400 text-amber-700 dark:text-amber-400">
+            Ente Estado
+          </Badge>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-xs">
+            {a2Result.loa_count} LOA
+          </Badge>
+          <Badge variant="secondary" className="text-xs">
+            {a2Result.despesas_count} Despesas
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard
+          title="Dotacao Total"
+          value={formatCurrency(totalDotacao || null)}
+          icon={Database}
+          subtitle={`${a2Result.loa_count} registros LOA`}
+        />
+        <KPICard
+          title="Execucao Total"
+          value={formatCurrency(totalExecucao || null)}
+          icon={Banknote}
+          subtitle={`${a2Result.despesas_count} despesas`}
+        />
+        <KPICard
+          title="Saldo Estimado"
+          value={formatCurrency(saldoEstimado)}
+          icon={TrendingUp}
+          subtitle="Dotacao - Execucao"
+        />
+        <KPICard
+          title="% Execucao"
+          value={pctExec !== null ? formatPercent(pctExec) : "N/D"}
+          icon={BarChart3}
+          subtitle="Execucao / Dotacao"
+        />
+      </div>
+
+      <Tabs defaultValue="conciliacao" className="w-full">
+        <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
+          <TabsTrigger value="conciliacao" data-testid="tab-conciliacao">
+            <Scale className="w-4 h-4 mr-1.5" />
+            Conciliacao
+          </TabsTrigger>
+          <TabsTrigger value="dados-importados" data-testid="tab-dados-importados">
+            <Download className="w-4 h-4 mr-1.5" />
+            Dados Importados
+          </TabsTrigger>
+          <TabsTrigger value="fontes" data-testid="tab-fontes">
+            <ExternalLink className="w-4 h-4 mr-1.5" />
+            Fontes Oficiais
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="conciliacao" className="mt-4 space-y-4">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-4">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Cruzamento Dotacao x Execucao — SP {selectedYear}</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm border-collapse" data-testid="table-a2-sp">
+                  <thead>
+                    <tr className="border-b bg-muted/50">
+                      <th className="text-left p-2.5 font-medium text-muted-foreground">Metrica</th>
+                      <th className="text-right p-2.5 font-medium text-muted-foreground">Valor (BRL)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-2.5 flex items-center gap-2">
+                        <Database className="w-3.5 h-3.5 text-blue-500" />
+                        Dotacao Atual Total
+                      </td>
+                      <td className="p-2.5 text-right font-semibold text-blue-600 dark:text-blue-400" data-testid="a2-dotacao-total">
+                        {formatCurrency(totalDotacao)}
+                      </td>
+                    </tr>
+                    <tr className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-2.5 flex items-center gap-2">
+                        <Banknote className="w-3.5 h-3.5 text-emerald-500" />
+                        Execucao Total (Liquidado)
+                      </td>
+                      <td className="p-2.5 text-right font-semibold text-emerald-600 dark:text-emerald-400" data-testid="a2-execucao-total">
+                        {formatCurrency(totalExecucao)}
+                      </td>
+                    </tr>
+                    <tr className="border-b hover:bg-muted/30 transition-colors">
+                      <td className="p-2.5 flex items-center gap-2">
+                        <TrendingUp className={`w-3.5 h-3.5 ${saldoEstimado >= 0 ? "text-emerald-500" : "text-red-500"}`} />
+                        Saldo Estimado
+                      </td>
+                      <td className={`p-2.5 text-right font-bold ${saldoEstimado >= 0 ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300"}`} data-testid="a2-saldo">
+                        {formatCurrency(saldoEstimado)}
+                      </td>
+                    </tr>
+                    {pctExec !== null && (
+                      <tr className="border-t-2 bg-muted/30">
+                        <td className="p-2.5 font-semibold flex items-center gap-2">
+                          <BarChart3 className="w-3.5 h-3.5 text-primary" />
+                          % Execucao
+                        </td>
+                        <td className="p-2.5 text-right font-bold" data-testid="a2-pct-exec">
+                          {formatPercent(pctExec)}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+              {pctExec !== null && (
+                <div className="mt-4 space-y-1.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Execucao / Dotacao</span>
+                    <span className="font-medium">{formatPercent(pctExec)}</span>
+                  </div>
+                  <Progress value={Math.min(pctExec, 100)} className="h-2" />
+                </div>
+              )}
+              {a2Result.summary.note && (
+                <div className="mt-3 flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-950/20 rounded-md text-xs text-amber-700 dark:text-amber-300">
+                  <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                  {a2Result.summary.note}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="dados-importados" className="mt-4 space-y-4">
+          {autoExecData && (
+            <Card className={autoExecData.ok ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                  <div className="flex items-center gap-2">
+                    <Download className={`w-4 h-4 ${autoExecData.ok ? "text-emerald-600" : "text-red-500"}`} />
+                    <span className="text-sm font-medium">Execucao Sefaz/SP — {autoExecData.ano}</span>
+                    <Badge variant={autoExecData.ok ? "default" : "destructive"} className={autoExecData.ok ? "bg-emerald-600" : ""}>
+                      {autoExecData.ok ? `${autoExecData.precatorios_encontrados} precatorios` : "Indisponivel"}
+                    </Badge>
+                  </div>
+                  {autoExecData.ok && (
+                    <span className="text-xs text-muted-foreground">{autoExecData.total_linhas} linhas</span>
+                  )}
+                </div>
+                {autoExecData.ok && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                      <div className="p-2 bg-muted/40 rounded-md">
+                        <p className="text-muted-foreground">SHA-256</p>
+                        <p className="font-mono break-all" data-testid="text-auto-exec-sha">{autoExecData.evidence?.csv_sha256}</p>
+                      </div>
+                      <div className="p-2 bg-muted/40 rounded-md">
+                        <p className="text-muted-foreground">Fonte</p>
+                        <p className="font-mono break-all text-[10px]">{autoExecData.fonte_url}</p>
+                      </div>
+                    </div>
+                    {autoExecData.precatorios?.map((p: any, i: number) => (
+                      <div key={i} className="p-2 bg-muted/30 rounded-md text-xs mb-1" data-testid={`text-prec-exec-${i}`}>
+                        <span className="font-medium">{p.desc_projeto}</span>
+                        <span className="text-muted-foreground ml-2">Dot. {formatCurrency(p.dotacao_inicial)}</span>
+                        <span className="text-emerald-600 dark:text-emerald-400 ml-2">Liq. {formatCurrency(p.valor_liquidado)}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {!autoExecData.ok && autoExecData.note && (
+                  <p className="text-xs text-red-600 dark:text-red-400">{autoExecData.note}</p>
                 )}
               </CardContent>
             </Card>
+          )}
 
-            <Separator />
+          {autoDotData && (
+            <Card className={autoDotData.ok ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"}>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                  <div className="flex items-center gap-2">
+                    <Download className={`w-4 h-4 ${autoDotData.ok ? "text-emerald-600" : "text-red-500"}`} />
+                    <span className="text-sm font-medium">Dotacao Sefaz/SP — {autoDotData.ano}</span>
+                    <Badge variant={autoDotData.ok ? "default" : "destructive"} className={autoDotData.ok ? "bg-emerald-600" : ""}>
+                      {autoDotData.ok ? `${autoDotData.precatorios_encontrados} precatorios` : "Indisponivel"}
+                    </Badge>
+                  </div>
+                  {autoDotData.ok && (
+                    <span className="text-xs text-muted-foreground">{autoDotData.total_linhas} linhas</span>
+                  )}
+                </div>
+                {autoDotData.ok && (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                      <div className="p-2 bg-muted/40 rounded-md">
+                        <p className="text-muted-foreground">SHA-256</p>
+                        <p className="font-mono break-all" data-testid="text-auto-dot-sha">{autoDotData.evidence?.csv_sha256}</p>
+                      </div>
+                      <div className="p-2 bg-muted/40 rounded-md">
+                        <p className="text-muted-foreground">Fonte</p>
+                        <p className="font-mono break-all text-[10px]">{autoDotData.fonte_url}</p>
+                      </div>
+                    </div>
+                    {autoDotData.precatorios?.map((p: any, i: number) => (
+                      <div key={i} className="p-2 bg-muted/30 rounded-md text-xs mb-1" data-testid={`text-prec-dot-${i}`}>
+                        <span className="font-medium">{p.desc_projeto}</span>
+                        <span className="text-muted-foreground ml-2">Dot. Inicial {formatCurrency(p.dotacao_inicial)}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {!autoDotData.ok && autoDotData.note && (
+                  <p className="text-xs text-red-600 dark:text-red-400">{autoDotData.note}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-            <details className="group">
-              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5" data-testid="toggle-manual-import">
-                <Upload className="w-3.5 h-3.5" />
-                Importacao Manual (CSV colado)
-              </summary>
+          {!autoExecData && !autoDotData && (
+            <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+              <Download className="w-8 h-8 mb-2 opacity-50" />
+              <p className="text-sm">Nenhum dado importado ainda. Use os botoes acima para baixar dados da Sefaz/SP.</p>
+            </div>
+          )}
+
+          <details className="group">
+            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5" data-testid="toggle-manual-import">
+              <Upload className="w-3.5 h-3.5" />
+              Importacao Manual (CSV colado)
+            </summary>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <FileText className="w-4 h-4" />
-                    LOA SP (Dotacao - Sefaz/SP)
+                    LOA SP (Dotacao)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
-                    <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
-                      <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      Cole o CSV da LOA SP (Sefaz). Colunas esperadas: ORGAO, UO, PROGRAMA, ACAO, DOTACAO_INICIAL, DOTACAO_ATUAL. Delimitador padrao: ponto-e-virgula (;).
-                    </p>
-                  </div>
                   <Textarea
                     placeholder="ORGAO;UO;PROGRAMA;ACAO;DOTACAO_ATUAL&#10;SECRETARIA X;1234;999;ATIVIDADE Y;1.234.567,89"
                     value={loaCsvText}
-                    onChange={(e) => setLoaCsvText(e.target.value)}
-                    className="min-h-[120px] font-mono text-xs"
+                    onChange={(e: any) => setLoaCsvText(e.target.value)}
+                    className="min-h-[100px] font-mono text-xs"
                     data-testid="textarea-loa-csv"
                   />
                   <Button
                     onClick={() => loaImportMutation.mutate()}
                     disabled={loaImportMutation.isPending || !loaCsvText.trim()}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full"
+                    size="sm"
                     data-testid="button-import-loa"
                   >
                     {loaImportMutation.isPending ? (
@@ -470,48 +889,30 @@ export default function SpDashboard() {
                     ) : (
                       <Upload className="w-4 h-4 mr-2" />
                     )}
-                    Importar LOA SP ({selectedYear})
+                    Importar LOA SP
                   </Button>
-                  {loaImportMutation.data && (
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-md">
-                      <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        {(loaImportMutation.data as SpImportResult).imported} linhas importadas
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-1 font-mono">
-                        <Hash className="w-3 h-3 inline mr-1" />
-                        {(loaImportMutation.data as SpImportResult).evidence.bundle_sha256?.slice(0, 24)}...
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
-
               <Card>
-                <CardHeader>
-                  <CardTitle className="text-base flex items-center gap-2">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
                     <Banknote className="w-4 h-4" />
-                    Despesas SP (Execucao - Portal Transparencia)
+                    Despesas SP (Execucao)
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
-                    <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
-                      <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      Cole o CSV de despesas do Portal da Transparencia SP. Colunas esperadas: ORGAO, UO, FASE, VALOR, FAVORECIDO, DATA. Delimitador padrao: ponto-e-virgula (;).
-                    </p>
-                  </div>
                   <Textarea
                     placeholder="ORGAO;UO;FASE;VALOR;DATA&#10;SECRETARIA X;1234;PAGAMENTO;123.456,78;2025-01-10"
                     value={despesasCsvText}
-                    onChange={(e) => setDespesasCsvText(e.target.value)}
-                    className="min-h-[120px] font-mono text-xs"
+                    onChange={(e: any) => setDespesasCsvText(e.target.value)}
+                    className="min-h-[100px] font-mono text-xs"
                     data-testid="textarea-despesas-csv"
                   />
                   <Button
                     onClick={() => despesasImportMutation.mutate()}
                     disabled={despesasImportMutation.isPending || !despesasCsvText.trim()}
-                    className="w-full bg-green-600 hover:bg-green-700 text-white"
+                    className="w-full"
+                    size="sm"
                     data-testid="button-import-despesas"
                   >
                     {despesasImportMutation.isPending ? (
@@ -519,359 +920,499 @@ export default function SpDashboard() {
                     ) : (
                       <Upload className="w-4 h-4 mr-2" />
                     )}
-                    Importar Despesas SP ({selectedYear})
+                    Importar Despesas SP
                   </Button>
-                  {despesasImportMutation.data && (
-                    <div className="p-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-md">
-                      <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        {(despesasImportMutation.data as SpImportResult).imported} linhas importadas
-                      </p>
-                      <p className="text-[10px] text-muted-foreground mt-1 font-mono">
-                        <Hash className="w-3 h-3 inline mr-1" />
-                        {(despesasImportMutation.data as SpImportResult).evidence.bundle_sha256?.slice(0, 24)}...
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             </div>
-            </details>
-          </TabsContent>
+          </details>
+        </TabsContent>
 
-          <TabsContent value="tjsp" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <Scale className="w-4 h-4" />
-                  Consulta TJSP - Precatorios Pendentes/Pagamentos (DEPRE)
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+        <TabsContent value="fontes" className="mt-4">
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center gap-2 mb-3">
+                <ExternalLink className="w-4 h-4 text-primary" />
+                <span className="text-sm font-medium">Fontes Oficiais — Estado de Sao Paulo</span>
+              </div>
+              <div className="space-y-3">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
+                  <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                    <FileText className="w-3.5 h-3.5" />
+                    Camada 1: LOA SP (Dotacao)
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">Fonte: Secretaria da Fazenda do Estado de SP</p>
+                  <div className="space-y-1">
+                    <a href="https://portal.fazenda.sp.gov.br/servicos/orcamento/Paginas/loa.aspx" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-loa-sp">
+                      <ExternalLink className="w-3 h-3" />
+                      portal.fazenda.sp.gov.br - LOA
+                    </a>
+                    <a href="https://dworcamento.fazenda.sp.gov.br" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-dworcamento">
+                      <ExternalLink className="w-3 h-3" />
+                      dworcamento.fazenda.sp.gov.br - Dados Abertos
+                    </a>
+                  </div>
+                </div>
+                <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-md">
+                  <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                    <Banknote className="w-3.5 h-3.5" />
+                    Camada 2: Execucao (Despesas)
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">Fonte: Portal da Transparencia do Estado de SP</p>
+                  <a href="https://www.transparencia.sp.gov.br/" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-transparencia-sp">
+                    <ExternalLink className="w-3 h-3" />
+                    transparencia.sp.gov.br
+                  </a>
+                </div>
                 <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
-                  <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
-                    <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                    MVP best-effort: captura HTML da pagina do TJSP e tenta mapear tabelas. Algumas paginas exigem selecao de entidade via formulario POST (Patch 2).
-                  </p>
-                </div>
-
-                <div className="flex items-end gap-3 flex-wrap">
-                  <div className="flex-1 min-w-[250px]">
-                    <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
-                      Entidade (texto exato TJSP)
-                    </label>
-                    <Input
-                      value={tjspEntidade}
-                      onChange={(e) => setTjspEntidade(e.target.value)}
-                      placeholder="FAZENDA DO ESTADO DE SAO PAULO"
-                      className="font-mono text-xs"
-                      data-testid="input-entidade-tjsp"
-                    />
-                  </div>
-                  <Button
-                    onClick={() => tjspPendentesMutation.mutate()}
-                    disabled={tjspPendentesMutation.isPending || !tjspEntidade.trim()}
-                    variant="default"
-                    data-testid="button-tjsp-pendentes"
-                  >
-                    {tjspPendentesMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Search className="w-4 h-4 mr-2" />
-                    )}
-                    Pendentes
-                  </Button>
-                  <Button
-                    onClick={() => tjspPagamentosMutation.mutate()}
-                    disabled={tjspPagamentosMutation.isPending || !tjspEntidade.trim()}
-                    variant="outline"
-                    data-testid="button-tjsp-pagamentos"
-                  >
-                    {tjspPagamentosMutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <Search className="w-4 h-4 mr-2" />
-                    )}
-                    Pagamentos
-                  </Button>
-                </div>
-
-                {tjspPendentesResult && (
-                  <Card className="border-blue-200 dark:border-blue-800">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <Scale className="w-4 h-4 text-blue-600" />
-                          Resultado Pendentes TJSP
-                        </h3>
-                        <Badge variant="outline">{tjspPendentesResult.count} itens</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{tjspPendentesResult.note}</p>
-                      {tjspPendentesResult.count > 0 ? (
-                        <div className="max-h-60 overflow-y-auto space-y-2">
-                          {tjspPendentesResult.data.map((item: TjspItem, idx: number) => (
-                            <div key={idx} className="p-2 bg-muted/50 rounded text-xs">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {item.numero && <Badge variant="secondary" className="font-mono">{item.numero}</Badge>}
-                                {item.credor && <span className="truncate">{item.credor}</span>}
-                                {item.valor !== undefined && (
-                                  <Badge className="bg-blue-600 text-white">{formatCurrency(item.valor)}</Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">Nenhum item extraido. A pagina pode exigir formulario POST por entidade (Patch 2).</p>
-                      )}
-                      <p className="text-[10px] font-mono text-muted-foreground mt-2">
-                        <Hash className="w-3 h-3 inline mr-1" />
-                        {tjspPendentesResult.evidence?.bundle_sha256?.slice(0, 24)}...
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {tjspPagamentosResult && (
-                  <Card className="border-green-200 dark:border-green-800">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold flex items-center gap-2">
-                          <Banknote className="w-4 h-4 text-green-600" />
-                          Resultado Pagamentos TJSP
-                        </h3>
-                        <Badge variant="outline">{tjspPagamentosResult.count} itens</Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mb-2">{tjspPagamentosResult.note}</p>
-                      {tjspPagamentosResult.count > 0 ? (
-                        <div className="max-h-60 overflow-y-auto space-y-2">
-                          {tjspPagamentosResult.data.map((item: TjspItem, idx: number) => (
-                            <div key={idx} className="p-2 bg-muted/50 rounded text-xs">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                {item.numero && <Badge variant="secondary" className="font-mono">{item.numero}</Badge>}
-                                {item.credor && <span className="truncate">{item.credor}</span>}
-                                {item.valor !== undefined && (
-                                  <Badge className="bg-green-600 text-white">{formatCurrency(item.valor)}</Badge>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      ) : (
-                        <p className="text-xs text-muted-foreground italic">Nenhum item extraido. A pagina pode exigir formulario POST por entidade (Patch 2).</p>
-                      )}
-                      <p className="text-[10px] font-mono text-muted-foreground mt-2">
-                        <Hash className="w-3 h-3 inline mr-1" />
-                        {tjspPagamentosResult.evidence?.bundle_sha256?.slice(0, 24)}...
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-
-                {(tjspPendentesResult || tjspPagamentosResult) && (
-                  <div className="p-3 bg-muted/30 rounded-md">
-                    <p className="text-xs font-medium mb-2">URLs Oficiais TJSP para consulta manual:</p>
-                    <div className="space-y-1">
-                      {Object.entries((tjspPendentesResult || tjspPagamentosResult)?.urls_consulta || {}).map(([key, url]) => (
-                        <a
-                          key={key}
-                          href={url as string}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-1.5 text-xs underline text-primary"
-                        >
-                          <ExternalLink className="w-3 h-3" />
-                          {key}: {(url as string).length > 60 ? (url as string).slice(0, 60) + "..." : url as string}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="conciliacao" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4" />
-                  Conciliacao A2 - Estado de Sao Paulo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="p-3 bg-muted/30 rounded-md">
-                  <p className="text-xs text-muted-foreground">
-                    Cruza LOA SP (dotacao) x Despesas SP (execucao) para o ano selecionado. Filtros opcionais por Orgao e UO.
-                  </p>
-                </div>
-                <div className="flex items-end gap-3 flex-wrap">
-                  <div className="min-w-[180px]">
-                    <label className="text-sm font-medium mb-1.5 block text-muted-foreground">Orgao (opcional)</label>
-                    <Input
-                      value={a2Orgao}
-                      onChange={(e) => setA2Orgao(e.target.value)}
-                      placeholder="Ex: SECRETARIA X"
-                      className="text-xs"
-                      data-testid="input-a2-orgao"
-                    />
-                  </div>
-                  <div className="min-w-[140px]">
-                    <label className="text-sm font-medium mb-1.5 block text-muted-foreground">UO (opcional)</label>
-                    <Input
-                      value={a2Uo}
-                      onChange={(e) => setA2Uo(e.target.value)}
-                      placeholder="Ex: 1234"
-                      className="text-xs"
-                      data-testid="input-a2-uo"
-                    />
-                  </div>
-                  <Button
-                    onClick={() => a2Mutation.mutate()}
-                    disabled={a2Mutation.isPending}
-                    className="bg-amber-600 hover:bg-amber-700 text-white"
-                    data-testid="button-a2-sp"
-                  >
-                    {a2Mutation.isPending ? (
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    ) : (
-                      <BarChart3 className="w-4 h-4 mr-2" />
-                    )}
-                    Conciliar A2 SP ({selectedYear})
-                  </Button>
-                </div>
-
-                {a2Result && (
-                  <div className="space-y-4 mt-4">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                      <Card className="border-blue-200 dark:border-blue-800">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-xs text-muted-foreground">Dotacao Atual Total</p>
-                          <p className="text-lg font-bold text-blue-600" data-testid="a2-dotacao-total">
-                            {formatCurrency(a2Result.summary.dotacao_atual_total)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{a2Result.loa_count} registros LOA</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-green-200 dark:border-green-800">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-xs text-muted-foreground">Execucao Total</p>
-                          <p className="text-lg font-bold text-green-600" data-testid="a2-execucao-total">
-                            {formatCurrency(a2Result.summary.execucao_total)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">{a2Result.despesas_count} despesas</p>
-                        </CardContent>
-                      </Card>
-                      <Card className="border-amber-200 dark:border-amber-800">
-                        <CardContent className="p-4 text-center">
-                          <p className="text-xs text-muted-foreground">Saldo Estimado</p>
-                          <p className={`text-lg font-bold ${a2Result.summary.saldo_estimado >= 0 ? "text-emerald-600" : "text-red-600"}`} data-testid="a2-saldo">
-                            {formatCurrency(a2Result.summary.saldo_estimado)}
-                          </p>
-                          <p className="text-[10px] text-muted-foreground">Dotacao - Execucao</p>
-                        </CardContent>
-                      </Card>
-                    </div>
-                    <div className="p-3 bg-muted/30 rounded-md">
-                      <p className="text-xs text-muted-foreground italic">{a2Result.summary.note}</p>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="fontes" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4" />
-                  Fontes Oficiais - Estado de Sao Paulo
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-3">
-                  <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
-                    <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
-                      <FileText className="w-3.5 h-3.5" />
-                      Camada 1: LOA SP (Dotacao)
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2">Fonte: Secretaria da Fazenda do Estado de SP</p>
-                    <a
-                      href="https://portal.fazenda.sp.gov.br/servicos/orcamento/Paginas/loa.aspx"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs underline flex items-center gap-1 text-primary"
-                      data-testid="link-fonte-loa-sp"
-                    >
+                  <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                    <Scale className="w-3.5 h-3.5" />
+                    Camada 3: Estoque (TJSP/DEPRE)
+                  </h4>
+                  <p className="text-xs text-muted-foreground mb-2">Fonte: Tribunal de Justica do Estado de SP</p>
+                  <div className="space-y-1">
+                    <a href="https://www.tjsp.jus.br/Precatorios/Precatorios/ListaPendentes" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-tjsp-pendentes">
                       <ExternalLink className="w-3 h-3" />
-                      portal.fazenda.sp.gov.br - LOA Atual e Anos Anteriores
+                      TJSP - Lista de Precatorios Pendentes
+                    </a>
+                    <a href="https://www.tjsp.jus.br/cac/scp/webmenupesquisa.aspx" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-tjsp-pesquisa">
+                      <ExternalLink className="w-3 h-3" />
+                      TJSP - Menu de Pesquisa
+                    </a>
+                    <a href="https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatpendentes.aspx" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-tjsp-lista-pagamentos">
+                      <ExternalLink className="w-3 h-3" />
+                      TJSP - Listas de Pagamento
                     </a>
                   </div>
-
-                  <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-md">
-                    <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
-                      <Banknote className="w-3.5 h-3.5" />
-                      Camada 2: Execucao (Despesas)
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2">Fonte: Portal da Transparencia do Estado de SP</p>
-                    <a
-                      href="https://www.transparencia.sp.gov.br/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs underline flex items-center gap-1 text-primary"
-                      data-testid="link-fonte-transparencia-sp"
-                    >
-                      <ExternalLink className="w-3 h-3" />
-                      transparencia.sp.gov.br - Portal da Transparencia
-                    </a>
-                  </div>
-
-                  <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
-                    <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
-                      <Scale className="w-3.5 h-3.5" />
-                      Camada 3: Estoque (TJSP/DEPRE)
-                    </h4>
-                    <p className="text-xs text-muted-foreground mb-2">Fonte: Tribunal de Justica do Estado de SP</p>
-                    <div className="space-y-1">
-                      <a
-                        href="https://www.tjsp.jus.br/Precatorios/Precatorios/ListaPendentes"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs underline flex items-center gap-1 text-primary"
-                        data-testid="link-fonte-tjsp-pendentes"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        TJSP - Lista de Precatorios Pendentes
-                      </a>
-                      <a
-                        href="https://www.tjsp.jus.br/cac/scp/webmenupesquisa.aspx"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs underline flex items-center gap-1 text-primary"
-                        data-testid="link-fonte-tjsp-pesquisa"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        TJSP - Menu de Pesquisa de Precatorios
-                      </a>
-                      <a
-                        href="https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatpendentes.aspx"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs underline flex items-center gap-1 text-primary"
-                        data-testid="link-fonte-tjsp-lista-pagamentos"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        TJSP - Publicacao de Listas de Pagamento
-                      </a>
-                    </div>
-                  </div>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      </main>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
+  );
+}
+
+function TJSPPanel({
+  tjspPendentesResult,
+  tjspPagamentosResult,
+  tjspEntidade,
+  setTjspEntidade,
+  tjspPagamentosMutation,
+}: {
+  tjspPendentesResult?: SpTjspResult;
+  tjspPagamentosResult?: SpTjspResult;
+  tjspEntidade: string;
+  setTjspEntidade: (v: string) => void;
+  tjspPagamentosMutation: any;
+}) {
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <h2 className="text-lg font-semibold">Estoque TJSP/DEPRE</h2>
+          <Badge variant="outline" className="font-mono text-[10px] border-amber-400 text-amber-700 dark:text-amber-400">
+            Ente Estado
+          </Badge>
+        </div>
+      </div>
+
+      <Card>
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2 mb-2">
+            <Scale className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Entidade para consulta</span>
+          </div>
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="flex-1 min-w-[250px]">
+              <Input
+                value={tjspEntidade}
+                onChange={(e) => setTjspEntidade(e.target.value)}
+                placeholder="FAZENDA DO ESTADO DE SAO PAULO"
+                className="font-mono text-xs"
+                data-testid="input-entidade-tjsp"
+              />
+            </div>
+            <Button
+              onClick={() => tjspPagamentosMutation.mutate()}
+              disabled={tjspPagamentosMutation.isPending || !tjspEntidade.trim()}
+              variant="outline"
+              data-testid="button-tjsp-pagamentos"
+            >
+              {tjspPagamentosMutation.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Search className="w-4 h-4 mr-2" />
+              )}
+              Pagamentos
+            </Button>
+          </div>
+
+          <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
+            <p className="text-xs text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+              MVP best-effort: captura HTML da pagina do TJSP. Algumas paginas exigem selecao de entidade via formulario POST.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {tjspPendentesResult && (
+        <Card className="border-blue-200 dark:border-blue-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Scale className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-semibold">Pendentes TJSP</span>
+              </div>
+              <Badge variant="outline">{tjspPendentesResult.count} itens</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">{tjspPendentesResult.note}</p>
+            {tjspPendentesResult.count > 0 ? (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {tjspPendentesResult.data.map((item: TjspItem, idx: number) => (
+                  <div key={idx} className="p-2 bg-muted/50 rounded text-xs">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {item.numero && <Badge variant="secondary" className="font-mono">{item.numero}</Badge>}
+                      {item.credor && <span className="truncate">{item.credor}</span>}
+                      {item.valor !== undefined && (
+                        <Badge className="bg-blue-600 text-white">{formatCurrency(item.valor)}</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">Nenhum item extraido.</p>
+            )}
+            <p className="text-[10px] font-mono text-muted-foreground mt-2">
+              <Hash className="w-3 h-3 inline mr-1" />
+              {tjspPendentesResult.evidence?.bundle_sha256?.slice(0, 24)}...
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {tjspPagamentosResult && (
+        <Card className="border-green-200 dark:border-green-800">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Banknote className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-semibold">Pagamentos TJSP</span>
+              </div>
+              <Badge variant="outline">{tjspPagamentosResult.count} itens</Badge>
+            </div>
+            <p className="text-xs text-muted-foreground mb-2">{tjspPagamentosResult.note}</p>
+            {tjspPagamentosResult.count > 0 ? (
+              <div className="max-h-60 overflow-y-auto space-y-2">
+                {tjspPagamentosResult.data.map((item: TjspItem, idx: number) => (
+                  <div key={idx} className="p-2 bg-muted/50 rounded text-xs">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {item.numero && <Badge variant="secondary" className="font-mono">{item.numero}</Badge>}
+                      {item.credor && <span className="truncate">{item.credor}</span>}
+                      {item.valor !== undefined && (
+                        <Badge className="bg-green-600 text-white">{formatCurrency(item.valor)}</Badge>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground italic">Nenhum item extraido.</p>
+            )}
+            <p className="text-[10px] font-mono text-muted-foreground mt-2">
+              <Hash className="w-3 h-3 inline mr-1" />
+              {tjspPagamentosResult.evidence?.bundle_sha256?.slice(0, 24)}...
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {(tjspPendentesResult || tjspPagamentosResult) && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-xs font-medium mb-2">URLs Oficiais TJSP para consulta manual:</p>
+            <div className="space-y-1">
+              {Object.entries((tjspPendentesResult || tjspPagamentosResult)?.urls_consulta || {}).map(([key, url]) => (
+                <a
+                  key={key}
+                  href={url as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs underline text-primary"
+                >
+                  <ExternalLink className="w-3 h-3" />
+                  {key}: {(url as string).length > 60 ? (url as string).slice(0, 60) + "..." : url as string}
+                </a>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
+
+function ImportAndFontesPanel({
+  autoExecData,
+  autoDotData,
+  loaCsvText,
+  setLoaCsvText,
+  despesasCsvText,
+  setDespesasCsvText,
+  loaImportMutation,
+  despesasImportMutation,
+}: {
+  autoExecData: any;
+  autoDotData: any;
+  loaCsvText: string;
+  setLoaCsvText: (v: string) => void;
+  despesasCsvText: string;
+  setDespesasCsvText: (v: string) => void;
+  loaImportMutation: any;
+  despesasImportMutation: any;
+}) {
+  return (
+    <Tabs defaultValue="dados-importados" className="w-full">
+      <TabsList className="w-full justify-start flex-wrap h-auto gap-1">
+        <TabsTrigger value="dados-importados" data-testid="tab-importar">
+          <Download className="w-4 h-4 mr-1.5" />
+          Dados Importados
+        </TabsTrigger>
+        <TabsTrigger value="fontes" data-testid="tab-fontes">
+          <ExternalLink className="w-4 h-4 mr-1.5" />
+          Fontes Oficiais
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="dados-importados" className="mt-4 space-y-4">
+        {autoExecData && (
+          <Card className={autoExecData.ok ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <Download className={`w-4 h-4 ${autoExecData.ok ? "text-emerald-600" : "text-red-500"}`} />
+                  <span className="text-sm font-medium">Execucao Sefaz/SP — {autoExecData.ano}</span>
+                  <Badge variant={autoExecData.ok ? "default" : "destructive"} className={autoExecData.ok ? "bg-emerald-600" : ""}>
+                    {autoExecData.ok ? `${autoExecData.precatorios_encontrados} precatorios` : "Indisponivel"}
+                  </Badge>
+                </div>
+                {autoExecData.ok && (
+                  <span className="text-xs text-muted-foreground">{autoExecData.total_linhas} linhas</span>
+                )}
+              </div>
+              {autoExecData.ok && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                    <div className="p-2 bg-muted/40 rounded-md">
+                      <p className="text-muted-foreground">SHA-256</p>
+                      <p className="font-mono break-all" data-testid="text-auto-exec-sha">{autoExecData.evidence?.csv_sha256}</p>
+                    </div>
+                    <div className="p-2 bg-muted/40 rounded-md">
+                      <p className="text-muted-foreground">Fonte</p>
+                      <p className="font-mono break-all text-[10px]">{autoExecData.fonte_url}</p>
+                    </div>
+                  </div>
+                  {autoExecData.precatorios?.map((p: any, i: number) => (
+                    <div key={i} className="p-2 bg-muted/30 rounded-md text-xs mb-1" data-testid={`text-prec-exec-${i}`}>
+                      <span className="font-medium">{p.desc_projeto}</span>
+                      <span className="text-muted-foreground ml-2">Dot. {formatCurrency(p.dotacao_inicial)}</span>
+                      <span className="text-emerald-600 dark:text-emerald-400 ml-2">Liq. {formatCurrency(p.valor_liquidado)}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {!autoExecData.ok && autoExecData.note && (
+                <p className="text-xs text-red-600 dark:text-red-400">{autoExecData.note}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {autoDotData && (
+          <Card className={autoDotData.ok ? "border-emerald-200 dark:border-emerald-800" : "border-red-200 dark:border-red-800"}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
+                <div className="flex items-center gap-2">
+                  <Download className={`w-4 h-4 ${autoDotData.ok ? "text-emerald-600" : "text-red-500"}`} />
+                  <span className="text-sm font-medium">Dotacao Sefaz/SP — {autoDotData.ano}</span>
+                  <Badge variant={autoDotData.ok ? "default" : "destructive"} className={autoDotData.ok ? "bg-emerald-600" : ""}>
+                    {autoDotData.ok ? `${autoDotData.precatorios_encontrados} precatorios` : "Indisponivel"}
+                  </Badge>
+                </div>
+                {autoDotData.ok && (
+                  <span className="text-xs text-muted-foreground">{autoDotData.total_linhas} linhas</span>
+                )}
+              </div>
+              {autoDotData.ok && (
+                <>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs mb-3">
+                    <div className="p-2 bg-muted/40 rounded-md">
+                      <p className="text-muted-foreground">SHA-256</p>
+                      <p className="font-mono break-all" data-testid="text-auto-dot-sha">{autoDotData.evidence?.csv_sha256}</p>
+                    </div>
+                    <div className="p-2 bg-muted/40 rounded-md">
+                      <p className="text-muted-foreground">Fonte</p>
+                      <p className="font-mono break-all text-[10px]">{autoDotData.fonte_url}</p>
+                    </div>
+                  </div>
+                  {autoDotData.precatorios?.map((p: any, i: number) => (
+                    <div key={i} className="p-2 bg-muted/30 rounded-md text-xs mb-1" data-testid={`text-prec-dot-${i}`}>
+                      <span className="font-medium">{p.desc_projeto}</span>
+                      <span className="text-muted-foreground ml-2">Dot. Inicial {formatCurrency(p.dotacao_inicial)}</span>
+                    </div>
+                  ))}
+                </>
+              )}
+              {!autoDotData.ok && autoDotData.note && (
+                <p className="text-xs text-red-600 dark:text-red-400">{autoDotData.note}</p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {!autoExecData && !autoDotData && (
+          <div className="flex flex-col items-center justify-center py-8 text-muted-foreground">
+            <Download className="w-8 h-8 mb-2 opacity-50" />
+            <p className="text-sm">Nenhum dado importado ainda. Use os botoes acima para baixar dados da Sefaz/SP.</p>
+          </div>
+        )}
+
+        <details className="group">
+          <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5" data-testid="toggle-manual-import">
+            <Upload className="w-3.5 h-3.5" />
+            Importacao Manual (CSV colado)
+          </summary>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="w-4 h-4" />
+                  LOA SP (Dotacao)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea
+                  placeholder="ORGAO;UO;PROGRAMA;ACAO;DOTACAO_ATUAL&#10;SECRETARIA X;1234;999;ATIVIDADE Y;1.234.567,89"
+                  value={loaCsvText}
+                  onChange={(e: any) => setLoaCsvText(e.target.value)}
+                  className="min-h-[100px] font-mono text-xs"
+                  data-testid="textarea-loa-csv"
+                />
+                <Button
+                  onClick={() => loaImportMutation.mutate()}
+                  disabled={loaImportMutation.isPending || !loaCsvText.trim()}
+                  className="w-full"
+                  size="sm"
+                  data-testid="button-import-loa"
+                >
+                  {loaImportMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4 mr-2" />
+                  )}
+                  Importar LOA SP
+                </Button>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Banknote className="w-4 h-4" />
+                  Despesas SP (Execucao)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea
+                  placeholder="ORGAO;UO;FASE;VALOR;DATA&#10;SECRETARIA X;1234;PAGAMENTO;123.456,78;2025-01-10"
+                  value={despesasCsvText}
+                  onChange={(e: any) => setDespesasCsvText(e.target.value)}
+                  className="min-h-[100px] font-mono text-xs"
+                  data-testid="textarea-despesas-csv"
+                />
+                <Button
+                  onClick={() => despesasImportMutation.mutate()}
+                  disabled={despesasImportMutation.isPending || !despesasCsvText.trim()}
+                  className="w-full"
+                  size="sm"
+                  data-testid="button-import-despesas"
+                >
+                  {despesasImportMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  ) : (
+                    <Upload className="w-4 h-4 mr-2" />
+                  )}
+                  Importar Despesas SP
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </details>
+      </TabsContent>
+
+      <TabsContent value="fontes" className="mt-4">
+        <Card>
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center gap-2 mb-3">
+              <ExternalLink className="w-4 h-4 text-primary" />
+              <span className="text-sm font-medium">Fontes Oficiais — Estado de Sao Paulo</span>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
+                <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                  <FileText className="w-3.5 h-3.5" />
+                  Camada 1: LOA SP (Dotacao)
+                </h4>
+                <p className="text-xs text-muted-foreground mb-2">Fonte: Secretaria da Fazenda do Estado de SP</p>
+                <div className="space-y-1">
+                  <a href="https://portal.fazenda.sp.gov.br/servicos/orcamento/Paginas/loa.aspx" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-loa-sp">
+                    <ExternalLink className="w-3 h-3" />
+                    portal.fazenda.sp.gov.br - LOA
+                  </a>
+                  <a href="https://dworcamento.fazenda.sp.gov.br" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-dworcamento">
+                    <ExternalLink className="w-3 h-3" />
+                    dworcamento.fazenda.sp.gov.br - Dados Abertos
+                  </a>
+                </div>
+              </div>
+              <div className="p-3 bg-green-50 dark:bg-green-950/30 rounded-md">
+                <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                  <Banknote className="w-3.5 h-3.5" />
+                  Camada 2: Execucao (Despesas)
+                </h4>
+                <p className="text-xs text-muted-foreground mb-2">Fonte: Portal da Transparencia do Estado de SP</p>
+                <a href="https://www.transparencia.sp.gov.br/" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-transparencia-sp">
+                  <ExternalLink className="w-3 h-3" />
+                  transparencia.sp.gov.br
+                </a>
+              </div>
+              <div className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md">
+                <h4 className="text-sm font-semibold mb-1 flex items-center gap-2">
+                  <Scale className="w-3.5 h-3.5" />
+                  Camada 3: Estoque (TJSP/DEPRE)
+                </h4>
+                <p className="text-xs text-muted-foreground mb-2">Fonte: Tribunal de Justica do Estado de SP</p>
+                <div className="space-y-1">
+                  <a href="https://www.tjsp.jus.br/Precatorios/Precatorios/ListaPendentes" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-tjsp-pendentes">
+                    <ExternalLink className="w-3 h-3" />
+                    TJSP - Lista de Precatorios Pendentes
+                  </a>
+                  <a href="https://www.tjsp.jus.br/cac/scp/webmenupesquisa.aspx" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-tjsp-pesquisa">
+                    <ExternalLink className="w-3 h-3" />
+                    TJSP - Menu de Pesquisa
+                  </a>
+                  <a href="https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatpendentes.aspx" target="_blank" rel="noopener noreferrer" className="text-xs underline flex items-center gap-1 text-primary" data-testid="link-fonte-tjsp-lista-pagamentos">
+                    <ExternalLink className="w-3 h-3" />
+                    TJSP - Listas de Pagamento
+                  </a>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </TabsContent>
+    </Tabs>
   );
 }
