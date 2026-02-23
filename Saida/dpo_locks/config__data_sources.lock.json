@@ -1,0 +1,12 @@
+{
+  "lock_id": "4cb3aa71-6566-49ad-90cb-6fd14810f093",
+  "resource": "config/data_sources",
+  "locked_at_iso": "2026-02-23T05:53:55.207Z",
+  "locked_by": "DPO AuraLOA",
+  "reason": "Protecao do pipeline completo",
+  "sha256_at_lock": "6c2a677a1173fa2dab02a2ae55f66bdda74b2f9cfcad96081115e62eed87d81d",
+  "status": "LOCKED",
+  "unlock_token": "3cc2d454e0d31fb42cb06510e09e283974962fdfef9367288d9427a8b87902b5",
+  "unlock_at_iso": null,
+  "unlock_by": null
+}

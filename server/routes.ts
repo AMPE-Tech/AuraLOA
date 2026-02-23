@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import loaUniaoA2Router from "./routes/loa_uniao_a2";
 import loaEstoqueRouter from "./routes/loa_estoque";
+import loaDpoRouter from "./routes/loa_dpo";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -10,6 +11,7 @@ export async function registerRoutes(
 ): Promise<Server> {
   app.use(loaUniaoA2Router);
   app.use(loaEstoqueRouter);
+  app.use(loaDpoRouter);
 
   return httpServer;
 }

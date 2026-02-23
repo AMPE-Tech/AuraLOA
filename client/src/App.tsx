@@ -6,12 +6,14 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import LOADashboard from "@/pages/loa-dashboard";
 import PrecatoriosPendentes from "@/pages/precatorios-pendentes";
+import ContratoTecnico from "@/pages/contrato-tecnico";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={LOADashboard} />
       <Route path="/pendentes" component={PrecatoriosPendentes} />
+      <Route path="/contrato" component={ContratoTecnico} />
       <Route component={NotFound} />
     </Switch>
   );

@@ -1,0 +1,12 @@
+{
+  "lock_id": "faef854e-11a2-4c79-9d63-0bb59c28e2d6",
+  "resource": "output/evidence_pack",
+  "locked_at_iso": "2026-02-23T05:53:55.207Z",
+  "locked_by": "DPO AuraLOA",
+  "reason": "Protecao do pipeline completo",
+  "sha256_at_lock": "779ebeacdd33d1d5c16d9402b035f497ecfe5cf114f88dc459b09f4c3bf2387d",
+  "status": "LOCKED",
+  "unlock_token": "ddbfa4e9f5edf021e8dee88dc821abf3872eb3afdc9d4d1bead8e586f8349fef",
+  "unlock_at_iso": null,
+  "unlock_by": null
+}

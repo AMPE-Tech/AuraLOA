@@ -1360,6 +1360,12 @@ export default function LOADashboard() {
                   Pendentes
                 </Button>
               </Link>
+              <Link href="/contrato">
+                <Button variant="outline" size="sm" data-testid="link-contrato">
+                  <Shield className="w-3.5 h-3.5 mr-1" />
+                  Contrato DPO
+                </Button>
+              </Link>
               <Badge variant="outline" className="text-[10px] font-mono">
                 MVP A2 - Dotacao + Execucao + Estoque
               </Badge>

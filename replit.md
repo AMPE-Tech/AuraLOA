@@ -8,7 +8,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 ### Frontend (React + Vite)
 - `client/src/pages/loa-dashboard.tsx` - Main dashboard with year selector, results display, KPIs, evidence trail, Estoque CNJ panel, and Gap Analysis panel
 - `client/src/pages/precatorios-pendentes.tsx` - Dedicated page for pending precatórios with tribunal consultation links and ofício requisitório access
-- `client/src/App.tsx` - Routes configuration (/, /pendentes)
+- `client/src/pages/contrato-tecnico.tsx` - Contrato Técnico Master page with DPO controls, anti-regression checks, audit log, and pipeline documentation
+- `client/src/App.tsx` - Routes configuration (/, /pendentes, /contrato)
 
 ### Backend (Express)
 - `server/routes/loa_uniao_a2.ts` - Main endpoint `POST /api/loa/uniao/a2` and history/catalog endpoints
@@ -22,9 +23,13 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `server/services/estoque_tribunais.ts` - Estoque orchestrator with provider fallback (datajud → csv → scraping stub) and PDF valor enrichment
 - `server/services/valor_precatorio_pdf.ts` - **DPO strategy**: Downloads and parses official tribunal PDFs (relação de precatórios para orçamento) to extract valores. Uses pdfjs-dist for parsing, regex extraction, caching, and SHA-256 evidence tracking
 - `server/services/gap_analysis.ts` - Cross-references Dotação x Execução x Estoque (Camada 4)
+- `server/services/dpo_guard.ts` - DPO authorization guard system (lock/unlock resources, audit log, integrity checks)
+- `server/services/anti_regression.ts` - Anti-regression validation (baselines, metric comparison, violation detection)
+- `server/services/anti_hallucination.ts` - Anti-hallucination guards (zero mock data, source validation, value evidence checks)
 - `server/services/cron_download.ts` - Automatic monthly batch download scheduler (runs day 1 at 03:00)
 - `server/services/evidence_pack.ts` - Evidence pack system (SHA-256 hashes, file saving)
 - `server/services/validate_output.ts` - Output validation
+- `server/routes/loa_dpo.ts` - DPO control, regression, cruzamento-completo, and contrato técnico endpoints
 
 ### Shared Types
 - `shared/loa_types.ts` - All TypeScript interfaces for A2, Estoque, and Gap Analysis modules
@@ -46,6 +51,16 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `POST /api/loa/uniao/estoque` - Query CNJ DataJud estoque (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
 - `POST /api/loa/uniao/gap-analysis` - Cross Dotação x Execução x Estoque (input: `{ ano_exercicio: number, mes?: number }`)
 - `POST /api/loa/uniao/precatorios-pendentes` - Filter pending precatórios only (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
+- `POST /api/loa/uniao/cruzamento-completo` - Full 4-layer crossed evidence spreadsheet (Dotação x Execução x Estoque x Valores)
+- `GET /api/loa/uniao/contrato-tecnico` - Contrato Técnico Master with all clauses
+- `GET /api/loa/uniao/dpo/locks` - List DPO locks
+- `POST /api/loa/uniao/dpo/lock` - Lock resource (requires DPO)
+- `POST /api/loa/uniao/dpo/unlock` - Unlock resource (requires token)
+- `POST /api/loa/uniao/dpo/check-integrity` - Verify SHA-256 integrity
+- `GET /api/loa/uniao/dpo/audit-log` - DPO audit log
+- `POST /api/loa/uniao/dpo/lock-all` - Lock all protected resources
+- `POST /api/loa/uniao/regression/check` - Anti-regression check
+- `POST /api/loa/uniao/regression/baseline` - Save regression baseline
 
 ## Data Sources
 - **Execução (Empenho/Liquidação/Pagamento)**: Portal da Transparência REST API - requires API key (env: PORTAL_TRANSPARENCIA_API_KEY). Uses endpoint `/api-de-dados/despesas/por-funcional-programatica` with `chave-api-dados` header.

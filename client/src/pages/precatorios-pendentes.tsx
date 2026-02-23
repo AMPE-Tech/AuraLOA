@@ -467,12 +467,20 @@ export default function PrecatoriosPendentes() {
                 </p>
               </div>
             </div>
-            {result && (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Clock className="w-3 h-3" />
-                Atualizado: {new Date(result.ultima_atualizacao_iso).toLocaleString("pt-BR")}
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <Link href="/contrato">
+                <Button variant="outline" size="sm" data-testid="link-contrato-dpo">
+                  <Shield className="w-3.5 h-3.5 mr-1" />
+                  Contrato DPO
+                </Button>
+              </Link>
+              {result && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Clock className="w-3 h-3" />
+                  Atualizado: {new Date(result.ultima_atualizacao_iso).toLocaleString("pt-BR")}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </header>
@@ -815,6 +823,37 @@ export default function PrecatoriosPendentes() {
                     >
                       <Download className="w-3 h-3 mr-1" />
                       JSON
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px] border-amber-400 text-amber-700 dark:text-amber-400"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch("/api/loa/uniao/cruzamento-completo", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ ano_exercicio: parseInt(selectedYear) }),
+                          });
+                          if (!res.ok) {
+                            const errData = await res.json().catch(() => ({}));
+                            throw new Error(errData.error || `HTTP ${res.status}`);
+                          }
+                          const blob = await res.blob();
+                          const url = URL.createObjectURL(blob);
+                          const a = document.createElement("a");
+                          a.href = url;
+                          a.download = `cruzamento_completo_${selectedYear}.csv`;
+                          a.click();
+                          URL.revokeObjectURL(url);
+                        } catch (err: any) {
+                          toast({ title: "Erro", description: err?.message || "Falha ao gerar cruzamento completo.", variant: "destructive" });
+                        }
+                      }}
+                      data-testid="button-export-cruzamento"
+                    >
+                      <FileSpreadsheet className="w-3 h-3 mr-1" />
+                      Cruzamento 4 Camadas
                     </Button>
                     <Separator orientation="vertical" className="h-5" />
                     <Tooltip>

@@ -1,0 +1,12 @@
+{
+  "lock_id": "7c943f72-a9f4-4464-8960-973c07b479b0",
+  "resource": "catalog/acoes_precatorios",
+  "locked_at_iso": "2026-02-23T05:53:55.206Z",
+  "locked_by": "DPO AuraLOA",
+  "reason": "Protecao do pipeline completo",
+  "sha256_at_lock": "8957a9a3fbf128510f7097b231dd75b3574c34b4cd2b437016a1d02ad62a19e8",
+  "status": "LOCKED",
+  "unlock_token": "7eca43868f80656fd420017e370559e4b3d47dae86c57489479fe4c2f088a686",
+  "unlock_at_iso": null,
+  "unlock_by": null
+}
