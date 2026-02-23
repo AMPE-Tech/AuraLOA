@@ -1,0 +1,16 @@
+[
+  {
+    "ano": 2026,
+    "funcao": "Encargos especiais",
+    "codigoFuncao": "28",
+    "subfuncao": "Outros encargos especiais",
+    "codigoSubfuncao": "846",
+    "programa": "OPERACOES ESPECIAIS: CUMPRIMENTO DE SENTENCAS JUDICIAIS",
+    "codigoPrograma": "0901",
+    "acao": "SENTENCAS JUDICIAIS DEVIDAS POR EMPRESAS ESTATAIS",
+    "codigoAcao": "0022",
+    "empenhado": "72.590.195,89",
+    "liquidado": "23.292.959,76",
+    "pago": "22.923.027,16"
+  }
+]

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import * as XLSX from "xlsx";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +33,7 @@ import {
   ArrowUpDown,
   ArrowDown,
   ArrowUp,
+  FileSpreadsheet,
 } from "lucide-react";
 import type {
   PrecatorioPendenteResult,
@@ -156,6 +158,67 @@ function exportProcessosJSON(processos: EstoqueProcesso[], ano: number, result: 
   };
   const date = new Date().toISOString().slice(0, 10);
   downloadBlob(JSON.stringify(exportData, null, 2), `precatorios_pendentes_${ano}_${date}.json`, "application/json;charset=utf-8");
+}
+
+function exportProcessosXLSX(processos: EstoqueProcesso[], ano: number) {
+  const fmtCnj = (n: string) => (!n || n.length < 20) ? n : `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
+
+  const data = processos.map((p) => ({
+    "Numero CNJ": p.numero_cnj,
+    "Numero Formatado": fmtCnj(p.numero_cnj),
+    "Tribunal": p.tribunal_alias.toUpperCase(),
+    "Classe Codigo": p.classe_codigo,
+    "Classe Nome": p.classe_nome,
+    "Situacao": p.situacao,
+    "Valor Causa": p.valor_causa,
+    "Data Ajuizamento": p.data_ajuizamento || "",
+    "Data Ultima Atualizacao": p.data_ultima_atualizacao || "",
+    "Orgao Julgador": p.orgao_julgador?.nome || "",
+    "Assuntos": p.assuntos.map((a) => a.nome).join(", "),
+    "Total Movimentos": p.total_movimentos,
+    "Ultima Movimentacao": p.ultima_movimentacao?.nome || "",
+    "Data Ultima Mov.": p.ultima_movimentacao?.data || "",
+    "Pagamento Pendente": p.pagamento_pendente ? "Sim" : "Nao",
+    "Tem Baixa": p.tem_baixa ? "Sim" : "Nao",
+    "Tem Pagamento": p.tem_pagamento ? "Sim" : "Nao",
+    "URL Consulta": p.url_consulta || "",
+  }));
+
+  const ws = XLSX.utils.json_to_sheet(data);
+
+  const colWidths = [
+    { wch: 22 }, { wch: 28 }, { wch: 8 }, { wch: 14 }, { wch: 30 },
+    { wch: 18 }, { wch: 14 }, { wch: 18 }, { wch: 22 },
+    { wch: 40 }, { wch: 40 }, { wch: 16 }, { wch: 30 },
+    { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 14 }, { wch: 60 },
+  ];
+  ws["!cols"] = colWidths;
+
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Pendentes");
+
+  const summaryData = [
+    { "Info": "Exportado em", "Valor": new Date().toISOString() },
+    { "Info": "Ano Exercicio", "Valor": String(ano) },
+    { "Info": "Total Pendentes", "Valor": String(processos.length) },
+    { "Info": "Precatorios", "Valor": String(processos.filter((p) => p.classe_codigo === 1265).length) },
+    { "Info": "RPVs", "Valor": String(processos.filter((p) => p.classe_codigo === 1266).length) },
+  ];
+  const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+  wsSummary["!cols"] = [{ wch: 20 }, { wch: 30 }];
+  XLSX.utils.book_append_sheet(wb, wsSummary, "Resumo");
+
+  const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+  const blob = new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  const date = new Date().toISOString().slice(0, 10);
+  a.download = `precatorios_pendentes_${ano}_${date}.xlsx`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }
 
 function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProcesso; expanded: boolean; onToggle: () => void }) {
@@ -632,6 +695,17 @@ export default function PrecatoriosPendentes() {
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Button
+                      variant="default"
+                      size="sm"
+                      className="h-7 text-[11px] bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => exportProcessosXLSX(filteredProcessos, parseInt(selectedYear))}
+                      disabled={filteredProcessos.length === 0}
+                      data-testid="button-export-xlsx"
+                    >
+                      <FileSpreadsheet className="w-3 h-3 mr-1" />
+                      Planilha (Google Sheets)
+                    </Button>
+                    <Button
                       variant="outline"
                       size="sm"
                       className="h-7 text-[11px]"
@@ -640,7 +714,7 @@ export default function PrecatoriosPendentes() {
                       data-testid="button-export-csv"
                     >
                       <Download className="w-3 h-3 mr-1" />
-                      Baixar CSV
+                      CSV
                     </Button>
                     <Button
                       variant="outline"
@@ -651,7 +725,7 @@ export default function PrecatoriosPendentes() {
                       data-testid="button-export-json"
                     >
                       <Download className="w-3 h-3 mr-1" />
-                      Baixar JSON
+                      JSON
                     </Button>
                     <Separator orientation="vertical" className="h-5" />
                     <Tooltip>
