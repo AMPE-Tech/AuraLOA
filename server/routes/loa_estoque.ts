@@ -294,6 +294,7 @@ router.post("/api/loa/uniao/precatorios-pendentes", async (req: Request, res: Re
       hashes: { output_sha256: "PLACEHOLDER" },
       evidence_pack_path: evidencePack.getBasePath(),
       ultima_atualizacao_iso: new Date().toISOString(),
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
     };
 
     const preHash = JSON.stringify(responseObj, null, 2);
@@ -357,6 +358,7 @@ router.post("/api/loa/uniao/precatorios-pendentes/csv", async (req: Request, res
       "Classe Nome",
       "Situacao",
       "Valor Causa",
+      "Fonte Valor",
       "Data Ajuizamento",
       "Data Ultima Atualizacao",
       "Orgao Julgador",
@@ -367,7 +369,8 @@ router.post("/api/loa/uniao/precatorios-pendentes/csv", async (req: Request, res
       "Pagamento Pendente",
       "Tem Baixa",
       "Tem Pagamento",
-      "URL Consulta",
+      "URL Consulta PJe",
+      "URL Consulta eProc",
     ];
 
     const formatCnj = (n: string) => {
@@ -390,6 +393,7 @@ router.post("/api/loa/uniao/precatorios-pendentes/csv", async (req: Request, res
       escCsv(p.classe_nome),
       escCsv(p.situacao),
       p.valor_causa !== null ? String(p.valor_causa) : "",
+      p.valor_fonte || "",
       p.data_ajuizamento || "",
       p.data_ultima_atualizacao || "",
       escCsv(p.orgao_julgador?.nome || ""),
@@ -401,6 +405,7 @@ router.post("/api/loa/uniao/precatorios-pendentes/csv", async (req: Request, res
       p.tem_baixa ? "Sim" : "Nao",
       p.tem_pagamento ? "Sim" : "Nao",
       p.url_consulta || "",
+      p.url_consulta_eproc || "",
     ].join(sep));
 
     const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");

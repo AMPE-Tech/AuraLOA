@@ -1,0 +1,98 @@
+Sim — isso é **normal no PJe**: a “consulta pública” te entrega muitos metadados (classe, órgão, última mov., assunto etc.), mas o **valor** quase sempre **não fica exposto no cabeçalho**. Ele costuma estar em **um documento** (PDF) ou em **listagens oficiais** (planilhas/PDFs de proposta/LOA/pagamento) — e aí sua extração precisa “mudar de alvo”.
+
+Abaixo vai o caminho mais eficiente (e mais auditável) para **TRF6**.
+
+---
+
+## 1) Onde o valor costuma estar (TRF6)
+
+### A) **No documento do requisitório** (melhor fonte por processo)
+
+Procure por anexos/tipos como:
+
+* **Ofício Requisitório / Requisição de Pagamento**
+* **Demonstrativo / Memória de Cálculo**
+* **Planilha de Atualização / Cálculos**
+* **Decisão de expedição** (às vezes traz o total)
+
+Esse é o melhor caminho porque o valor vem **no PDF “oficial do caso”**.
+
+### B) **Na consulta “correta” do tribunal para requisições (PJe/eproc)**
+
+O próprio TRF6 orienta que **requisições transmitidas via PJe** devem ser consultadas no **link do TRF1 (processual.trf1.jus.br)**; e as transmitidas via **eproc** no **eproc2g.trf6.jus.br**. ([Portal TRF6][1])
+Ou seja: muitas vezes você está vendo “o processo/andamento”, mas o “registro de requisição” (onde aparece valor ou link do requisitório) está **na consulta indicada pelo TRF6**.
+
+### C) **Em listagens oficiais/publicadas (batch fallback)**
+
+O TRF6 publica:
+
+* **Painéis de Precatórios e RPVs** (fontes consolidadas). ([Portal TRF6][2])
+* **Relações de precatórios pagos / por proposta** (normalmente com valores). ([Portal TRF6][3])
+* PDFs oficiais de orçamento/proposta com coluna **VALOR (R$)** (ex.: “precatórios … orçamento 2025”). ([Portal TRF6][4])
+
+Essas fontes são ótimas como **fallback** quando o documento do requisitório não está acessível na consulta pública.
+
+---
+
+## 2) Diário Oficial ajuda?
+
+Ajuda **pontualmente**, mas eu não usaria como fonte primária para “valor do precatório” por três razões:
+
+1. nem sempre publica **o valor individual completo** do requisitório;
+2. pode publicar valores **parciais** (atualizações, complementares, lotes, preferências) e confundir o “total”;
+3. é pior para automação e para prova (muita variação de formato).
+
+Diário Oficial eu deixaria como **Camada 2/3 de evidência**, não como “fonte do número”.
+
+---
+
+## 3) O que eu recomendo como solução prática (ordem de ataque)
+
+### Passo 1 — **Trocar o ponto de consulta**
+
+Para casos PJe, testar consulta no **TRF1 processual** conforme orientação oficial do TRF6. ([Portal TRF6][1])
+Objetivo: achar o “objeto requisição” e/ou o link do documento (requisição/ofício).
+
+### Passo 2 — **Extrair valor do PDF do requisitório**
+
+Uma vez que vocês consigam baixar o PDF (via “ConsultaDocumento/listView.seam” ou link equivalente), a extração de valor fica robusta com:
+
+* parser de texto PDF + regex para chaves:
+
+  * “**valor requisitado**”, “**valor total**”, “**valor atualizado**”, “**principal**”, “**juros**”, “**honorários**”, “**total geral**”
+* normalização BR (`1.234.567,89` → `1234567.89`)
+* regra de decisão (ex.: se existirem vários totais, priorizar “TOTAL REQUISITADO / TOTAL GERAL / VALOR ATUALIZADO”)
+
+### Passo 3 — **Fallback batch por painéis/listas**
+
+Se o documento não estiver acessível (captcha/indisponibilidade), cruzar o número/identificador com:
+
+* Painéis/relatórios do TRF6 ([Portal TRF6][2])
+* Relações oficiais (pagos/propostas) ([Portal TRF6][3])
+* PDFs de orçamento/proposta com “VALOR (R$)” ([Portal TRF6][4])
+
+---
+
+## 4) Aplicando ao seu exemplo (TRF6 / SUPRE)
+
+O seu print mostra **movimentações**, mas **não mostra anexos** do requisitório. Então a sua dificuldade é esperada: vocês estão “na tela de andamentos”, não na “peça de requisição/planilha”.
+
+O destrave costuma ser:
+
+* achar o **documento** “Ofício Requisitório / Requisição de Pagamento” na área de documentos; **ou**
+* consultar pela rota indicada pelo TRF6 (TRF1 processual para PJe). ([Portal TRF6][1])
+
+---
+
+Se você disser **qual destes cenários vocês têm hoje**, eu fecho a estratégia sem suposições:
+
+1. vocês conseguem listar/baixar **documentos** (PDF) desse processo na consulta pública?
+2. ou só conseguem ver **andamentos** como no seu print?
+
+Se for (1), a solução é **extrair do PDF**.
+Se for (2), a solução é **migrar a consulta para TRF1/eproc conforme TRF6** e/ou usar **painéis/listas** como fallback.
+
+[1]: https://portal.trf6.jus.br/rpv-e-precatorios/consulta-precatorio-e-rpv/ "Consulta precatório e RPV - JUSTIÇA FEDERAL"
+[2]: https://portal.trf6.jus.br/estatisticas/paineis-precatorios-e-rpvs/ "Painéis Precatórios e RPVs - JUSTIÇA FEDERAL"
+[3]: https://portal.trf6.jus.br/rpv-e-precatorios/relacao-de-precatorios-pagos-por-banco-depositario/?utm_source=chatgpt.com "Relação de Precatórios Pagos por Banco Depositário - TRF6"
+[4]: https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf?utm_source=chatgpt.com "precatórios federias trf6 orçamento 2025.htm"

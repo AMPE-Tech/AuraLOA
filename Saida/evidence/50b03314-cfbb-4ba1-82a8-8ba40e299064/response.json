@@ -1,0 +1,812 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "50b03314-cfbb-4ba1-82a8-8ba40e299064",
+  "ano_exercicio": 2025,
+  "generated_at_iso": "2026-02-23T04:49:57.286Z",
+  "status_geral": "OK",
+  "total_pendentes": 11,
+  "total_precatorios_pendentes": 8,
+  "total_rpvs_pendentes": 3,
+  "por_tribunal": [
+    {
+      "tribunal": "Tribunal Regional Federal da 1ª Região",
+      "tribunal_alias": "trf1",
+      "total_processos": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "PARCIAL",
+      "observacoes": "0 pendentes de 0 total"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 2ª Região",
+      "tribunal_alias": "trf2",
+      "total_processos": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "PARCIAL",
+      "observacoes": "0 pendentes de 0 total"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "total_processos": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "OK",
+      "observacoes": "0 pendentes de 100 total"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "total_processos": 5,
+      "precatorios": 2,
+      "rpvs": 3,
+      "provider": "datajud",
+      "status": "OK",
+      "observacoes": "5 pendentes de 100 total"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 5ª Região",
+      "tribunal_alias": "trf5",
+      "total_processos": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "PARCIAL",
+      "observacoes": "0 pendentes de 0 total"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "total_processos": 6,
+      "precatorios": 6,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "OK",
+      "observacoes": "6 pendentes de 100 total"
+    }
+  ],
+  "processos": [
+    {
+      "numero_cnj": "50250516520254049388",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "20250822142248",
+      "data_ultima_atualizacao": "2025-09-15T13:01:11.129Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 3,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-23T01:05:32.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-08-23T01:05:31.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-08-23T01:05:30.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-08-23T01:05:32.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+      "url_consulta_eproc": null,
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "50994404420254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "pagamento_parcial",
+      "valor_causa": null,
+      "data_ajuizamento": "20250818083603",
+      "data_ultima_atualizacao": "2025-09-15T08:00:43.315Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-19T01:07:40.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 85,
+          "nome": "Petição",
+          "data": "2025-08-28T20:54:50.000Z"
+        },
+        {
+          "codigo": 60,
+          "nome": "Expedição de documento",
+          "data": "2025-08-25T16:38:11.000Z"
+        },
+        {
+          "codigo": 581,
+          "nome": "Documento",
+          "data": "2025-08-25T09:14:35.000Z"
+        },
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-08-19T01:07:39.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-08-19T01:07:37.000Z"
+        },
+        {
+          "codigo": 12266,
+          "nome": "Confirmada",
+          "data": "2025-08-28T20:54:50.000Z"
+        },
+        {
+          "codigo": 12265,
+          "nome": "Expedida/certificada",
+          "data": "2025-08-25T16:38:12.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-08-19T01:07:40.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": true,
+      "url_consulta": "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+      "url_consulta_eproc": null,
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "51915958220254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "20250731191841",
+      "data_ultima_atualizacao": "2025-09-14T06:41:53.178Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 5,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T07:41:21.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 85,
+          "nome": "Petição",
+          "data": "2025-08-27T15:22:34.000Z"
+        },
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-08-01T07:41:19.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-08-01T07:41:18.000Z"
+        },
+        {
+          "codigo": 12176,
+          "nome": "Paga",
+          "data": "2025-08-25T14:56:41.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-08-01T07:41:21.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+      "url_consulta_eproc": null,
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "51846022320254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5917,
+          "nome": "IRPF/Imposto de Renda de Pessoa Física"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "20250730202020",
+      "data_ultima_atualizacao": "2025-09-16T03:30:21.752Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 5,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-07-31T04:55:07.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 85,
+          "nome": "Petição",
+          "data": "2025-08-27T14:00:36.000Z"
+        },
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-07-31T04:55:04.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-07-31T04:55:00.000Z"
+        },
+        {
+          "codigo": 12176,
+          "nome": "Paga",
+          "data": "2025-08-25T14:34:27.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-07-31T04:55:07.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+      "url_consulta_eproc": null,
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "50231108020254049388",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "pagamento_parcial",
+      "valor_causa": null,
+      "data_ajuizamento": "20250729162817",
+      "data_ultima_atualizacao": "2025-09-14T19:10:44.693Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 18,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-07-30T01:26:54.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 1051,
+          "nome": "Decurso de Prazo",
+          "data": "2025-08-26T01:02:52.000Z"
+        },
+        {
+          "codigo": 581,
+          "nome": "Documento",
+          "data": "2025-08-13T14:22:58.000Z"
+        },
+        {
+          "codigo": 92,
+          "nome": "Publicação",
+          "data": "2025-08-13T02:33:03.000Z"
+        },
+        {
+          "codigo": 1061,
+          "nome": "Disponibilização no Diário da Justiça Eletrônico",
+          "data": "2025-08-12T02:01:55.000Z"
+        },
+        {
+          "codigo": 85,
+          "nome": "Petição",
+          "data": "2025-08-11T09:25:29.000Z"
+        },
+        {
+          "codigo": 85,
+          "nome": "Petição",
+          "data": "2025-08-11T09:25:12.000Z"
+        },
+        {
+          "codigo": 60,
+          "nome": "Expedição de documento",
+          "data": "2025-08-08T18:04:25.000Z"
+        },
+        {
+          "codigo": 581,
+          "nome": "Documento",
+          "data": "2025-08-08T14:38:32.000Z"
+        },
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-07-30T01:26:53.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-07-30T01:26:52.000Z"
+        },
+        {
+          "codigo": 12266,
+          "nome": "Confirmada",
+          "data": "2025-08-18T23:59:59.000Z"
+        },
+        {
+          "codigo": 12266,
+          "nome": "Confirmada",
+          "data": "2025-08-11T09:25:29.000Z"
+        },
+        {
+          "codigo": 12266,
+          "nome": "Confirmada",
+          "data": "2025-08-11T09:25:28.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-08-08T18:30:14.000Z"
+        },
+        {
+          "codigo": 12265,
+          "nome": "Expedida/certificada",
+          "data": "2025-08-08T18:04:26.000Z"
+        },
+        {
+          "codigo": 12265,
+          "nome": "Expedida/certificada",
+          "data": "2025-08-08T18:04:26.000Z"
+        },
+        {
+          "codigo": 12265,
+          "nome": "Expedida/certificada",
+          "data": "2025-08-08T18:04:26.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-07-30T01:26:54.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": true,
+      "url_consulta": "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+      "url_consulta_eproc": null,
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "60027014620244069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6104,
+          "nome": "Pensão por Morte (Art. 74/9)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "9025-09-26T21:18:28.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:00:22.165Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-09-27T01:06:34.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2024-09-27T01:06:34.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2024-09-27T01:06:34.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-04-11T15:05:54.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2024-09-27T01:06:34.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://processual.trf1.jus.br/consultaProcessual/processo.php?proc=60027014620244069388&secao=TRF6",
+      "url_consulta_eproc": "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "60026970920244069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6104,
+          "nome": "Pensão por Morte (Art. 74/9)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "9025-09-26T21:18:28.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:00:22.165Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-09-27T01:06:31.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2024-09-27T01:06:31.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2024-09-27T01:06:31.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-04-11T15:05:53.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2024-09-27T01:06:31.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://processual.trf1.jus.br/consultaProcessual/processo.php?proc=60026970920244069388&secao=TRF6",
+      "url_consulta_eproc": "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "60018007820244069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6095,
+          "nome": "Aposentadoria por Incapacidade Permanente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "5702-08-23T13:20:40.000Z",
+      "data_ultima_atualizacao": "2025-06-04T14:50:06.986Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-08-24T06:35:54.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2024-08-24T06:35:54.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2024-08-24T06:35:53.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-04-11T15:02:48.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2024-08-24T06:35:54.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://processual.trf1.jus.br/consultaProcessual/processo.php?proc=60018007820244069388&secao=TRF6",
+      "url_consulta_eproc": "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "60024551620254069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6100,
+          "nome": "Aposentadoria Especial (Art. 57/8)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "3027-09-24T13:33:10.000Z",
+      "data_ultima_atualizacao": "2025-06-07T05:20:17.115Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-03-25T01:06:14.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-03-25T01:06:14.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-03-25T01:06:14.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-04-11T15:25:05.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-03-25T01:06:14.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://processual.trf1.jus.br/consultaProcessual/processo.php?proc=60024551620254069388&secao=TRF6",
+      "url_consulta_eproc": "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "60044783220254069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6104,
+          "nome": "Pensão por Morte (Art. 74/9)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "3025-05-06T16:25:00.000Z",
+      "data_ultima_atualizacao": "2025-06-07T10:40:03.724Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-04-02T01:11:54.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-04-02T01:11:54.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-04-02T01:11:54.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-04-11T15:32:18.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-04-02T01:11:54.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://processual.trf1.jus.br/consultaProcessual/processo.php?proc=60044783220254069388&secao=TRF6",
+      "url_consulta_eproc": "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+      "valor_fonte": null
+    },
+    {
+      "numero_cnj": "60094296920254069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 5922,
+          "nome": "Retido na fonte"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "valor_causa": null,
+      "data_ajuizamento": "20251025012643",
+      "data_ultima_atualizacao": "2025-11-12T22:20:25.704Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 3,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-10-25T01:26:44.000Z"
+      },
+      "movimentos": [
+        {
+          "codigo": 123,
+          "nome": "Remessa",
+          "data": "2025-10-25T01:26:44.000Z"
+        },
+        {
+          "codigo": 26,
+          "nome": "Distribuição",
+          "data": "2025-10-25T01:26:44.000Z"
+        },
+        {
+          "codigo": 11383,
+          "nome": "Ato ordinatório",
+          "data": "2025-10-25T01:26:44.000Z"
+        }
+      ],
+      "pagamento_pendente": true,
+      "tem_baixa": false,
+      "tem_pagamento": false,
+      "url_consulta": "https://processual.trf1.jus.br/consultaProcessual/processo.php?proc=60094296920254069388&secao=TRF6",
+      "url_consulta_eproc": "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+      "valor_fonte": null
+    }
+  ],
+  "sources": [
+    {
+      "name": "CNJ DataJud API Publica",
+      "url": "https://api-publica.datajud.cnj.jus.br",
+      "type": "API"
+    },
+    {
+      "name": "Relacao Precatorios TRF6 (PDF Oficial)",
+      "url": "https://portal.trf6.jus.br/rpv-e-precatorios/consulta-precatorio-e-rpv/",
+      "type": "WEB"
+    }
+  ],
+  "evidencias_count": 6,
+  "hashes": {
+    "output_sha256": "c3b463d4552fe96fca4957953ae19a104dc030ba56339e9c6192870e9522b54f"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/50b03314-cfbb-4ba1-82a8-8ba40e299064",
+  "ultima_atualizacao_iso": "2026-02-23T04:49:57.286Z",
+  "pdf_orcamento_summaries": [
+    {
+      "tribunal": "TRF6",
+      "ano_orcamento": 2025,
+      "total_precatorios_pdf": 9585,
+      "valor_total_orcamento": 1697717219.4800043,
+      "valor_alimentar": 1697717219.4800043,
+      "valor_comum": 0,
+      "total_idoso": 5628,
+      "total_deficiencia": 329,
+      "fonte_url": "https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf",
+      "sha256": "07365776301a3da833d09800281a1f7e2c491ebbe95d2d7fdcda627306b2c78e"
+    }
+  ]
+}

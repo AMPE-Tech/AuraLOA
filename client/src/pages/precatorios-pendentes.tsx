@@ -41,6 +41,7 @@ import type {
   EstoqueSummaryByTribunal,
   MovimentoProcesso,
   SourceInfo,
+  PDFOrcamentoSummary,
 } from "@shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -122,9 +123,9 @@ function exportProcessosCSV(processos: EstoqueProcesso[], ano: number) {
   const sep = ";";
   const headers = [
     "Numero CNJ", "Numero Formatado", "Tribunal", "Classe Codigo", "Classe Nome",
-    "Situacao", "Valor Causa", "Data Ajuizamento", "Data Ultima Atualizacao",
+    "Situacao", "Valor Causa", "Fonte Valor", "Data Ajuizamento", "Data Ultima Atualizacao",
     "Orgao Julgador", "Assuntos", "Total Movimentos", "Ultima Movimentacao",
-    "Data Ultima Movimentacao", "Pagamento Pendente", "Tem Baixa", "Tem Pagamento", "URL Consulta",
+    "Data Ultima Movimentacao", "Pagamento Pendente", "Tem Baixa", "Tem Pagamento", "URL Consulta PJe", "URL Consulta eProc",
   ];
   const esc = (v: string) => (v.includes(sep) || v.includes('"') || v.includes("\n")) ? '"' + v.replace(/"/g, '""') + '"' : v;
   const fmtCnj = (n: string) => (!n || n.length < 20) ? n : `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
@@ -132,12 +133,13 @@ function exportProcessosCSV(processos: EstoqueProcesso[], ano: number) {
   const rows = processos.map((p) => [
     esc(p.numero_cnj), esc(fmtCnj(p.numero_cnj)), esc(p.tribunal_alias.toUpperCase()),
     String(p.classe_codigo), esc(p.classe_nome), esc(p.situacao),
-    p.valor_causa !== null ? String(p.valor_causa) : "",
+    p.valor_causa !== null ? String(p.valor_causa) : "", p.valor_fonte || "",
     p.data_ajuizamento || "", p.data_ultima_atualizacao || "",
     esc(p.orgao_julgador?.nome || ""), esc(p.assuntos.map((a) => a.nome).join(", ")),
     String(p.total_movimentos), esc(p.ultima_movimentacao?.nome || ""),
     p.ultima_movimentacao?.data || "", p.pagamento_pendente ? "Sim" : "Nao",
-    p.tem_baixa ? "Sim" : "Nao", p.tem_pagamento ? "Sim" : "Nao", p.url_consulta || "",
+    p.tem_baixa ? "Sim" : "Nao", p.tem_pagamento ? "Sim" : "Nao",
+    p.url_consulta || "", p.url_consulta_eproc || "",
   ].join(sep));
 
   const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");
@@ -171,6 +173,7 @@ function exportProcessosXLSX(processos: EstoqueProcesso[], ano: number) {
     "Classe Nome": p.classe_nome,
     "Situacao": p.situacao,
     "Valor Causa": p.valor_causa,
+    "Fonte Valor": p.valor_fonte || "",
     "Data Ajuizamento": p.data_ajuizamento || "",
     "Data Ultima Atualizacao": p.data_ultima_atualizacao || "",
     "Orgao Julgador": p.orgao_julgador?.nome || "",
@@ -181,16 +184,17 @@ function exportProcessosXLSX(processos: EstoqueProcesso[], ano: number) {
     "Pagamento Pendente": p.pagamento_pendente ? "Sim" : "Nao",
     "Tem Baixa": p.tem_baixa ? "Sim" : "Nao",
     "Tem Pagamento": p.tem_pagamento ? "Sim" : "Nao",
-    "URL Consulta": p.url_consulta || "",
+    "URL Consulta PJe": p.url_consulta || "",
+    "URL Consulta eProc": p.url_consulta_eproc || "",
   }));
 
   const ws = XLSX.utils.json_to_sheet(data);
 
   const colWidths = [
     { wch: 22 }, { wch: 28 }, { wch: 8 }, { wch: 14 }, { wch: 30 },
-    { wch: 18 }, { wch: 14 }, { wch: 18 }, { wch: 22 },
+    { wch: 18 }, { wch: 14 }, { wch: 14 }, { wch: 18 }, { wch: 22 },
     { wch: 40 }, { wch: 40 }, { wch: 16 }, { wch: 30 },
-    { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 14 }, { wch: 60 },
+    { wch: 18 }, { wch: 18 }, { wch: 10 }, { wch: 14 }, { wch: 60 }, { wch: 60 },
   ];
   ws["!cols"] = colWidths;
 
@@ -239,9 +243,19 @@ function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProce
             <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
               <span className="font-mono">{processo.tribunal_alias.toUpperCase()}</span>
               {processo.valor_causa !== null && (
-                <span className="font-semibold text-amber-700 dark:text-amber-400" data-testid={`text-valor-${processo.numero_cnj}`}>
-                  {formatBRL(processo.valor_causa)}
-                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span className="font-semibold text-amber-700 dark:text-amber-400 cursor-help" data-testid={`text-valor-${processo.numero_cnj}`}>
+                      {formatBRL(processo.valor_causa)}
+                      {processo.valor_fonte && (
+                        <span className="text-[9px] ml-1 opacity-70">({processo.valor_fonte === "pdf_oficial" ? "PDF" : processo.valor_fonte})</span>
+                      )}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="text-xs">Fonte: {processo.valor_fonte === "pdf_oficial" ? "Relacao oficial do tribunal (PDF)" : processo.valor_fonte || "DataJud"}</p>
+                  </TooltipContent>
+                </Tooltip>
               )}
               <span>Ajuiz.: {formatDate(processo.data_ajuizamento)}</span>
               <span>Atualiz.: {formatDate(processo.data_ultima_atualizacao)}</span>
@@ -269,12 +283,36 @@ function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProce
                   >
                     <Button variant="outline" size="sm">
                       <ExternalLink className="w-3 h-3 mr-1" />
-                      Consulta
+                      {processo.tribunal_alias === "trf6" ? "PJe (TRF1)" : "Consulta"}
                     </Button>
                   </a>
                 </TooltipTrigger>
-                <TooltipContent>
-                  <p>Abrir consulta publica no {processo.tribunal_alias.toUpperCase()} - acesso ao oficio requisitorio</p>
+                <TooltipContent className="max-w-[280px]">
+                  <p className="text-xs">
+                    {processo.tribunal_alias === "trf6"
+                      ? "Consulta PJe via TRF1 processual (conforme orientacao oficial TRF6) - acesso ao oficio requisitorio"
+                      : `Abrir consulta publica no ${processo.tribunal_alias.toUpperCase()} - acesso ao oficio requisitorio`}
+                  </p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            {processo.url_consulta_eproc && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={processo.url_consulta_eproc}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`link-eproc-${processo.numero_cnj}`}
+                  >
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      eProc
+                    </Button>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent className="max-w-[280px]">
+                  <p className="text-xs">Consulta eProc {processo.tribunal_alias.toUpperCase()} - requisicoes transmitidas via eproc</p>
                 </TooltipContent>
               </Tooltip>
             )}
@@ -560,6 +598,57 @@ export default function PrecatoriosPendentes() {
               </Card>
             </div>
 
+            {result.pdf_orcamento_summaries && result.pdf_orcamento_summaries.length > 0 && (
+              <Card className="border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    <span className="text-sm font-medium">Orcamento Oficial de Precatorios (PDF Tribunal)</span>
+                    <Badge variant="outline" className="text-[10px]">Relacao Oficial</Badge>
+                  </div>
+                  {result.pdf_orcamento_summaries.map((pdf: PDFOrcamentoSummary, idx: number) => (
+                    <div key={idx} className="space-y-3">
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                        <div className="p-3 bg-white dark:bg-background rounded-md border">
+                          <p className="text-[10px] text-muted-foreground uppercase">Valor Total Orcamento</p>
+                          <p className="text-lg font-bold text-amber-700 dark:text-amber-400" data-testid="kpi-valor-orcamento">
+                            {formatBRL(pdf.valor_total_orcamento)}
+                          </p>
+                          <p className="text-[10px] text-muted-foreground">{pdf.tribunal} - {pdf.ano_orcamento}</p>
+                        </div>
+                        <div className="p-3 bg-white dark:bg-background rounded-md border">
+                          <p className="text-[10px] text-muted-foreground uppercase">Precatorios no PDF</p>
+                          <p className="text-lg font-bold" data-testid="kpi-total-pdf">{pdf.total_precatorios_pdf.toLocaleString("pt-BR")}</p>
+                          <p className="text-[10px] text-muted-foreground">inscritos no orcamento</p>
+                        </div>
+                        <div className="p-3 bg-white dark:bg-background rounded-md border">
+                          <p className="text-[10px] text-muted-foreground uppercase">Alimentares</p>
+                          <p className="text-lg font-bold text-blue-600 dark:text-blue-400">{formatBRL(pdf.valor_alimentar)}</p>
+                          <p className="text-[10px] text-muted-foreground">
+                            {pdf.total_idoso > 0 && `${pdf.total_idoso} idosos`}
+                            {pdf.total_idoso > 0 && pdf.total_deficiencia > 0 && " / "}
+                            {pdf.total_deficiencia > 0 && `${pdf.total_deficiencia} PcD`}
+                          </p>
+                        </div>
+                        <div className="p-3 bg-white dark:bg-background rounded-md border">
+                          <p className="text-[10px] text-muted-foreground uppercase">Comuns</p>
+                          <p className="text-lg font-bold">{formatBRL(pdf.valor_comum)}</p>
+                          <p className="text-[10px] text-muted-foreground">nao preferenciais</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3 text-[10px] text-muted-foreground">
+                        <a href={pdf.fonte_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline" data-testid="link-pdf-fonte">
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          Fonte: {pdf.fonte_url}
+                        </a>
+                        <span className="font-mono">SHA-256: {pdf.sha256.slice(0, 16)}...</span>
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm font-medium mb-3">Resumo por Tribunal</p>
@@ -759,9 +848,11 @@ export default function PrecatoriosPendentes() {
 
                 <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-md text-xs text-blue-700 dark:text-blue-300 mb-4">
                   <Info className="w-3 h-3 mt-0.5 shrink-0" />
-                  <div>
-                    <strong>Acesso ao Oficio Requisitorio:</strong> Clique no botao "Consulta" em cada processo para abrir a consulta publica do tribunal.
-                    No sistema do tribunal, localize o processo pelo numero CNJ e acesse os documentos/autos para baixar o oficio requisitorio.
+                  <div className="space-y-1">
+                    <p><strong>Acesso ao Oficio Requisitorio:</strong> Clique no botao "Consulta" (PJe ou eProc) em cada processo para abrir a consulta publica do tribunal.
+                    No sistema do tribunal, localize o documento "Oficio Requisitorio" ou "Requisicao de Pagamento" nos autos.</p>
+                    <p><strong>TRF6:</strong> Conforme orientacao oficial, requisicoes PJe devem ser consultadas via TRF1 processual; requisicoes eProc via eproc2g.trf6.jus.br.</p>
+                    <p><strong>Valores:</strong> Obtidos da relacao oficial de precatorios publicada pelo tribunal (PDF). Quando marcado "(PDF)", o valor foi extraido do documento oficial de inclusao no orcamento.</p>
                   </div>
                 </div>
 

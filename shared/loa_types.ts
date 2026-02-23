@@ -203,6 +203,21 @@ export interface EstoqueProcesso {
   tem_baixa: boolean;
   tem_pagamento: boolean;
   url_consulta: string | null;
+  url_consulta_eproc: string | null;
+  valor_fonte: string | null;
+}
+
+export interface PDFOrcamentoSummary {
+  tribunal: string;
+  ano_orcamento: number;
+  total_precatorios_pdf: number;
+  valor_total_orcamento: number;
+  valor_alimentar: number;
+  valor_comum: number;
+  total_idoso: number;
+  total_deficiencia: number;
+  fonte_url: string;
+  sha256: string;
 }
 
 export interface PrecatorioPendenteResult {
@@ -221,6 +236,7 @@ export interface PrecatorioPendenteResult {
   hashes: { output_sha256: string };
   evidence_pack_path: string;
   ultima_atualizacao_iso: string;
+  pdf_orcamento_summaries?: PDFOrcamentoSummary[];
 }
 
 export interface EstoqueSummaryByTribunal {

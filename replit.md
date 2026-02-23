@@ -19,7 +19,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `server/services/a2_execucao_from_zip.ts` - **DPO block**: parses execution (PAGO+LIQUIDADO) from ZIP CSVs via join Pagamento_EmpenhosImpactados + Liquidacao_EmpenhosImpactados + Empenho
 - `server/services/siop_dotacao.ts` - Dotação via SPARQL (orcamento.dados.gov.br + SIOP fallback)
 - `server/services/estoque_datajud.ts` - CNJ DataJud Elasticsearch API provider for court process stock (Camada 3)
-- `server/services/estoque_tribunais.ts` - Estoque orchestrator with provider fallback (datajud → csv → scraping stub)
+- `server/services/estoque_tribunais.ts` - Estoque orchestrator with provider fallback (datajud → csv → scraping stub) and PDF valor enrichment
+- `server/services/valor_precatorio_pdf.ts` - **DPO strategy**: Downloads and parses official tribunal PDFs (relação de precatórios para orçamento) to extract valores. Uses pdfjs-dist for parsing, regex extraction, caching, and SHA-256 evidence tracking
 - `server/services/gap_analysis.ts` - Cross-references Dotação x Execução x Estoque (Camada 4)
 - `server/services/cron_download.ts` - Automatic monthly batch download scheduler (runs day 1 at 03:00)
 - `server/services/evidence_pack.ts` - Evidence pack system (SHA-256 hashes, file saving)
@@ -51,6 +52,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - **Dotação (Orçamento LOA)**: SPARQL endpoints - orcamento.dados.gov.br (public, data up to ~2016) and SIOP SPARQL (blocked by Cloudflare from external environments). Dotação for years >2016 currently unavailable via automated query.
 - **ZIP Downloads**: `https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/despesas/YYYYMM01_Despesas.zip` - Monthly despesas ZIP files with evidence tracking
 - **Estoque (CNJ DataJud)**: Public Elasticsearch API at `https://api-publica.datajud.cnj.jus.br/api_publica_{tribunal}/_search`. Uses class codes 1265 (Precatório) and 1266 (RPV). Federal tribunals: TRF1-TRF6. TRF3/TRF4/TRF6 have data; TRF1/TRF2/TRF5 return empty.
+- **Valores (PDF Oficial Tribunal)**: TRF6 publishes official PDF with precatório values for budget inclusion. URL: `https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf`. Parsed with pdfjs-dist, cached in `./Saida/cache/pdf_valores/`. Contains ~9500 entries with VALOR(R$) and preferência (IDOSO/NÃO/PcD).
+- **Consulta TRF6**: Per official TRF6 guidance, PJe cases should be consulted via TRF1 processual (`processual.trf1.jus.br`) with `secao=TRF6`; eProc cases via `eproc2g.trf6.jus.br`.
 
 ## Precatório Actions Catalog (2025)
 - 0005 - Sentenças Judiciais Transitadas em Julgado (Precatórios)

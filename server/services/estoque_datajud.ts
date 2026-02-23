@@ -88,7 +88,11 @@ const TRIBUNAL_CONSULTA_URLS: Record<string, string> = {
   trf3: "https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam",
   trf4: "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
   trf5: "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
-  trf6: "https://pje1g.trf6.jus.br/pje/ConsultaPublica/listView.seam",
+  trf6: "https://processual.trf1.jus.br/consultaProcessual/processo.php",
+};
+
+const TRIBUNAL_CONSULTA_EPROC: Record<string, string> = {
+  trf6: "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
 };
 
 function buildConsultaUrl(tribunalAlias: string, numeroCnj: string): string | null {
@@ -97,7 +101,14 @@ function buildConsultaUrl(tribunalAlias: string, numeroCnj: string): string | nu
   if (tribunalAlias === "trf1") {
     return `${base}?proc=${numeroCnj}&secao=TRF1`;
   }
+  if (tribunalAlias === "trf6") {
+    return `${base}?proc=${numeroCnj}&secao=TRF6`;
+  }
   return base;
+}
+
+function buildConsultaEprocUrl(tribunalAlias: string): string | null {
+  return TRIBUNAL_CONSULTA_EPROC[tribunalAlias] || null;
 }
 
 function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome: string): EstoqueProcesso {
@@ -153,6 +164,8 @@ function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome
     tem_baixa: temBaixa,
     tem_pagamento: temPagamento,
     url_consulta: buildConsultaUrl(tribunalAlias, numeroCnj),
+    url_consulta_eproc: buildConsultaEprocUrl(tribunalAlias),
+    valor_fonte: typeof src.valorCausa === "number" ? "datajud" : null,
   };
 }
 
