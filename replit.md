@@ -7,7 +7,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 
 ### Frontend (React + Vite)
 - `client/src/pages/loa-dashboard.tsx` - Main dashboard with year selector, results display, KPIs, evidence trail, Estoque CNJ panel, and Gap Analysis panel
-- `client/src/App.tsx` - Routes configuration
+- `client/src/pages/precatorios-pendentes.tsx` - Dedicated page for pending precatórios with tribunal consultation links and ofício requisitório access
+- `client/src/App.tsx` - Routes configuration (/, /pendentes)
 
 ### Backend (Express)
 - `server/routes/loa_uniao_a2.ts` - Main endpoint `POST /api/loa/uniao/a2` and history/catalog endpoints
@@ -42,7 +43,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `POST /api/loa/uniao/a2/cron/start` - Start monthly auto-download
 - `POST /api/loa/uniao/a2/cron/stop` - Stop monthly auto-download
 - `POST /api/loa/uniao/estoque` - Query CNJ DataJud estoque (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
-- `POST /api/loa/uniao/gap-analysis` - Cross Dotação x Execução x Estoque (input: `{ ano_exercicio: number, mes?: number, max_estoque_por_tribunal?: number }`)
+- `POST /api/loa/uniao/gap-analysis` - Cross Dotação x Execução x Estoque (input: `{ ano_exercicio: number, mes?: number }`)
+- `POST /api/loa/uniao/precatorios-pendentes` - Filter pending precatórios only (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
 
 ## Data Sources
 - **Execução (Empenho/Liquidação/Pagamento)**: Portal da Transparência REST API - requires API key (env: PORTAL_TRANSPARENCIA_API_KEY). Uses endpoint `/api-de-dados/despesas/por-funcional-programatica` with `chave-api-dados` header.

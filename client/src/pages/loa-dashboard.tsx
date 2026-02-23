@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Link } from "wouter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1352,9 +1353,17 @@ export default function LOADashboard() {
                 </p>
               </div>
             </div>
-            <Badge variant="outline" className="text-[10px] font-mono">
-              MVP A2 - Dotacao + Execucao + Estoque
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Link href="/pendentes">
+                <Button variant="outline" size="sm" data-testid="link-pendentes">
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  Pendentes
+                </Button>
+              </Link>
+              <Badge variant="outline" className="text-[10px] font-mono">
+                MVP A2 - Dotacao + Execucao + Estoque
+              </Badge>
+            </div>
           </div>
         </div>
       </header>

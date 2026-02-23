@@ -5,11 +5,13 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import LOADashboard from "@/pages/loa-dashboard";
+import PrecatoriosPendentes from "@/pages/precatorios-pendentes";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={LOADashboard} />
+      <Route path="/pendentes" component={PrecatoriosPendentes} />
       <Route component={NotFound} />
     </Switch>
   );

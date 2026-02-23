@@ -10,6 +10,7 @@ import type {
   GapResult,
   CruzamentoAcaoItem,
   SourceInfo,
+  PrecatorioPendenteResult,
 } from "../../shared/loa_types";
 import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
 import { fetchEstoque } from "../services/estoque_tribunais";
@@ -230,6 +231,95 @@ router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) =
     evidencePack.saveLog();
     return res.status(500).json({
       error: "Erro interno na gap analysis",
+      message: error.message,
+      process_id_uuid: processId,
+    });
+  }
+});
+
+router.post("/api/loa/uniao/precatorios-pendentes", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Input invalido",
+        details: parsed.error.issues,
+      });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    evidencePack.log(`start precatorios-pendentes process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 2000,
+      evidencePack,
+    });
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+
+    const precPendentes = pendentes.filter((p) => p.classe_codigo === 1265);
+    const rpvPendentes = pendentes.filter((p) => p.classe_codigo === 1266);
+
+    const porTribunalPendentes = estoqueResult.por_tribunal.map((t) => {
+      const tribPendentes = pendentes.filter((p) => p.tribunal_alias === t.tribunal_alias);
+      return {
+        ...t,
+        total_processos: tribPendentes.length,
+        precatorios: tribPendentes.filter((p) => p.classe_codigo === 1265).length,
+        rpvs: tribPendentes.filter((p) => p.classe_codigo === 1266).length,
+        observacoes: `${tribPendentes.length} pendentes de ${t.total_processos} total`,
+      };
+    });
+
+    const responseObj: PrecatorioPendenteResult = {
+      schema_version: SCHEMA_VERSION,
+      process_id_uuid: processId,
+      ano_exercicio,
+      generated_at_iso: new Date().toISOString(),
+      status_geral: pendentes.length > 0 ? "OK" : "NAO_LOCALIZADO",
+      total_pendentes: pendentes.length,
+      total_precatorios_pendentes: precPendentes.length,
+      total_rpvs_pendentes: rpvPendentes.length,
+      por_tribunal: porTribunalPendentes,
+      processos: pendentes,
+      sources: estoqueResult.sources,
+      evidencias_count: estoqueResult.evidences.length,
+      hashes: { output_sha256: "PLACEHOLDER" },
+      evidence_pack_path: evidencePack.getBasePath(),
+      ultima_atualizacao_iso: new Date().toISOString(),
+    };
+
+    const preHash = JSON.stringify(responseObj, null, 2);
+    responseObj.hashes.output_sha256 = computeSHA256(preHash);
+
+    evidencePack.saveResponse(responseObj);
+
+    const allHashes: Record<string, string> = {
+      output: responseObj.hashes.output_sha256,
+    };
+    for (const ev of estoqueResult.evidences) {
+      if (ev.raw_payload_sha256 && ev.raw_payload_path) {
+        allHashes[ev.raw_payload_path] = ev.raw_payload_sha256;
+      }
+    }
+    evidencePack.saveHashes(allHashes);
+
+    evidencePack.log(`end precatorios-pendentes total_pendentes=${pendentes.length} prec=${precPendentes.length} rpv=${rpvPendentes.length}`);
+    evidencePack.saveLog();
+
+    return res.json(responseObj);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({
+      error: "Erro interno ao buscar precatorios pendentes",
       message: error.message,
       process_id_uuid: processId,
     });

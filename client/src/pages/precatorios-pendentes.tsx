@@ -1,0 +1,567 @@
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
+import { Separator } from "@/components/ui/separator";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+import {
+  Search,
+  AlertTriangle,
+  XCircle,
+  CheckCircle2,
+  Hash,
+  ExternalLink,
+  Loader2,
+  FileText,
+  Scale,
+  Shield,
+  Clock,
+  ArrowLeft,
+  RefreshCw,
+  Banknote,
+  Filter,
+  Download,
+  Eye,
+  Info,
+} from "lucide-react";
+import type {
+  PrecatorioPendenteResult,
+  EstoqueProcesso,
+  EstoqueSummaryByTribunal,
+  MovimentoProcesso,
+  SourceInfo,
+} from "@shared/loa_types";
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === "OK") {
+    return (
+      <Badge variant="default" className="bg-emerald-600 dark:bg-emerald-500 text-white">
+        <CheckCircle2 className="w-3 h-3 mr-1" />
+        OK
+      </Badge>
+    );
+  }
+  if (status === "PARCIAL") {
+    return (
+      <Badge variant="default" className="bg-amber-500 dark:bg-amber-400 text-white">
+        <AlertTriangle className="w-3 h-3 mr-1" />
+        PARCIAL
+      </Badge>
+    );
+  }
+  return (
+    <Badge variant="destructive">
+      <XCircle className="w-3 h-3 mr-1" />
+      NAO LOCALIZADO
+    </Badge>
+  );
+}
+
+function SituacaoBadge({ situacao }: { situacao: string }) {
+  if (situacao === "baixado") {
+    return <Badge variant="secondary" className="text-[10px]">Baixado</Badge>;
+  }
+  if (situacao === "pagamento_parcial") {
+    return <Badge variant="default" className="bg-amber-500 text-[10px] text-white">Pag. Parcial</Badge>;
+  }
+  if (situacao === "em_tramitacao") {
+    return <Badge variant="default" className="bg-blue-600 text-[10px] text-white">Em Tramitacao</Badge>;
+  }
+  return <Badge variant="outline" className="text-[10px]">Desconhecido</Badge>;
+}
+
+function formatCnj(numero: string): string {
+  if (!numero || numero.length < 20) return numero;
+  return `${numero.slice(0, 7)}-${numero.slice(7, 9)}.${numero.slice(9, 13)}.${numero.slice(13, 14)}.${numero.slice(14, 16)}.${numero.slice(16, 20)}`;
+}
+
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "-";
+  if (dateStr.length >= 8 && !dateStr.includes("-")) {
+    return `${dateStr.slice(6, 8)}/${dateStr.slice(4, 6)}/${dateStr.slice(0, 4)}`;
+  }
+  if (dateStr.includes("T")) {
+    return new Date(dateStr).toLocaleDateString("pt-BR");
+  }
+  return dateStr;
+}
+
+function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProcesso; expanded: boolean; onToggle: () => void }) {
+  return (
+    <Card className="hover-elevate" data-testid={`card-processo-${processo.numero_cnj}`}>
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <span className="font-mono text-sm font-semibold" data-testid={`text-cnj-${processo.numero_cnj}`}>
+                {formatCnj(processo.numero_cnj)}
+              </span>
+              <Badge variant={processo.classe_codigo === 1265 ? "default" : "secondary"} className="text-[10px]">
+                {processo.classe_nome}
+              </Badge>
+              <SituacaoBadge situacao={processo.situacao} />
+            </div>
+            <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
+              <span className="font-mono">{processo.tribunal_alias.toUpperCase()}</span>
+              <span>Ajuiz.: {formatDate(processo.data_ajuizamento)}</span>
+              <span>Atualiz.: {formatDate(processo.data_ultima_atualizacao)}</span>
+              {processo.orgao_julgador && (
+                <span className="max-w-[200px] truncate" title={processo.orgao_julgador.nome}>{processo.orgao_julgador.nome}</span>
+              )}
+            </div>
+            {processo.assuntos.length > 0 && (
+              <div className="flex items-center gap-1 mt-1 flex-wrap">
+                {processo.assuntos.slice(0, 3).map((a: { codigo: number; nome: string }, i: number) => (
+                  <Badge key={i} variant="outline" className="text-[10px]">{a.nome}</Badge>
+                ))}
+              </div>
+            )}
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            {processo.url_consulta && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href={processo.url_consulta}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    data-testid={`link-consulta-${processo.numero_cnj}`}
+                  >
+                    <Button variant="outline" size="sm">
+                      <ExternalLink className="w-3 h-3 mr-1" />
+                      Consulta
+                    </Button>
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Abrir consulta publica no {processo.tribunal_alias.toUpperCase()} - acesso ao oficio requisitorio</p>
+                </TooltipContent>
+              </Tooltip>
+            )}
+            <Button variant="ghost" size="sm" onClick={onToggle} data-testid={`button-expand-${processo.numero_cnj}`}>
+              <Eye className="w-3 h-3 mr-1" />
+              {expanded ? "Fechar" : "Detalhes"}
+            </Button>
+          </div>
+        </div>
+
+        {processo.ultima_movimentacao && (
+          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+            <Clock className="w-3 h-3 shrink-0" />
+            <span>Ultima mov.: <strong>{processo.ultima_movimentacao.nome}</strong> ({formatDate(processo.ultima_movimentacao.data)})</span>
+          </div>
+        )}
+
+        {expanded && processo.movimentos.length > 0 && (
+          <div className="mt-3 border-t pt-3">
+            <p className="text-xs font-medium mb-2 text-muted-foreground">Historico de Movimentacoes ({processo.movimentos.length})</p>
+            <div className="space-y-1 max-h-[300px] overflow-y-auto">
+              {processo.movimentos.slice().reverse().map((mov: MovimentoProcesso, idx: number) => (
+                <div key={idx} className="flex items-center gap-2 text-[11px] py-1 border-b border-dashed last:border-0">
+                  <span className="text-muted-foreground w-[80px] shrink-0">{formatDate(mov.data)}</span>
+                  <Badge variant="outline" className="text-[9px] font-mono shrink-0">{mov.codigo}</Badge>
+                  <span className="truncate" title={mov.nome}>{mov.nome}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function PrecatoriosPendentes() {
+  const [selectedYear, setSelectedYear] = useState("2025");
+  const [result, setResult] = useState<PrecatorioPendenteResult | null>(null);
+  const [expandedProcessos, setExpandedProcessos] = useState<Set<string>>(new Set());
+  const [filtroTribunal, setFiltroTribunal] = useState<string>("todos");
+  const [filtroClasse, setFiltroClasse] = useState<string>("todos");
+  const { toast } = useToast();
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 5 }, (_, i) => String(currentYear - i));
+
+  const mutation = useMutation({
+    mutationFn: async (ano: number) => {
+      const res = await apiRequest("POST", "/api/loa/uniao/precatorios-pendentes", {
+        ano_exercicio: ano,
+        max_por_tribunal: 2000,
+      });
+      return res.json();
+    },
+    onSuccess: (data: PrecatorioPendenteResult) => {
+      setResult(data);
+      setExpandedProcessos(new Set());
+      toast({
+        title: "Pendentes atualizados",
+        description: `${data.total_pendentes} processos pendentes (${data.total_precatorios_pendentes} prec., ${data.total_rpvs_pendentes} RPVs)`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro ao buscar pendentes",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleConsulta = () => {
+    mutation.mutate(parseInt(selectedYear));
+  };
+
+  const toggleExpanded = (numeroCnj: string) => {
+    setExpandedProcessos((prev) => {
+      const next = new Set(prev);
+      if (next.has(numeroCnj)) next.delete(numeroCnj);
+      else next.add(numeroCnj);
+      return next;
+    });
+  };
+
+  const filteredProcessos = result?.processos.filter((p: EstoqueProcesso) => {
+    if (filtroTribunal !== "todos" && p.tribunal_alias !== filtroTribunal) return false;
+    if (filtroClasse === "precatorio" && p.classe_codigo !== 1265) return false;
+    if (filtroClasse === "rpv" && p.classe_codigo !== 1266) return false;
+    return true;
+  }) || [];
+
+  const tribunaisDisponiveis: string[] = result
+    ? Array.from(new Set(result.processos.map((p: EstoqueProcesso) => p.tribunal_alias)))
+    : [];
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
+            <div className="flex items-center gap-3">
+              <Link href="/">
+                <Button variant="ghost" size="sm" data-testid="button-voltar">
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Dashboard
+                </Button>
+              </Link>
+              <Separator orientation="vertical" className="h-6" />
+              <div className="p-2 rounded-md bg-amber-500/10">
+                <Scale className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold tracking-tight" data-testid="text-page-title">
+                  Precatorios Pendentes
+                </h1>
+                <p className="text-xs text-muted-foreground">
+                  Processos com pagamento pendente - Acesso ao Oficio Requisitorio
+                </p>
+              </div>
+            </div>
+            {result && (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Clock className="w-3 h-3" />
+                Atualizado: {new Date(result.ultima_atualizacao_iso).toLocaleString("pt-BR")}
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        <Card>
+          <CardContent className="p-5">
+            <div className="flex items-end gap-3 flex-wrap">
+              <div className="min-w-[140px]">
+                <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
+                  Exercicio (Ano)
+                </label>
+                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                  <SelectTrigger data-testid="select-year" className="w-full">
+                    <SelectValue placeholder="Selecione o ano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {years.map((y) => (
+                      <SelectItem key={y} value={y}>{y}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button
+                onClick={handleConsulta}
+                disabled={mutation.isPending}
+                data-testid="button-buscar-pendentes"
+                className="bg-amber-600 text-white"
+              >
+                {mutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                    Buscando...
+                  </>
+                ) : (
+                  <>
+                    <Search className="w-4 h-4 mr-1.5" />
+                    Buscar Pendentes
+                  </>
+                )}
+              </Button>
+              {result && (
+                <Button
+                  variant="outline"
+                  onClick={handleConsulta}
+                  disabled={mutation.isPending}
+                  data-testid="button-atualizar"
+                >
+                  <RefreshCw className={`w-4 h-4 mr-1.5 ${mutation.isPending ? "animate-spin" : ""}`} />
+                  Atualizar
+                </Button>
+              )}
+            </div>
+            {mutation.isPending && (
+              <div className="mt-4 space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Consultando DataJud CNJ (TRF1-TRF6) e filtrando processos pendentes...
+                </div>
+                <Progress value={undefined} className="h-1.5" />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {result && (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <Card className="hover-elevate">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Total Pendentes</p>
+                      <p className="text-xl font-semibold" data-testid="kpi-total-pendentes">{result.total_pendentes}</p>
+                    </div>
+                    <div className="p-2 rounded-md bg-amber-500/10 shrink-0">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="hover-elevate">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Precatorios Pendentes</p>
+                      <p className="text-xl font-semibold text-blue-600 dark:text-blue-400" data-testid="kpi-prec-pendentes">{result.total_precatorios_pendentes}</p>
+                      <p className="text-xs text-muted-foreground">Classe 1265</p>
+                    </div>
+                    <div className="p-2 rounded-md bg-blue-500/10 shrink-0">
+                      <Scale className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="hover-elevate">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">RPVs Pendentes</p>
+                      <p className="text-xl font-semibold text-emerald-600 dark:text-emerald-400" data-testid="kpi-rpv-pendentes">{result.total_rpvs_pendentes}</p>
+                      <p className="text-xs text-muted-foreground">Classe 1266</p>
+                    </div>
+                    <div className="p-2 rounded-md bg-emerald-500/10 shrink-0">
+                      <Banknote className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="hover-elevate">
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="space-y-1">
+                      <p className="text-sm text-muted-foreground">Tribunais com Dados</p>
+                      <p className="text-xl font-semibold" data-testid="kpi-tribunais">{tribunaisDisponiveis.length}</p>
+                      <p className="text-xs text-muted-foreground">de {result.por_tribunal.length} consultados</p>
+                    </div>
+                    <div className="p-2 rounded-md bg-primary/10 shrink-0">
+                      <FileText className="w-4 h-4 text-primary" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-sm font-medium mb-3">Resumo por Tribunal</p>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs border-collapse" data-testid="table-tribunal-pendentes">
+                    <thead>
+                      <tr className="border-b bg-muted/50">
+                        <th className="text-left p-2 font-medium text-muted-foreground">Tribunal</th>
+                        <th className="text-right p-2 font-medium text-muted-foreground">Pendentes</th>
+                        <th className="text-right p-2 font-medium text-muted-foreground">Prec.</th>
+                        <th className="text-right p-2 font-medium text-muted-foreground">RPVs</th>
+                        <th className="text-center p-2 font-medium text-muted-foreground">Status</th>
+                        <th className="text-left p-2 font-medium text-muted-foreground">Obs.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.por_tribunal.map((t: EstoqueSummaryByTribunal) => (
+                        <tr key={t.tribunal_alias} className="border-b hover:bg-muted/30 transition-colors">
+                          <td className="p-2">
+                            <span className="font-mono font-semibold">{t.tribunal_alias.toUpperCase()}</span>
+                            <span className="text-muted-foreground ml-2 hidden sm:inline">{t.tribunal}</span>
+                          </td>
+                          <td className="p-2 text-right font-semibold">{t.total_processos}</td>
+                          <td className="p-2 text-right text-blue-600 dark:text-blue-400">{t.precatorios}</td>
+                          <td className="p-2 text-right text-emerald-600 dark:text-emerald-400">{t.rpvs}</td>
+                          <td className="p-2 text-center">
+                            <StatusBadge status={t.status === "ERRO" ? "NAO_LOCALIZADO" : t.status} />
+                          </td>
+                          <td className="p-2 text-muted-foreground">{t.observacoes}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <Scale className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">Processos Pendentes</span>
+                    <Badge variant="secondary">{filteredProcessos.length} processos</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Filter className="w-3 h-3 text-muted-foreground" />
+                    <Select value={filtroTribunal} onValueChange={setFiltroTribunal}>
+                      <SelectTrigger className="w-[120px] h-8 text-xs" data-testid="select-filtro-tribunal">
+                        <SelectValue placeholder="Tribunal" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        {tribunaisDisponiveis.map((t) => (
+                          <SelectItem key={t} value={t}>{t.toUpperCase()}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={filtroClasse} onValueChange={setFiltroClasse}>
+                      <SelectTrigger className="w-[130px] h-8 text-xs" data-testid="select-filtro-classe">
+                        <SelectValue placeholder="Classe" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="todos">Todos</SelectItem>
+                        <SelectItem value="precatorio">Precatorio</SelectItem>
+                        <SelectItem value="rpv">RPV</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-2 p-3 bg-blue-50 dark:bg-blue-950/20 rounded-md text-xs text-blue-700 dark:text-blue-300 mb-4">
+                  <Info className="w-3 h-3 mt-0.5 shrink-0" />
+                  <div>
+                    <strong>Acesso ao Oficio Requisitorio:</strong> Clique no botao "Consulta" em cada processo para abrir a consulta publica do tribunal.
+                    No sistema do tribunal, localize o processo pelo numero CNJ e acesse os documentos/autos para baixar o oficio requisitorio.
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {filteredProcessos.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+                      <Scale className="w-10 h-10 mb-3 opacity-50" />
+                      <p className="text-sm">Nenhum processo pendente encontrado com os filtros selecionados</p>
+                    </div>
+                  ) : (
+                    filteredProcessos.map((p: EstoqueProcesso) => (
+                      <ProcessoCard
+                        key={p.numero_cnj}
+                        processo={p}
+                        expanded={expandedProcessos.has(p.numero_cnj)}
+                        onToggle={() => toggleExpanded(p.numero_cnj)}
+                      />
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <Shield className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">Evidencias e Rastreabilidade</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 bg-muted/40 rounded-md">
+                    <p className="text-muted-foreground">Process ID</p>
+                    <p className="font-mono break-all" data-testid="text-process-id">{result.process_id_uuid}</p>
+                  </div>
+                  <div className="p-2 bg-muted/40 rounded-md">
+                    <p className="text-muted-foreground">Output SHA-256</p>
+                    <p className="font-mono break-all" data-testid="text-output-sha256">{result.hashes.output_sha256}</p>
+                  </div>
+                  <div className="p-2 bg-muted/40 rounded-md sm:col-span-2">
+                    <p className="text-muted-foreground">Evidence Pack</p>
+                    <p className="font-mono break-all">{result.evidence_pack_path}</p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {result.sources.map((src: SourceInfo, idx: number) => (
+                    <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" data-testid={`link-source-${idx}`}>
+                      <Badge variant="outline" className="text-[10px]">
+                        <ExternalLink className="w-2.5 h-2.5 mr-1" />
+                        {src.name} ({src.type})
+                      </Badge>
+                    </a>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        {!result && !mutation.isPending && (
+          <Card>
+            <CardContent className="p-12 flex flex-col items-center justify-center text-center">
+              <div className="p-4 rounded-full bg-amber-500/10 mb-4">
+                <Scale className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+              </div>
+              <h3 className="text-lg font-semibold mb-1" data-testid="text-empty-state">
+                Precatorios com Pagamento Pendente
+              </h3>
+              <p className="text-sm text-muted-foreground max-w-md">
+                Consulte processos de precatorios e RPVs que ainda nao foram baixados (pagamento pendente)
+                nos Tribunais Regionais Federais (TRF1-TRF6) via CNJ DataJud.
+              </p>
+              <p className="text-sm text-muted-foreground max-w-md mt-2">
+                Cada processo inclui link direto para consulta publica do tribunal, onde voce pode acessar
+                e baixar o <strong>oficio requisitorio</strong>.
+              </p>
+              <div className="flex items-center gap-4 mt-6 text-xs text-muted-foreground flex-wrap justify-center">
+                <div className="flex items-center gap-1.5">
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  Consulta Publica
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Download className="w-3.5 h-3.5" />
+                  Oficio Requisitorio
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Shield className="w-3.5 h-3.5" />
+                  Rastreabilidade
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </main>
+    </div>
+  );
+}

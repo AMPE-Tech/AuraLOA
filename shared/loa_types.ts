@@ -177,6 +177,12 @@ export interface A2Response {
 
 export type EstoqueProvider = "datajud" | "arquivo_oficial" | "scraping";
 
+export interface MovimentoProcesso {
+  codigo: number | null;
+  nome: string;
+  data: string | null;
+}
+
 export interface EstoqueProcesso {
   numero_cnj: string;
   tribunal: string;
@@ -190,7 +196,30 @@ export interface EstoqueProcesso {
   orgao_julgador: { codigo: number | null; nome: string } | null;
   grau: string | null;
   total_movimentos: number;
-  ultima_movimentacao: { codigo: number | null; nome: string; data: string | null } | null;
+  ultima_movimentacao: MovimentoProcesso | null;
+  movimentos: MovimentoProcesso[];
+  pagamento_pendente: boolean;
+  tem_baixa: boolean;
+  tem_pagamento: boolean;
+  url_consulta: string | null;
+}
+
+export interface PrecatorioPendenteResult {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  total_pendentes: number;
+  total_precatorios_pendentes: number;
+  total_rpvs_pendentes: number;
+  por_tribunal: EstoqueSummaryByTribunal[];
+  processos: EstoqueProcesso[];
+  sources: SourceInfo[];
+  evidencias_count: number;
+  hashes: { output_sha256: string };
+  evidence_pack_path: string;
+  ultima_atualizacao_iso: string;
 }
 
 export interface EstoqueSummaryByTribunal {

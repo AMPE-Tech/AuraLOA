@@ -1,4 +1,4 @@
-import type { EstoqueProcesso, EstoqueSummaryByTribunal } from "../../shared/loa_types";
+import type { EstoqueProcesso, EstoqueSummaryByTribunal, MovimentoProcesso } from "../../shared/loa_types";
 import { EvidencePack, computeSHA256 } from "./evidence_pack";
 
 const DATAJUD_BASE = "https://api-publica.datajud.cnj.jus.br";
@@ -78,13 +78,51 @@ function buildElasticsearchQuery(classeCodigos: number[], ano: number | null, si
   return query;
 }
 
+const CODIGOS_BAIXA = [22, 246, 488, 861];
+const CODIGOS_PAGAMENTO = [848, 12264, 12265];
+
+const TRIBUNAL_CONSULTA_URLS: Record<string, string> = {
+  trf1: "https://processual.trf1.jus.br/consultaProcessual/processo.php",
+  trf2: "https://eproc.trf2.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+  trf3: "https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam",
+  trf4: "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+  trf5: "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
+  trf6: "https://pje1g.trf6.jus.br/pje/ConsultaPublica/listView.seam",
+};
+
+function buildConsultaUrl(tribunalAlias: string, numeroCnj: string): string | null {
+  const base = TRIBUNAL_CONSULTA_URLS[tribunalAlias];
+  if (!base) return null;
+  if (tribunalAlias === "trf1") {
+    return `${base}?proc=${numeroCnj}&secao=TRF1`;
+  }
+  return base;
+}
+
 function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome: string): EstoqueProcesso {
   const src = hit._source;
-  const movimentos = src.movimentos || [];
-  const ultimoMov = movimentos.length > 0 ? movimentos[movimentos.length - 1] : null;
+  const rawMovs = src.movimentos || [];
+  const ultimoMov = rawMovs.length > 0 ? rawMovs[rawMovs.length - 1] : null;
+
+  const movimentos: MovimentoProcesso[] = rawMovs.map((m) => ({
+    codigo: m.codigo ?? null,
+    nome: m.nome || "",
+    data: m.dataHora || null,
+  }));
+
+  const temBaixa = rawMovs.some((m) => m.codigo !== undefined && CODIGOS_BAIXA.includes(m.codigo));
+  const temPagamento = rawMovs.some((m) => m.codigo !== undefined && CODIGOS_PAGAMENTO.includes(m.codigo));
+  const pagamentoPendente = !temBaixa;
+
+  let situacao = "em_tramitacao";
+  if (temBaixa) situacao = "baixado";
+  else if (temPagamento) situacao = "pagamento_parcial";
+  else if (rawMovs.length === 0) situacao = "desconhecido";
+
+  const numeroCnj = src.numeroProcesso || "";
 
   return {
-    numero_cnj: src.numeroProcesso || "",
+    numero_cnj: numeroCnj,
     tribunal: tribunalNome,
     tribunal_alias: tribunalAlias,
     classe_codigo: src.classe?.codigo || 0,
@@ -93,14 +131,14 @@ function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome
       codigo: a.codigoNacional || a.codigo || 0,
       nome: a.nome || "",
     })),
-    situacao: movimentos.length > 0 ? "em_tramitacao" : "desconhecido",
+    situacao,
     data_ajuizamento: src.dataAjuizamento || null,
     data_ultima_atualizacao: src.dataHoraUltimaAtualizacao || null,
     orgao_julgador: src.orgaoJulgador
       ? { codigo: src.orgaoJulgador.codigo ?? null, nome: src.orgaoJulgador.nome || "" }
       : null,
     grau: src.grau || null,
-    total_movimentos: movimentos.length,
+    total_movimentos: rawMovs.length,
     ultima_movimentacao: ultimoMov
       ? {
           codigo: ultimoMov.codigo ?? null,
@@ -108,6 +146,11 @@ function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome
           data: ultimoMov.dataHora || null,
         }
       : null,
+    movimentos,
+    pagamento_pendente: pagamentoPendente,
+    tem_baixa: temBaixa,
+    tem_pagamento: temPagamento,
+    url_consulta: buildConsultaUrl(tribunalAlias, numeroCnj),
   };
 }
 
