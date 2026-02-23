@@ -1349,15 +1349,15 @@ export default function LOADashboard() {
                   AuraLOA
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  Precatorios inscritos na LOA - Uniao (Federal)
+                  Precatorios inscritos na LOA
                 </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/pendentes">
-                <Button variant="outline" size="sm" data-testid="link-pendentes">
+              <Link href="/">
+                <Button variant="outline" size="sm" data-testid="link-federal" className="border-blue-400 text-blue-700 dark:text-blue-400">
                   <Scale className="w-3.5 h-3.5 mr-1" />
-                  Pendentes
+                  Federal
                 </Button>
               </Link>
               <Link href="/sp">
@@ -1366,15 +1366,18 @@ export default function LOADashboard() {
                   SP (Estado)
                 </Button>
               </Link>
+              <Link href="/pendentes">
+                <Button variant="outline" size="sm" data-testid="link-pendentes">
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  Pendentes
+                </Button>
+              </Link>
               <Link href="/contrato">
                 <Button variant="outline" size="sm" data-testid="link-contrato">
                   <Shield className="w-3.5 h-3.5 mr-1" />
                   Contrato DPO
                 </Button>
               </Link>
-              <Badge variant="outline" className="text-[10px] font-mono">
-                MVP A2 - Dotacao + Execucao + Estoque
-              </Badge>
             </div>
           </div>
         </div>
