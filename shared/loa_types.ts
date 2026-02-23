@@ -344,3 +344,100 @@ export interface A2HistoryEntry {
   dotacao_total: number | null;
   zip_downloaded?: boolean;
 }
+
+export type Ente = "UNIAO" | "SP";
+
+export interface SpLoaRow {
+  ente: "SP";
+  ano: number;
+  orgao?: string;
+  uo?: string;
+  programa?: string;
+  acao_local?: string;
+  dotacao_inicial?: number;
+  dotacao_atual?: number;
+  raw: Record<string, string>;
+}
+
+export interface SpDespesaRow {
+  ente: "SP";
+  ano: number;
+  orgao?: string;
+  uo?: string;
+  fase?: string;
+  valor?: number;
+  favorecido?: string;
+  data?: string;
+  raw: Record<string, string>;
+}
+
+export interface TjspItem {
+  entidade: string;
+  numero?: string;
+  credor?: string;
+  natureza?: string;
+  valor?: number;
+  status?: "PENDENTE" | "PAGAMENTO" | string;
+  fonte_url: string;
+}
+
+export interface SpA2Summary {
+  dotacao_atual_total: number;
+  execucao_total: number;
+  saldo_estimado: number;
+  note: string;
+}
+
+export interface SpA2Result {
+  ok: boolean;
+  ente: "SP";
+  query: { ano: number; orgao?: string; uo?: string };
+  summary: SpA2Summary;
+  loa_count: number;
+  despesas_count: number;
+  loa: SpLoaRow[];
+  despesas: SpDespesaRow[];
+}
+
+export interface SpImportResult {
+  ok: boolean;
+  imported: number;
+  evidence: {
+    schema_version: string;
+    generated_at_iso_utc: string;
+    process_id_uuid: string;
+    bundle_sha256: string;
+  };
+}
+
+export interface SpTjspResult {
+  ok: boolean;
+  note: string;
+  entidade: string;
+  count: number;
+  data: TjspItem[];
+  evidence: {
+    schema_version: string;
+    generated_at_iso_utc: string;
+    process_id_uuid: string;
+    bundle_sha256: string;
+  };
+}
+
+export const spLoaImportSchema = z.object({
+  ano: z.number().int().min(2000).max(2100),
+  csvText: z.string().min(1),
+  delimiter: z.string().optional(),
+});
+
+export const spDespesasImportSchema = z.object({
+  ano: z.number().int().min(2000).max(2100),
+  csvText: z.string().min(1),
+  delimiter: z.string().optional(),
+});
+
+export const spA2RequestSchema = z.object({
+  ano: z.number().int().min(2000).max(2100),
+  orgao: z.string().optional(),
+  uo: z.string().optional(),
+});

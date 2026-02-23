@@ -1360,6 +1360,12 @@ export default function LOADashboard() {
                   Pendentes
                 </Button>
               </Link>
+              <Link href="/sp">
+                <Button variant="outline" size="sm" data-testid="link-sp" className="border-amber-400 text-amber-700 dark:text-amber-400">
+                  <Scale className="w-3.5 h-3.5 mr-1" />
+                  SP (Estado)
+                </Button>
+              </Link>
               <Link href="/contrato">
                 <Button variant="outline" size="sm" data-testid="link-contrato">
                   <Shield className="w-3.5 h-3.5 mr-1" />

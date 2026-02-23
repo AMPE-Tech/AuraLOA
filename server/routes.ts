@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import loaUniaoA2Router from "./routes/loa_uniao_a2";
 import loaEstoqueRouter from "./routes/loa_estoque";
 import loaDpoRouter from "./routes/loa_dpo";
+import loaSpRouter from "./routes/loa_sp";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -12,6 +13,7 @@ export async function registerRoutes(
   app.use(loaUniaoA2Router);
   app.use(loaEstoqueRouter);
   app.use(loaDpoRouter);
+  app.use(loaSpRouter);
 
   return httpServer;
 }

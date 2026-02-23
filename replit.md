@@ -9,7 +9,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `client/src/pages/loa-dashboard.tsx` - Main dashboard with year selector, results display, KPIs, evidence trail, Estoque CNJ panel, and Gap Analysis panel
 - `client/src/pages/precatorios-pendentes.tsx` - Dedicated page for pending precatórios with tribunal consultation links and ofício requisitório access
 - `client/src/pages/contrato-tecnico.tsx` - Contrato Técnico Master page with DPO controls, anti-regression checks, audit log, and pipeline documentation
-- `client/src/App.tsx` - Routes configuration (/, /pendentes, /contrato)
+- `client/src/pages/sp-dashboard.tsx` - SP (Estado de São Paulo) dashboard with CSV import, TJSP scraping, and A2 conciliation
+- `client/src/App.tsx` - Routes configuration (/, /pendentes, /contrato, /sp)
 
 ### Backend (Express)
 - `server/routes/loa_uniao_a2.ts` - Main endpoint `POST /api/loa/uniao/a2` and history/catalog endpoints
@@ -30,6 +31,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `server/services/evidence_pack.ts` - Evidence pack system (SHA-256 hashes, file saving)
 - `server/services/validate_output.ts` - Output validation
 - `server/routes/loa_dpo.ts` - DPO control, regression, cruzamento-completo, and contrato técnico endpoints
+- `server/routes/loa_sp.ts` - SP (Estado de São Paulo) module: LOA import, despesas import, TJSP scraping, A2 conciliation
+- `server/services/sp_tjsp.ts` - TJSP HTML scraping with evidence pack (pendentes + pagamentos)
 
 ### Shared Types
 - `shared/loa_types.ts` - All TypeScript interfaces for A2, Estoque, and Gap Analysis modules
@@ -61,6 +64,12 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `POST /api/loa/uniao/dpo/lock-all` - Lock all protected resources
 - `POST /api/loa/uniao/regression/check` - Anti-regression check
 - `POST /api/loa/uniao/regression/baseline` - Save regression baseline
+- `POST /api/sp/loa/import` - Import LOA SP CSV (input: `{ ano, csvText, delimiter? }`)
+- `POST /api/sp/despesas/import` - Import Despesas SP CSV (input: `{ ano, csvText, delimiter? }`)
+- `GET /api/sp/tjsp/pendentes?entidade=X` - TJSP precatórios pendentes (HTML scraping)
+- `GET /api/sp/tjsp/pagamentos?entidade=X` - TJSP pagamentos disponibilizados (HTML scraping)
+- `POST /api/sp/a2` - A2 conciliation SP (input: `{ ano, orgao?, uo? }`)
+- `GET /api/sp/status` - SP module status (imported data counts)
 
 ## Data Sources
 - **Execução (Empenho/Liquidação/Pagamento)**: Portal da Transparência REST API - requires API key (env: PORTAL_TRANSPARENCIA_API_KEY). Uses endpoint `/api-de-dados/despesas/por-funcional-programatica` with `chave-api-dados` header.
@@ -91,3 +100,6 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - Federal tribunals TRF1-TRF6 as primary targets
 - Provider pattern for estoque with graceful degradation and evidence tracking per provider
 - Gap Analysis crosses all 3 layers per precatório action with coverage metrics
+- SP module uses manual CSV import for LOA and Despesas (MVP strategy); TJSP scraping is best-effort HTML extraction
+- SP module reuses existing evidence pack system (SHA-256, UUID) for full auditability
+- Multi-ente architecture: `ente=UNIAO` for Federal, `ente=SP` for Estado de São Paulo

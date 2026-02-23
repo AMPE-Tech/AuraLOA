@@ -7,6 +7,7 @@ import NotFound from "@/pages/not-found";
 import LOADashboard from "@/pages/loa-dashboard";
 import PrecatoriosPendentes from "@/pages/precatorios-pendentes";
 import ContratoTecnico from "@/pages/contrato-tecnico";
+import SpDashboard from "@/pages/sp-dashboard";
 
 function Router() {
   return (
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/" component={LOADashboard} />
       <Route path="/pendentes" component={PrecatoriosPendentes} />
       <Route path="/contrato" component={ContratoTecnico} />
+      <Route path="/sp" component={SpDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
