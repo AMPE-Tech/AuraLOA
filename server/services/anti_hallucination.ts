@@ -25,6 +25,11 @@ const KNOWN_GOVERNMENT_DOMAINS = [
   "processual.trf1.jus.br",
   "eproc2g.trf6.jus.br",
   "www1.siop.planejamento.gov.br",
+  "esaj.tjsp.jus.br",
+  "www.tjsp.jus.br",
+  "dworcamento.fazenda.sp.gov.br",
+  "portal.fazenda.sp.gov.br",
+  "www.transparencia.sp.gov.br",
 ];
 
 const FORBIDDEN_MOCK_PATTERNS = [

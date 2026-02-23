@@ -16,6 +16,10 @@ export const TRIBUNAIS_FEDERAIS: { alias: string; nome: string }[] = [
   { alias: "trf6", nome: "Tribunal Regional Federal da 6ª Região" },
 ];
 
+export const TRIBUNAIS_SP: { alias: string; nome: string }[] = [
+  { alias: "tjsp", nome: "Tribunal de Justiça do Estado de São Paulo" },
+];
+
 export interface DataJudFetchOptions {
   tribunal_alias: string;
   classe_codigos: number[];
@@ -89,6 +93,7 @@ const TRIBUNAL_CONSULTA_URLS: Record<string, string> = {
   trf4: "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
   trf5: "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
   trf6: "https://processual.trf1.jus.br/consultaProcessual/processo.php",
+  tjsp: "https://esaj.tjsp.jus.br/cpopg/open.do",
 };
 
 const TRIBUNAL_CONSULTA_EPROC: Record<string, string> = {
@@ -103,6 +108,9 @@ function buildConsultaUrl(tribunalAlias: string, numeroCnj: string): string | nu
   }
   if (tribunalAlias === "trf6") {
     return `${base}?proc=${numeroCnj}&secao=TRF6`;
+  }
+  if (tribunalAlias === "tjsp") {
+    return `${base}?processo.numero=${numeroCnj}`;
   }
   return base;
 }
@@ -175,7 +183,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
   evidences: { source_name: string; source_url: string; captured_at_iso: string; raw_payload_sha256: string; raw_payload_path: string; bytes: number }[];
 }> {
   const { tribunal_alias, classe_codigos, ano_exercicio, max_results, evidencePack } = options;
-  const tribunalInfo = TRIBUNAIS_FEDERAIS.find((t) => t.alias === tribunal_alias);
+  const tribunalInfo = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP].find((t) => t.alias === tribunal_alias);
   const tribunalNome = tribunalInfo?.nome || tribunal_alias.toUpperCase();
 
   const endpoint = `${DATAJUD_BASE}/api_publica_${tribunal_alias}/_search`;

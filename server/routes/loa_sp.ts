@@ -12,6 +12,12 @@ import {
   getAnosDisponiveis,
 } from "../services/sp_auto_import";
 import {
+  fetchEstoqueFromDataJud,
+  TRIBUNAIS_SP,
+  CLASSE_PRECATORIO,
+  CLASSE_RPV,
+} from "../services/estoque_datajud";
+import {
   spLoaImportSchema,
   spDespesasImportSchema,
   spA2RequestSchema,
@@ -353,6 +359,80 @@ router.post("/api/sp/auto/dotacao", async (req: Request, res: Response) => {
 
 router.get("/api/sp/auto/anos", (_req: Request, res: Response) => {
   return res.json({ anos: getAnosDisponiveis() });
+});
+
+router.post("/api/sp/pendentes-datajud", async (req: Request, res: Response) => {
+  const processId = crypto.randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const ano_exercicio = Number(req.body?.ano_exercicio) || new Date().getFullYear();
+    const max_por_tribunal = Number(req.body?.max_por_tribunal) || 2000;
+    evidencePack.log(`SP pendentes-datajud start process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const allProcessos: any[] = [];
+    const porTribunal: any[] = [];
+    const allEvidences: any[] = [];
+
+    const results = await Promise.allSettled(
+      TRIBUNAIS_SP.map((tribunal) =>
+        fetchEstoqueFromDataJud({
+          tribunal_alias: tribunal.alias,
+          classe_codigos: [CLASSE_PRECATORIO, CLASSE_RPV],
+          ano_exercicio,
+          max_results: max_por_tribunal,
+          evidencePack,
+        })
+      )
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        allProcessos.push(...result.value.processos);
+        porTribunal.push(result.value.summary);
+        allEvidences.push(...result.value.evidences);
+      }
+    }
+
+    const pendentes = allProcessos.filter((p: any) => p.pagamento_pendente);
+    const precPendentes = pendentes.filter((p: any) => p.classe_codigo === CLASSE_PRECATORIO);
+    const rpvPendentes = pendentes.filter((p: any) => p.classe_codigo === CLASSE_RPV);
+
+    const output = {
+      ente: "SP",
+      ano_exercicio,
+      process_id_uuid: processId,
+      status_geral: allProcessos.length > 0 ? "OK" : "NAO_LOCALIZADO",
+      total_processos: allProcessos.length,
+      total_pendentes: pendentes.length,
+      total_precatorios_pendentes: precPendentes.length,
+      total_rpvs_pendentes: rpvPendentes.length,
+      processos: pendentes,
+      por_tribunal: porTribunal,
+      sources: [
+        { name: "CNJ DataJud API Publica (TJSP)", url: "https://api-publica.datajud.cnj.jus.br", type: "API" },
+        { name: "TJSP eSAJ Consulta", url: "https://esaj.tjsp.jus.br/cpopg/open.do", type: "WEB" },
+      ],
+      evidencias_count: allEvidences.length,
+      hashes: { output_sha256: "" },
+      evidence_pack_path: evidencePack.getBasePath(),
+      ultima_atualizacao_iso: new Date().toISOString(),
+    };
+
+    const outputHash = computeSHA256(JSON.stringify(output));
+    output.hashes.output_sha256 = outputHash;
+
+    evidencePack.saveResponse(output);
+    evidencePack.saveHashes({ output_sha256: outputHash });
+    evidencePack.saveLog();
+
+    return res.json(output);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({ error: "Erro ao consultar pendentes SP", message: error.message });
+  }
 });
 
 router.get("/api/sp/status", (_req: Request, res: Response) => {

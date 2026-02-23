@@ -283,7 +283,7 @@ function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProce
                   >
                     <Button variant="outline" size="sm">
                       <ExternalLink className="w-3 h-3 mr-1" />
-                      {processo.tribunal_alias === "trf6" ? "PJe (TRF1)" : "Consulta"}
+                      {processo.tribunal_alias === "trf6" ? "PJe (TRF1)" : processo.tribunal_alias === "tjsp" ? "eSAJ (TJSP)" : "Consulta"}
                     </Button>
                   </a>
                 </TooltipTrigger>
@@ -291,6 +291,8 @@ function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProce
                   <p className="text-xs">
                     {processo.tribunal_alias === "trf6"
                       ? "Consulta PJe via TRF1 processual (conforme orientacao oficial TRF6) - acesso ao oficio requisitorio"
+                      : processo.tribunal_alias === "tjsp"
+                      ? "Consulta publica eSAJ TJSP - acesso ao processo e oficio requisitorio"
                       : `Abrir consulta publica no ${processo.tribunal_alias.toUpperCase()} - acesso ao oficio requisitorio`}
                   </p>
                 </TooltipContent>
@@ -351,6 +353,7 @@ function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProce
 
 export default function PrecatoriosPendentes() {
   const [selectedYear, setSelectedYear] = useState("2025");
+  const [selectedEnte, setSelectedEnte] = useState<"UNIAO" | "SP">("UNIAO");
   const [result, setResult] = useState<PrecatorioPendenteResult | null>(null);
   const [expandedProcessos, setExpandedProcessos] = useState<Set<string>>(new Set());
   const [filtroTribunal, setFiltroTribunal] = useState<string>("todos");
@@ -364,7 +367,10 @@ export default function PrecatoriosPendentes() {
 
   const mutation = useMutation({
     mutationFn: async (ano: number) => {
-      const res = await apiRequest("POST", "/api/loa/uniao/precatorios-pendentes", {
+      const endpoint = selectedEnte === "SP"
+        ? "/api/sp/pendentes-datajud"
+        : "/api/loa/uniao/precatorios-pendentes";
+      const res = await apiRequest("POST", endpoint, {
         ano_exercicio: ano,
         max_por_tribunal: 2000,
       });
@@ -373,8 +379,10 @@ export default function PrecatoriosPendentes() {
     onSuccess: (data: PrecatorioPendenteResult) => {
       setResult(data);
       setExpandedProcessos(new Set());
+      setFiltroTribunal("todos");
+      setFiltroClasse("todos");
       toast({
-        title: "Pendentes atualizados",
+        title: `Pendentes ${selectedEnte === "SP" ? "SP" : "Federal"} atualizados`,
         description: `${data.total_pendentes} processos pendentes (${data.total_precatorios_pendentes} prec., ${data.total_rpvs_pendentes} RPVs)`,
       });
     },
@@ -460,10 +468,12 @@ export default function PrecatoriosPendentes() {
               </div>
               <div>
                 <h1 className="text-xl font-bold tracking-tight" data-testid="text-page-title">
-                  Precatorios Pendentes
+                  Precatorios Pendentes {selectedEnte === "SP" ? "— SP" : "— Federal"}
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  Processos com pagamento pendente - Acesso ao Oficio Requisitorio
+                  {selectedEnte === "SP"
+                    ? "TJSP — Processos com pagamento pendente via CNJ DataJud"
+                    : "TRF1-TRF6 — Processos com pagamento pendente - Acesso ao Oficio Requisitorio"}
                 </p>
               </div>
             </div>
@@ -489,6 +499,20 @@ export default function PrecatoriosPendentes() {
         <Card>
           <CardContent className="p-5">
             <div className="flex items-end gap-3 flex-wrap">
+              <div className="min-w-[140px]">
+                <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
+                  Ente
+                </label>
+                <Select value={selectedEnte} onValueChange={(v) => { setSelectedEnte(v as "UNIAO" | "SP"); setResult(null); }}>
+                  <SelectTrigger data-testid="select-ente" className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="UNIAO">Federal (Uniao)</SelectItem>
+                    <SelectItem value="SP">Sao Paulo (SP)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="min-w-[140px]">
                 <label className="text-sm font-medium mb-1.5 block text-muted-foreground">
                   Exercicio (Ano)
@@ -518,7 +542,7 @@ export default function PrecatoriosPendentes() {
                 ) : (
                   <>
                     <Search className="w-4 h-4 mr-1.5" />
-                    Buscar Pendentes
+                    Buscar Pendentes {selectedEnte === "SP" ? "SP" : ""}
                   </>
                 )}
               </Button>
@@ -538,7 +562,9 @@ export default function PrecatoriosPendentes() {
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  Consultando DataJud CNJ (TRF1-TRF6) e filtrando processos pendentes...
+                  {selectedEnte === "SP"
+                    ? "Consultando DataJud CNJ (TJSP) e filtrando processos pendentes SP..."
+                    : "Consultando DataJud CNJ (TRF1-TRF6) e filtrando processos pendentes..."}
                 </div>
                 <Progress value={undefined} className="h-1.5" />
               </div>
