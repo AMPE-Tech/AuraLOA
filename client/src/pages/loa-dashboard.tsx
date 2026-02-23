@@ -46,6 +46,11 @@ import type {
   ZipExecucaoRow,
   ZipEmpenhoDetalhe,
   CruzamentoAcaoItem,
+  EstoqueResult,
+  EstoqueProcesso,
+  EstoqueSummaryByTribunal,
+  GapResult,
+  GapAcaoItem,
 } from "../../shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -640,6 +645,341 @@ function EmpenhoDetalheTable({ empenhos }: { empenhos: ZipEmpenhoDetalhe[] }) {
   );
 }
 
+function EstoquePanel({ data }: { data: EstoqueResult }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <Scale className="w-4 h-4 text-primary" />
+            Estoque CNJ (DataJud) - Exercicio {data.ano_exercicio}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {data.tribunais_consultados.length} tribunais consultados | Providers: {data.providers_used.join(", ")}
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatusBadge status={data.status_geral} />
+          <Badge variant="outline" className="font-mono text-[10px]">
+            <Hash className="w-3 h-3 mr-1" />
+            {data.process_id_uuid.slice(0, 8)}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <KPICard
+          title="Total Processos"
+          value={String(data.summary.total_processos)}
+          icon={FileText}
+          subtitle="Precatorios + RPVs"
+        />
+        <KPICard
+          title="Precatorios"
+          value={String(data.summary.total_precatorios)}
+          icon={Scale}
+          subtitle="Classe 1265"
+        />
+        <KPICard
+          title="RPVs"
+          value={String(data.summary.total_rpvs)}
+          icon={Banknote}
+          subtitle="Classe 1266"
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm font-medium mb-3">Resumo por Tribunal</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse" data-testid="table-estoque-tribunal">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-2 font-medium text-muted-foreground">Tribunal</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Total</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Prec.</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">RPVs</th>
+                  <th className="text-center p-2 font-medium text-muted-foreground">Provider</th>
+                  <th className="text-center p-2 font-medium text-muted-foreground">Status</th>
+                  <th className="text-left p-2 font-medium text-muted-foreground">Obs.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.summary.por_tribunal.map((t: EstoqueSummaryByTribunal) => (
+                  <tr key={t.tribunal_alias} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-tribunal-${t.tribunal_alias}`}>
+                    <td className="p-2">
+                      <span className="font-mono font-semibold">{t.tribunal_alias.toUpperCase()}</span>
+                      <span className="text-muted-foreground ml-2 hidden sm:inline">{t.tribunal}</span>
+                    </td>
+                    <td className="p-2 text-right font-semibold">{t.total_processos}</td>
+                    <td className="p-2 text-right text-blue-600 dark:text-blue-400">{t.precatorios}</td>
+                    <td className="p-2 text-right text-emerald-600 dark:text-emerald-400">{t.rpvs}</td>
+                    <td className="p-2 text-center">
+                      <Badge variant="secondary" className="text-[10px]">{t.provider}</Badge>
+                    </td>
+                    <td className="p-2 text-center">
+                      <StatusBadge status={t.status === "ERRO" ? "NAO_LOCALIZADO" : t.status} />
+                    </td>
+                    <td className="p-2 text-muted-foreground max-w-[200px] truncate" title={t.observacoes}>{t.observacoes}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 bg-muted/30 font-semibold">
+                  <td className="p-2">TOTAL</td>
+                  <td className="p-2 text-right">{data.summary.total_processos}</td>
+                  <td className="p-2 text-right text-blue-700 dark:text-blue-300">{data.summary.total_precatorios}</td>
+                  <td className="p-2 text-right text-emerald-700 dark:text-emerald-300">{data.summary.total_rpvs}</td>
+                  <td className="p-2" colSpan={3}></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {data.processos.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm font-medium mb-3">Processos ({data.processos.length})</p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-[11px] border-collapse" data-testid="table-estoque-processos">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Numero CNJ</th>
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Tribunal</th>
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Classe</th>
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Assuntos</th>
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Dt. Ajuizamento</th>
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Orgao Julgador</th>
+                    <th className="text-right p-1.5 font-medium text-muted-foreground">Movs.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.processos.map((p: EstoqueProcesso, idx: number) => (
+                    <tr key={p.numero_cnj || idx} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-processo-${idx}`}>
+                      <td className="p-1.5 font-mono">{p.numero_cnj || "-"}</td>
+                      <td className="p-1.5 font-mono">{p.tribunal_alias.toUpperCase()}</td>
+                      <td className="p-1.5">
+                        <Badge variant={p.classe_codigo === 1265 ? "default" : "secondary"} className="text-[10px]">
+                          {p.classe_nome || p.classe_codigo}
+                        </Badge>
+                      </td>
+                      <td className="p-1.5 max-w-[200px] truncate" title={p.assuntos.map((a: {codigo: number; nome: string}) => a.nome).join(", ")}>
+                        {p.assuntos.map((a: {codigo: number; nome: string}) => a.nome).join(", ") || "-"}
+                      </td>
+                      <td className="p-1.5">{p.data_ajuizamento ? p.data_ajuizamento.substring(0, 8).replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "-"}</td>
+                      <td className="p-1.5 max-w-[180px] truncate" title={p.orgao_julgador?.nome || ""}>{p.orgao_julgador?.nome || "-"}</td>
+                      <td className="p-1.5 text-right">{p.total_movimentos}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Evidencias Estoque</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="p-2 bg-muted/40 rounded-md">
+              <p className="text-muted-foreground">Output SHA-256</p>
+              <p className="font-mono break-all" data-testid="text-estoque-sha256">{data.hashes.output_sha256}</p>
+            </div>
+            <div className="p-2 bg-muted/40 rounded-md">
+              <p className="text-muted-foreground">Evidence Pack</p>
+              <p className="font-mono break-all">{data.evidence_pack_path}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {data.sources.map((src: { name: string; url: string; type: string }, idx: number) => (
+              <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" data-testid={`link-estoque-source-${idx}`}>
+                <Badge variant="outline" className="text-[10px]">
+                  <ExternalLink className="w-2.5 h-2.5 mr-1" />
+                  {src.name} ({src.type})
+                </Badge>
+              </a>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
+function GapAnalysisPanel({ data }: { data: GapResult }) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h3 className="text-sm font-semibold flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary" />
+            Gap Analysis - Exercicio {data.ano_exercicio}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            Dotacao (SIOP) vs Execucao (Portal) vs Estoque (CNJ)
+          </p>
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          <StatusBadge status={data.status_geral} />
+          <Badge variant="outline" className="font-mono text-[10px]">
+            <Hash className="w-3 h-3 mr-1" />
+            {data.process_id_uuid.slice(0, 8)}
+          </Badge>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+        <KPICard
+          title="Dotacao Total"
+          value={formatCurrency(data.totais.dotacao_total)}
+          icon={Database}
+          subtitle="Orcamento previsto"
+        />
+        <KPICard
+          title="Total Pago"
+          value={formatCurrency(data.totais.pago_total)}
+          icon={Banknote}
+          subtitle="Execucao efetiva"
+        />
+        <KPICard
+          title="Estoque Processos"
+          value={String(data.totais.estoque_total_processos)}
+          icon={FileText}
+          subtitle={`${data.totais.estoque_total_precatorios} prec. + ${data.totais.estoque_total_rpvs} RPVs`}
+        />
+        <KPICard
+          title="Cobertura"
+          value={data.totais.cobertura_pct !== null ? formatPercent(data.totais.cobertura_pct) : "N/D"}
+          icon={TrendingUp}
+          subtitle={data.totais.gap_dotacao_vs_pago !== null ? `Gap: ${formatCurrency(data.totais.gap_dotacao_vs_pago)}` : "Gap: N/D"}
+        />
+      </div>
+
+      <Card>
+        <CardContent className="p-4">
+          <p className="text-sm font-medium mb-3">Gap por Acao Orcamentaria</p>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs border-collapse" data-testid="table-gap-analysis">
+              <thead>
+                <tr className="border-b bg-muted/50">
+                  <th className="text-left p-2 font-medium text-muted-foreground">Acao</th>
+                  <th className="text-left p-2 font-medium text-muted-foreground max-w-[180px]">Descricao</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Dotacao</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Empenhado</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Pago</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Gap (Dot-Pago)</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Cobertura</th>
+                  <th className="text-center p-2 font-medium text-muted-foreground">Estoque</th>
+                  <th className="text-center p-2 font-medium text-muted-foreground">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.por_acao.map((item: GapAcaoItem) => (
+                  <tr key={item.codigo_acao} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-gap-${item.codigo_acao}`}>
+                    <td className="p-2 font-mono font-semibold">{item.codigo_acao}</td>
+                    <td className="p-2 max-w-[180px] truncate" title={item.descricao_acao}>{item.descricao_acao}</td>
+                    <td className="p-2 text-right font-mono">{formatCurrency(item.dotacao_atual)}</td>
+                    <td className="p-2 text-right font-mono text-blue-600 dark:text-blue-400">{formatCurrency(item.total_empenhado)}</td>
+                    <td className="p-2 text-right font-mono font-semibold text-emerald-600 dark:text-emerald-400">{formatCurrency(item.total_pago)}</td>
+                    <td className={`p-2 text-right font-mono ${item.gap_dotacao_vs_pago !== null && item.gap_dotacao_vs_pago > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>
+                      {formatCurrency(item.gap_dotacao_vs_pago)}
+                    </td>
+                    <td className="p-2 text-right font-mono">{formatPercent(item.cobertura_pct)}</td>
+                    <td className="p-2 text-center">
+                      <span className="text-muted-foreground">{item.estoque_processos > 0 ? item.estoque_processos : "-"}</span>
+                    </td>
+                    <td className="p-2 text-center"><StatusBadge status={item.status} /></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t-2 bg-muted/30 font-semibold">
+                  <td className="p-2" colSpan={2}>TOTAL</td>
+                  <td className="p-2 text-right font-mono">{formatCurrency(data.totais.dotacao_total)}</td>
+                  <td className="p-2 text-right font-mono text-blue-700 dark:text-blue-300">{formatCurrency(data.totais.empenhado_total)}</td>
+                  <td className="p-2 text-right font-mono text-emerald-700 dark:text-emerald-300">{formatCurrency(data.totais.pago_total)}</td>
+                  <td className="p-2 text-right font-mono">{formatCurrency(data.totais.gap_dotacao_vs_pago)}</td>
+                  <td className="p-2 text-right font-mono">{formatPercent(data.totais.cobertura_pct)}</td>
+                  <td className="p-2 text-center">{data.totais.estoque_total_processos}</td>
+                  <td className="p-2"></td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {data.estoque_por_tribunal.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm font-medium mb-3">Estoque por Tribunal (CNJ DataJud)</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {data.estoque_por_tribunal.map((t: EstoqueSummaryByTribunal) => (
+                <div key={t.tribunal_alias} className="p-3 bg-muted/40 rounded-md" data-testid={`card-tribunal-${t.tribunal_alias}`}>
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-mono font-semibold text-sm">{t.tribunal_alias.toUpperCase()}</span>
+                    <StatusBadge status={t.status === "ERRO" ? "NAO_LOCALIZADO" : t.status} />
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">{t.tribunal}</p>
+                  <div className="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                      <p className="text-muted-foreground">Total</p>
+                      <p className="font-semibold">{t.total_processos}</p>
+                    </div>
+                    <div>
+                      <p className="text-blue-600 dark:text-blue-400">Prec.</p>
+                      <p className="font-semibold">{t.precatorios}</p>
+                    </div>
+                    <div>
+                      <p className="text-emerald-600 dark:text-emerald-400">RPVs</p>
+                      <p className="font-semibold">{t.rpvs}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card>
+        <CardContent className="p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Shield className="w-4 h-4 text-primary" />
+            <span className="text-sm font-medium">Evidencias Gap Analysis</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+            <div className="p-2 bg-muted/40 rounded-md">
+              <p className="text-muted-foreground">Output SHA-256</p>
+              <p className="font-mono break-all" data-testid="text-gap-sha256">{data.hashes.output_sha256}</p>
+            </div>
+            <div className="p-2 bg-muted/40 rounded-md">
+              <p className="text-muted-foreground">Evidence Pack</p>
+              <p className="font-mono break-all">{data.evidence_pack_path}</p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {data.sources.map((src: { name: string; url: string; type: string }, idx: number) => (
+              <a key={idx} href={src.url} target="_blank" rel="noopener noreferrer" data-testid={`link-gap-source-${idx}`}>
+                <Badge variant="outline" className="text-[10px]">
+                  <ExternalLink className="w-2.5 h-2.5 mr-1" />
+                  {src.name} ({src.type})
+                </Badge>
+              </a>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 function ResultPanel({ data }: { data: A2Response }) {
   const totalPago = data.data.execucao.reduce((sum: number, e: ExecucaoItem) => sum + (e.pago || 0), 0);
   const totalEmpenhado = data.data.execucao.reduce((sum: number, e: ExecucaoItem) => sum + (e.empenhado || 0), 0);
@@ -866,6 +1206,9 @@ export default function LOADashboard() {
   const [selectedYear, setSelectedYear] = useState("2025");
   const [selectedMonth, setSelectedMonth] = useState<string>("");
   const [currentResult, setCurrentResult] = useState<A2Response | null>(null);
+  const [estoqueResult, setEstoqueResult] = useState<EstoqueResult | null>(null);
+  const [gapResult, setGapResult] = useState<GapResult | null>(null);
+  const [activeView, setActiveView] = useState<"a2" | "estoque" | "gap">("a2");
   const { toast } = useToast();
 
   const currentYear = new Date().getFullYear();
@@ -924,13 +1267,71 @@ export default function LOADashboard() {
     },
   });
 
+  const estoqueMutation = useMutation({
+    mutationFn: async (ano: number) => {
+      const res = await apiRequest("POST", "/api/loa/uniao/estoque", {
+        ano_exercicio: ano,
+        max_por_tribunal: 50,
+      });
+      return res.json();
+    },
+    onSuccess: (data: EstoqueResult) => {
+      setEstoqueResult(data);
+      setActiveView("estoque");
+      toast({
+        title: "Estoque consultado",
+        description: `${data.summary.total_processos} processos (${data.summary.total_precatorios} prec., ${data.summary.total_rpvs} RPVs)`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro na consulta de estoque",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const gapMutation = useMutation({
+    mutationFn: async (ano: number) => {
+      const res = await apiRequest("POST", "/api/loa/uniao/gap-analysis", {
+        ano_exercicio: ano,
+      });
+      return res.json();
+    },
+    onSuccess: (data: GapResult) => {
+      setGapResult(data);
+      setActiveView("gap");
+      toast({
+        title: "Gap Analysis concluida",
+        description: `${data.por_acao.length} acoes analisadas | Cobertura: ${data.totais.cobertura_pct !== null ? data.totais.cobertura_pct.toFixed(1) + '%' : 'N/D'}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erro no Gap Analysis",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const handleConsulta = () => {
     const mes = selectedMonth && selectedMonth !== "none" ? parseInt(selectedMonth) : undefined;
     mutation.mutate({ ano: parseInt(selectedYear), mes });
+    setActiveView("a2");
   };
 
   const handleBatchDownload = () => {
     batchMutation.mutate(parseInt(selectedYear));
+  };
+
+  const handleEstoque = () => {
+    estoqueMutation.mutate(parseInt(selectedYear));
+  };
+
+  const handleGapAnalysis = () => {
+    gapMutation.mutate(parseInt(selectedYear));
   };
 
   return (
@@ -952,7 +1353,7 @@ export default function LOADashboard() {
               </div>
             </div>
             <Badge variant="outline" className="text-[10px] font-mono">
-              MVP A2 - Dotacao + Execucao
+              MVP A2 - Dotacao + Execucao + Estoque
             </Badge>
           </div>
         </div>
@@ -1039,17 +1440,73 @@ export default function LOADashboard() {
                   <p>Baixar ZIPs de todos os 12 meses do ano selecionado</p>
                 </TooltipContent>
               </Tooltip>
+              <Separator orientation="vertical" className="h-8" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="outline"
+                    onClick={handleEstoque}
+                    disabled={estoqueMutation.isPending}
+                    data-testid="button-estoque"
+                  >
+                    {estoqueMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                        Estoque...
+                      </>
+                    ) : (
+                      <>
+                        <Scale className="w-4 h-4 mr-1.5" />
+                        Estoque CNJ
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Consultar estoque de processos no CNJ DataJud (TRF1-TRF6)</p>
+                </TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="default"
+                    onClick={handleGapAnalysis}
+                    disabled={gapMutation.isPending}
+                    data-testid="button-gap-analysis"
+                    className="bg-violet-600 text-white"
+                  >
+                    {gapMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />
+                        Analisando...
+                      </>
+                    ) : (
+                      <>
+                        <TrendingUp className="w-4 h-4 mr-1.5" />
+                        Gap Analysis
+                      </>
+                    )}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Cruzar Dotacao x Execucao x Estoque CNJ</p>
+                </TooltipContent>
+              </Tooltip>
             </div>
             <div className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
               <Calendar className="w-3 h-3" />
               Download automatico agendado para dia 1 de cada mes
             </div>
-            {(mutation.isPending || batchMutation.isPending) && (
+            {(mutation.isPending || batchMutation.isPending || estoqueMutation.isPending || gapMutation.isPending) && (
               <div className="mt-4 space-y-2">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Loader2 className="w-4 h-4 animate-spin" />
                   {batchMutation.isPending
                     ? "Baixando ZIPs de 12 meses (pode levar alguns minutos)..."
+                    : estoqueMutation.isPending
+                    ? "Consultando estoque CNJ DataJud (TRF1-TRF6)..."
+                    : gapMutation.isPending
+                    ? "Executando Gap Analysis (Dotacao x Execucao x Estoque)..."
                     : "Buscando dados do Portal da Transparencia e SIOP..."}
                 </div>
                 <Progress value={undefined} className="h-1.5" />
@@ -1058,9 +1515,34 @@ export default function LOADashboard() {
           </CardContent>
         </Card>
 
-        {currentResult && <ResultPanel data={currentResult} />}
+        {activeView === "a2" && currentResult && <ResultPanel data={currentResult} />}
+        {activeView === "estoque" && estoqueResult && <EstoquePanel data={estoqueResult} />}
+        {activeView === "gap" && gapResult && <GapAnalysisPanel data={gapResult} />}
 
-        {!currentResult && !mutation.isPending && (
+        {(activeView === "a2" ? currentResult : activeView === "estoque" ? estoqueResult : gapResult) && (
+          <div className="flex items-center gap-2 flex-wrap">
+            {currentResult && activeView !== "a2" && (
+              <Button variant="ghost" size="sm" onClick={() => setActiveView("a2")} data-testid="button-view-a2">
+                <BarChart3 className="w-3 h-3 mr-1" />
+                Ver Dotacao x Execucao
+              </Button>
+            )}
+            {estoqueResult && activeView !== "estoque" && (
+              <Button variant="ghost" size="sm" onClick={() => setActiveView("estoque")} data-testid="button-view-estoque">
+                <Scale className="w-3 h-3 mr-1" />
+                Ver Estoque CNJ
+              </Button>
+            )}
+            {gapResult && activeView !== "gap" && (
+              <Button variant="ghost" size="sm" onClick={() => setActiveView("gap")} data-testid="button-view-gap">
+                <TrendingUp className="w-3 h-3 mr-1" />
+                Ver Gap Analysis
+              </Button>
+            )}
+          </div>
+        )}
+
+        {!currentResult && !estoqueResult && !gapResult && !mutation.isPending && !estoqueMutation.isPending && !gapMutation.isPending && (
           <Card>
             <CardContent className="p-12 flex flex-col items-center justify-center text-center">
               <div className="p-4 rounded-full bg-muted/50 mb-4">

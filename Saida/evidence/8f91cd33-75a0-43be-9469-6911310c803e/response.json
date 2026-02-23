@@ -1,0 +1,98 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "8f91cd33-75a0-43be-9469-6911310c803e",
+  "ano_exercicio": 2025,
+  "generated_at_iso": "2026-02-23T02:50:03.587Z",
+  "status_geral": "PARCIAL",
+  "providers_used": [
+    "datajud"
+  ],
+  "tribunais_consultados": [
+    "trf1",
+    "trf2",
+    "trf3",
+    "trf4",
+    "trf5",
+    "trf6"
+  ],
+  "summary": {
+    "total_processos": 0,
+    "total_precatorios": 0,
+    "total_rpvs": 0,
+    "por_tribunal": [
+      {
+        "tribunal": "Tribunal Regional Federal da 1ª Região",
+        "tribunal_alias": "trf1",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 2ª Região",
+        "tribunal_alias": "trf2",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 3ª Região",
+        "tribunal_alias": "trf3",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 4ª Região",
+        "tribunal_alias": "trf4",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 5ª Região",
+        "tribunal_alias": "trf5",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 6ª Região",
+        "tribunal_alias": "trf6",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      }
+    ]
+  },
+  "processos": [],
+  "sources": [
+    {
+      "name": "CNJ DataJud API Publica",
+      "url": "https://api-publica.datajud.cnj.jus.br",
+      "type": "API"
+    }
+  ],
+  "evidencias_count": 6,
+  "hashes": {
+    "output_sha256": "823976be3061f048a88ecf386ff26d7c98f1c3cc6b23547c990e8d4f8be2c327"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/8f91cd33-75a0-43be-9469-6911310c803e"
+}

@@ -1,0 +1,56 @@
+Decisão de Camada 3 (Estoque): fonte e formato
+
+1) Fonte primária (padrão do produto): CNJ DataJud (API oficial).
+
+Vamos tratar a Camada 3 como index/estoque nacional consultável via conectores oficiais CNJ/DataJud, com parâmetros por tribunal (TJSP, TJCE, TRF’s etc.), classe/assunto, situação, datas e número CNJ quando existir.
+
+Motivo: padronização nacional, menor risco de quebra, e melhor alinhamento com “evidência oficial + cadeia de custódia”.
+
+2) Fonte secundária (quando existir): CSV/planilhas oficiais do CNJ/tribunais.
+
+Se houver export/relatório oficial em CSV/XLSX (ex.: listagens públicas, painéis, relatórios de precatórios), vamos suportar como ingestão batch (ETL) para compor/validar o estoque, sempre com:
+
+armazenamento do arquivo bruto,
+
+SHA-256,
+
+metadados (origem, data, link, competência),
+
+process_id (UUID).
+
+3) Fonte terciária (exceção, sob governança): scraping/robô.
+
+Só entra se não houver dado via DataJud nem export oficial, e mesmo assim com “modo evidência” (HTML/PDF bruto + hash + logs + reprodutibilidade).
+
+Implicação direta no estoque_tribunais.ts
+
+O serviço estoque_tribunais.ts deve ser desenhado como orquestrador de conectores, com estratégia:
+
+provider = datajud (default)
+
+provider = arquivo_oficial (CSV/XLSX/PDF quando aplicável)
+
+provider = scraping (feature flag / exceção)
+
+E deve retornar um formato canônico de item de estoque (mínimo) para alimentar o resto do pipeline:
+
+tribunal
+
+numero_cnj (quando houver)
+
+classe / assunto
+
+situacao (em tramitação / baixado / etc.)
+
+datas_relevantes (última movimentação, distribuição)
+
+fonte_oficial (qual endpoint/arquivo)
+
+evidence_pack (raw + hash + uuid)
+
+Texto pronto (curto) para você colar na resposta
+
+Camada 3 (Estoque) virá principalmente de fonte oficial padronizada do CNJ (DataJud/API), por ser o caminho mais sustentável e auditável. Onde houver, vamos complementar com CSVs/planilhas oficiais (CNJ/Tribunais) como ingestão batch com evidência (arquivo bruto + SHA-256 + metadados + UUID). Scraping só como exceção sob feature flag.
+Isso define o estoque_tribunais.ts como um orquestrador de providers (datajud default, arquivo_oficial secundário, scraping excepcional), retornando um item canônico de estoque + evidence pack.
+
+Se você quiser, eu já te devolvo também o contrato TypeScript (interfaces + enum providers + shape do retorno) do estoque_tribunais.ts no padrão “anti-alucinação/evidence pack” que você vem exigindo — mas só me diga “OK, manda o contrato TS”.

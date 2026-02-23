@@ -1,0 +1,98 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "a4f34ebe-fb50-4ad1-bf92-2cf083633d1e",
+  "ano_exercicio": 2025,
+  "generated_at_iso": "2026-02-23T02:49:24.382Z",
+  "status_geral": "NAO_LOCALIZADO",
+  "providers_used": [
+    "datajud"
+  ],
+  "tribunais_consultados": [
+    "trf1",
+    "trf2",
+    "trf3",
+    "trf4",
+    "trf5",
+    "trf6"
+  ],
+  "summary": {
+    "total_processos": 0,
+    "total_precatorios": 0,
+    "total_rpvs": 0,
+    "por_tribunal": [
+      {
+        "tribunal": "Tribunal Regional Federal da 1ª Região",
+        "tribunal_alias": "trf1",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "ERRO",
+        "observacoes": "DataJud indisponivel, providers alternativos nao implementados"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 2ª Região",
+        "tribunal_alias": "trf2",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "ERRO",
+        "observacoes": "DataJud indisponivel, providers alternativos nao implementados"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 3ª Região",
+        "tribunal_alias": "trf3",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "ERRO",
+        "observacoes": "DataJud indisponivel, providers alternativos nao implementados"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 4ª Região",
+        "tribunal_alias": "trf4",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "ERRO",
+        "observacoes": "DataJud indisponivel, providers alternativos nao implementados"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 5ª Região",
+        "tribunal_alias": "trf5",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "ERRO",
+        "observacoes": "DataJud indisponivel, providers alternativos nao implementados"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 6ª Região",
+        "tribunal_alias": "trf6",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "ERRO",
+        "observacoes": "DataJud indisponivel, providers alternativos nao implementados"
+      }
+    ]
+  },
+  "processos": [],
+  "sources": [
+    {
+      "name": "CNJ DataJud API Publica",
+      "url": "https://api-publica.datajud.cnj.jus.br",
+      "type": "API"
+    }
+  ],
+  "evidencias_count": 0,
+  "hashes": {
+    "output_sha256": "be64045dfdecebd1dcd0f9efd2745fe25ff2a34a7c01beb8f1f58f866ac3b020"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/a4f34ebe-fb50-4ad1-bf92-2cf083633d1e"
+}

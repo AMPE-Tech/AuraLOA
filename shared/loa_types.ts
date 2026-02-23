@@ -175,6 +175,117 @@ export interface A2Response {
   evidence_pack_path: string;
 }
 
+export type EstoqueProvider = "datajud" | "arquivo_oficial" | "scraping";
+
+export interface EstoqueProcesso {
+  numero_cnj: string;
+  tribunal: string;
+  tribunal_alias: string;
+  classe_codigo: number;
+  classe_nome: string;
+  assuntos: { codigo: number; nome: string }[];
+  situacao: string;
+  data_ajuizamento: string | null;
+  data_ultima_atualizacao: string | null;
+  orgao_julgador: { codigo: number | null; nome: string } | null;
+  grau: string | null;
+  total_movimentos: number;
+  ultima_movimentacao: { codigo: number | null; nome: string; data: string | null } | null;
+}
+
+export interface EstoqueSummaryByTribunal {
+  tribunal: string;
+  tribunal_alias: string;
+  total_processos: number;
+  precatorios: number;
+  rpvs: number;
+  provider: EstoqueProvider;
+  status: "OK" | "PARCIAL" | "ERRO";
+  observacoes: string;
+}
+
+export interface EstoqueResult {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  providers_used: EstoqueProvider[];
+  tribunais_consultados: string[];
+  summary: {
+    total_processos: number;
+    total_precatorios: number;
+    total_rpvs: number;
+    por_tribunal: EstoqueSummaryByTribunal[];
+  };
+  processos: EstoqueProcesso[];
+  sources: SourceInfo[];
+  evidencias_count: number;
+  hashes: {
+    output_sha256: string;
+  };
+  evidence_pack_path: string;
+}
+
+export const estoqueRequestSchema = z.object({
+  ano_exercicio: z.number().int().min(2000).max(2100),
+  tribunais: z.array(z.string()).optional(),
+  classes: z.array(z.number()).optional(),
+  max_por_tribunal: z.number().int().min(1).max(10000).optional(),
+});
+
+export type EstoqueRequest = z.infer<typeof estoqueRequestSchema>;
+
+export interface GapAcaoItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  dotacao_atual: number | null;
+  total_pago: number | null;
+  total_empenhado: number | null;
+  estoque_processos: number;
+  estoque_precatorios: number;
+  estoque_rpvs: number;
+  gap_dotacao_vs_pago: number | null;
+  cobertura_pct: number | null;
+  fonte_dotacao: string;
+  fonte_execucao: string;
+  fonte_estoque: string;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+}
+
+export interface GapResult {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  totais: {
+    dotacao_total: number | null;
+    pago_total: number | null;
+    empenhado_total: number | null;
+    estoque_total_processos: number;
+    estoque_total_precatorios: number;
+    estoque_total_rpvs: number;
+    gap_dotacao_vs_pago: number | null;
+    cobertura_pct: number | null;
+  };
+  por_acao: GapAcaoItem[];
+  estoque_por_tribunal: EstoqueSummaryByTribunal[];
+  sources: SourceInfo[];
+  hashes: {
+    output_sha256: string;
+  };
+  evidence_pack_path: string;
+}
+
+export const gapRequestSchema = z.object({
+  ano_exercicio: z.number().int().min(2000).max(2100),
+  mes: z.number().int().min(1).max(12).optional(),
+  tribunais: z.array(z.string()).optional(),
+});
+
+export type GapRequest = z.infer<typeof gapRequestSchema>;
+
 export interface A2HistoryEntry {
   id: string;
   process_id_uuid: string;

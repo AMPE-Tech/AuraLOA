@@ -1,0 +1,4149 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "19940a36-31a5-4a27-bdc6-adea6edc7bbd",
+  "ano_exercicio": 2025,
+  "generated_at_iso": "2026-02-23T02:55:24.981Z",
+  "status_geral": "PARCIAL",
+  "providers_used": [
+    "datajud"
+  ],
+  "tribunais_consultados": [
+    "trf1",
+    "trf2",
+    "trf3",
+    "trf4",
+    "trf5",
+    "trf6"
+  ],
+  "summary": {
+    "total_processos": 150,
+    "total_precatorios": 6,
+    "total_rpvs": 144,
+    "por_tribunal": [
+      {
+        "tribunal": "Tribunal Regional Federal da 1ª Região",
+        "tribunal_alias": "trf1",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 2ª Região",
+        "tribunal_alias": "trf2",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 3ª Região",
+        "tribunal_alias": "trf3",
+        "total_processos": 50,
+        "precatorios": 0,
+        "rpvs": 50,
+        "provider": "datajud",
+        "status": "OK",
+        "observacoes": "50 processos via DataJud"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 4ª Região",
+        "tribunal_alias": "trf4",
+        "total_processos": 50,
+        "precatorios": 1,
+        "rpvs": 49,
+        "provider": "datajud",
+        "status": "OK",
+        "observacoes": "50 processos via DataJud"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 5ª Região",
+        "tribunal_alias": "trf5",
+        "total_processos": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      },
+      {
+        "tribunal": "Tribunal Regional Federal da 6ª Região",
+        "tribunal_alias": "trf6",
+        "total_processos": 50,
+        "precatorios": 5,
+        "rpvs": 45,
+        "provider": "datajud",
+        "status": "OK",
+        "observacoes": "50 processos via DataJud"
+      }
+    ]
+  },
+  "processos": [
+    {
+      "numero_cnj": "00798650920074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5974,
+          "nome": "Aquisição de veículos automotores"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070703000000",
+      "data_ultima_atualizacao": "2025-07-17T18:39:53.990Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-06-30T17:15:19.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00801344820074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070703000000",
+      "data_ultima_atualizacao": "2025-07-17T18:40:01.097Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2018-05-28T16:33:48.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00799188720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10128,
+          "nome": "Servidão Administrativa"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070703000000",
+      "data_ultima_atualizacao": "2025-08-09T19:53:12.036Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 37,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-05-28T16:59:52.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00799162020074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10128,
+          "nome": "Servidão Administrativa"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070703000000",
+      "data_ultima_atualizacao": "2025-08-09T19:53:12.055Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 36,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-05-28T16:59:52.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00780732020074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6133,
+          "nome": "IRSM de Fevereiro de 1994(39,67%)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070702000000",
+      "data_ultima_atualizacao": "2025-07-17T18:39:46.934Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 488,
+        "nome": "Cancelamento de Distribuição",
+        "data": "2023-08-08T16:49:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00775224020074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070701000000",
+      "data_ultima_atualizacao": "2025-07-17T18:35:25.612Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 17,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-05-31T17:13:15.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00769135720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070629000000",
+      "data_ultima_atualizacao": "2025-07-17T18:35:30.661Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-04-28T16:10:56.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00760085220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6096,
+          "nome": "Aposentadoria por Idade (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070628000000",
+      "data_ultima_atualizacao": "2025-07-17T18:35:30.640Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-06-28T18:41:13.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00737922120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5975,
+          "nome": "Aquisição de combustíveis"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070627000000",
+      "data_ultima_atualizacao": "2024-07-23T01:34:09.201Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 246,
+        "nome": "Definitivo",
+        "data": "2007-12-05T12:25:43.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00730188820074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070626000000",
+      "data_ultima_atualizacao": "2025-07-17T18:26:35.190Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-09-29T16:20:40.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00729313520074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6120,
+          "nome": "RMI - Renda Mensal Inicial"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070626000000",
+      "data_ultima_atualizacao": "2025-07-17T18:31:16.270Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2018-03-23T15:52:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00733210520074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6126,
+          "nome": "Benefício mínimo a partir da CF/88 (art. 201, § 2º CF/88)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070626000000",
+      "data_ultima_atualizacao": "2025-07-17T18:35:31.043Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-05-17T16:32:53.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00726767720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070625000000",
+      "data_ultima_atualizacao": "2025-07-17T18:26:35.183Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 60,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-12-16T17:26:15.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00722385120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6095,
+          "nome": "Aposentadoria por Incapacidade Permanente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070624000000",
+      "data_ultima_atualizacao": "2025-07-17T18:26:38.935Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-09-28T17:04:31.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00717734220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070622000000",
+      "data_ultima_atualizacao": "2025-07-17T18:26:36.466Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-10-31T15:38:08.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00700031420074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6139,
+          "nome": "Reajuste pela Súmula 260 do TFR"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070619000000",
+      "data_ultima_atualizacao": "2025-07-17T18:15:56.015Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 16,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-07-28T17:06:51.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00683455220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6144,
+          "nome": "Salário Mínimo de Ncz$ 120,00 para junho/89"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070618000000",
+      "data_ultima_atualizacao": "2025-07-17T18:02:51.144Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 14,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-01-21T19:04:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00683429720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6144,
+          "nome": "Salário Mínimo de Ncz$ 120,00 para junho/89"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070618000000",
+      "data_ultima_atualizacao": "2025-07-17T18:02:52.730Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 13,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-01-21T19:04:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00683463720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6144,
+          "nome": "Salário Mínimo de Ncz$ 120,00 para junho/89"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070618000000",
+      "data_ultima_atualizacao": "2025-07-17T18:02:52.736Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 13,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-01-21T19:02:14.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00684607320074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10317,
+          "nome": "Índice de 28,86% Lei 8.622/1993 e 8.627/1993"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070618000000",
+      "data_ultima_atualizacao": "2025-07-17T18:15:58.925Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-03-31T16:55:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00662288820074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070615000000",
+      "data_ultima_atualizacao": "2025-07-17T23:55:54.729Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 488,
+        "nome": "Cancelamento de Distribuição",
+        "data": "2015-03-30T12:11:37.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00665389420074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6122,
+          "nome": "RMI pelo art. 1º da Lei 6.423/77 - índices de atualização dos 24 1ºs salários-de-contribuição, anteriores aos 12 últimos)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070615000000",
+      "data_ultima_atualizacao": "2025-07-17T23:55:54.730Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 40,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-05-17T16:32:53.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00668593220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070615000000",
+      "data_ultima_atualizacao": "2025-07-17T23:55:58.260Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 488,
+        "nome": "Cancelamento de Distribuição",
+        "data": "2017-07-27T16:08:47.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00669320420074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6152,
+          "nome": "Gratificação Natalina a partir da CF/88 (Art. 201, § 6º CF/88)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070615000000",
+      "data_ultima_atualizacao": "2025-07-17T23:55:58.261Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-10-31T15:38:08.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00629395020074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6127,
+          "nome": "Parcelas e índices de correção do salário-de-contribuição"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070603000000",
+      "data_ultima_atualizacao": "2025-07-17T18:15:58.969Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-04-27T17:14:10.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00631066720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6127,
+          "nome": "Parcelas e índices de correção do salário-de-contribuição"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070603000000",
+      "data_ultima_atualizacao": "2025-07-17T23:53:11.169Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-06-30T17:15:19.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00627186720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6158,
+          "nome": "Correção Monetária de Benefício pago com atraso"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070601000000",
+      "data_ultima_atualizacao": "2025-07-17T23:47:37.383Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-10-31T15:38:08.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00628607120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6127,
+          "nome": "Parcelas e índices de correção do salário-de-contribuição"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070601000000",
+      "data_ultima_atualizacao": "2025-07-17T23:47:37.385Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-04-27T17:14:10.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00625540520074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070601000000",
+      "data_ultima_atualizacao": "2025-07-17T23:47:38.726Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-12-16T17:26:15.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00628278120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6127,
+          "nome": "Parcelas e índices de correção do salário-de-contribuição"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070601000000",
+      "data_ultima_atualizacao": "2025-07-17T23:50:37.064Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 12,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-04-27T17:14:10.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00609743720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6133,
+          "nome": "IRSM de Fevereiro de 1994(39,67%)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070531000000",
+      "data_ultima_atualizacao": "2025-07-17T23:44:47.199Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 488,
+        "nome": "Cancelamento de Distribuição",
+        "data": "2017-06-27T15:49:03.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00550010420074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070522000000",
+      "data_ultima_atualizacao": "2025-07-17T23:25:48.710Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 488,
+        "nome": "Cancelamento de Distribuição",
+        "data": "2016-02-25T15:51:04.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00550037120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070522000000",
+      "data_ultima_atualizacao": "2025-07-17T23:25:49.241Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-10-31T15:38:08.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00548426120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070522000000",
+      "data_ultima_atualizacao": "2025-07-17T23:25:49.255Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-10-31T15:38:08.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00542467720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6114,
+          "nome": "Benefício Assistencial (Art. 203,V CF/88)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070521000000",
+      "data_ultima_atualizacao": "2025-07-17T17:45:37.672Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-03-31T16:55:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00534360520074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070518000000",
+      "data_ultima_atualizacao": "2025-07-17T23:13:35.045Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-03-31T16:55:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00530853220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6120,
+          "nome": "RMI - Renda Mensal Inicial"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070518000000",
+      "data_ultima_atualizacao": "2025-07-17T23:13:33.074Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2020-08-07T14:10:56.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00517256220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070517000000",
+      "data_ultima_atualizacao": "2025-08-13T12:42:47.232Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 26,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2020-01-21T18:51:21.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00517239220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070517000000",
+      "data_ultima_atualizacao": "2025-08-13T12:43:31.357Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 26,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2020-01-21T18:43:27.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00517273220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6138,
+          "nome": "Reajustes e Revisões Específicos"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070517000000",
+      "data_ultima_atualizacao": "2025-08-13T12:46:55.492Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 48,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2020-01-21T18:41:54.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00505096620074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070516000000",
+      "data_ultima_atualizacao": "2025-07-17T18:15:21.748Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2018-07-20T18:46:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00466495720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5975,
+          "nome": "Aquisição de combustíveis"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070503000000",
+      "data_ultima_atualizacao": "2025-07-17T18:47:28.818Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 18,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-11-03T17:13:26.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00466521220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5975,
+          "nome": "Aquisição de combustíveis"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070503000000",
+      "data_ultima_atualizacao": "2025-07-17T18:47:31.072Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 28,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-06-30T17:15:19.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00436746220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5974,
+          "nome": "Aquisição de veículos automotores"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070430000000",
+      "data_ultima_atualizacao": "2025-07-17T23:41:07.591Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-06-25T18:39:51.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00391139220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5975,
+          "nome": "Aquisição de combustíveis"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070423000000",
+      "data_ultima_atualizacao": "2025-07-17T23:16:29.648Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 50,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2015-04-27T17:14:10.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00380962120074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6152,
+          "nome": "Gratificação Natalina a partir da CF/88 (Art. 201, § 6º CF/88)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070419000000",
+      "data_ultima_atualizacao": "2025-07-17T23:08:19.507Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 13,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-01-30T16:33:41.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00378529220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070419000000",
+      "data_ultima_atualizacao": "2025-07-17T23:08:31.381Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2018-08-31T11:59:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00371504920074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6144,
+          "nome": "Salário Mínimo de Ncz$ 120,00 para junho/89"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070418000000",
+      "data_ultima_atualizacao": "2025-07-17T23:05:51.917Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2017-06-28T18:41:13.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00330029220074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5974,
+          "nome": "Aquisição de veículos automotores"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070402000000",
+      "data_ultima_atualizacao": "2025-07-17T18:13:33.139Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 11,
+      "ultima_movimentacao": {
+        "codigo": 488,
+        "nome": "Cancelamento de Distribuição",
+        "data": "2015-09-29T13:33:40.000Z"
+      }
+    },
+    {
+      "numero_cnj": "00306099720074030000",
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20070329000000",
+      "data_ultima_atualizacao": "2025-07-17T23:25:25.226Z",
+      "orgao_julgador": {
+        "codigo": 21710,
+        "nome": "GABINETE DA PRESIDÊNCIA DO TRIBUNAL REGIONAL FEDERAL DA 3ª REGIÃO"
+      },
+      "grau": "G2",
+      "total_movimentos": 42,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2016-02-29T14:31:01.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50250516520254049388",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250822142248",
+      "data_ultima_atualizacao": "2025-09-15T13:01:11.129Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 3,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-23T01:05:32.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50994404420254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250818083603",
+      "data_ultima_atualizacao": "2025-09-15T08:00:43.315Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-19T01:07:40.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51873121620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731193819",
+      "data_ultima_atualizacao": "2025-09-14T05:00:46.516Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T03:08:32.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51873052420254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731193746",
+      "data_ultima_atualizacao": "2025-09-14T05:00:46.869Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T03:08:14.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51872455120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731192000",
+      "data_ultima_atualizacao": "2025-09-14T05:00:43.031Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T03:04:26.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51872308220254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14772,
+          "nome": "Urbana (art. 42/44)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731191959",
+      "data_ultima_atualizacao": "2025-09-14T05:00:42.954Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T03:03:35.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50935320620254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731191946",
+      "data_ultima_atualizacao": "2025-09-14T05:00:41.331Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:58:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50935312120254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14772,
+          "nome": "Urbana (art. 42/44)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731191946",
+      "data_ultima_atualizacao": "2025-09-14T05:00:41.332Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:57:59.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51915958220254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731191841",
+      "data_ultima_atualizacao": "2025-09-14T06:41:53.178Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 5,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T07:41:21.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51870108420254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14831,
+          "nome": "Contribuinte Individual ou Segurada Desempregada"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731180815",
+      "data_ultima_atualizacao": "2025-09-14T04:51:42.994Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:50:52.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50934429520254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731175650",
+      "data_ultima_atualizacao": "2025-09-14T04:51:42.051Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:47:38.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51869475920254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731175424",
+      "data_ultima_atualizacao": "2025-09-14T04:51:41.812Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:46:17.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51869199120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14808,
+          "nome": "Rural (art. 59/63)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731175423",
+      "data_ultima_atualizacao": "2025-09-14T04:51:40.700Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:45:06.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51868210920254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731175404",
+      "data_ultima_atualizacao": "2025-09-14T04:51:39.917Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:40:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51868359020254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14772,
+          "nome": "Urbana (art. 42/44)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731175404",
+      "data_ultima_atualizacao": "2025-09-14T04:51:40.171Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:41:22.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51868055520254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731174842",
+      "data_ultima_atualizacao": "2025-09-14T04:51:39.742Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:39:44.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51867908620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 11946,
+          "nome": "Deficiente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731174612",
+      "data_ultima_atualizacao": "2025-09-14T04:51:37.006Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:38:48.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51867864920254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731174320",
+      "data_ultima_atualizacao": "2025-09-14T04:40:49.593Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:38:31.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51867856420254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10686,
+          "nome": "Multa Cominatória / Astreintes"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731174320",
+      "data_ultima_atualizacao": "2025-09-14T04:40:50.061Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:38:29.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50934126020254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14728,
+          "nome": "Gratificação de Desempenho do Plano Geral de Cargos do Poder Executivo - GDPGPE"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731173538",
+      "data_ultima_atualizacao": "2025-09-14T04:40:49.811Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:37:48.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51867449720254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14771,
+          "nome": "Adicional de 25%"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731171652",
+      "data_ultima_atualizacao": "2025-09-14T04:40:49.979Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:35:52.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51865449020254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165855",
+      "data_ultima_atualizacao": "2025-09-14T04:30:40.068Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:25:52.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51865388320254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6107,
+          "nome": "Auxílio-Acidente (Art. 86)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165854",
+      "data_ultima_atualizacao": "2025-09-14T04:30:40.004Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:25:37.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51864738820254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 12920,
+          "nome": "Residência Médica"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165850",
+      "data_ultima_atualizacao": "2025-09-14T04:21:06.515Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:22:28.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51864349120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165706",
+      "data_ultima_atualizacao": "2025-09-14T04:21:08.153Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:20:11.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51864131820254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14823,
+          "nome": "Óbito de Companheiro/Companheira"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165001",
+      "data_ultima_atualizacao": "2025-09-14T04:21:04.007Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:18:26.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51864045620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165001",
+      "data_ultima_atualizacao": "2025-09-14T04:21:08.061Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:18:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51864140320254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731165001",
+      "data_ultima_atualizacao": "2025-09-14T04:21:09.501Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:18:32.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51863750620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731164959",
+      "data_ultima_atualizacao": "2025-09-14T04:21:08.440Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T02:16:42.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51862097120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6097,
+          "nome": "Urbana (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161350",
+      "data_ultima_atualizacao": "2025-09-14T03:40:40.418Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:57:42.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861785120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6097,
+          "nome": "Urbana (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161347",
+      "data_ultima_atualizacao": "2025-09-14T03:40:40.819Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:55:42.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861707420254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161346",
+      "data_ultima_atualizacao": "2025-09-14T03:40:40.141Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:54:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861439120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161056",
+      "data_ultima_atualizacao": "2025-09-14T03:40:40.256Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:53:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861309220254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161055",
+      "data_ultima_atualizacao": "2025-09-14T03:40:38.882Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:53:12.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861179320254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161054",
+      "data_ultima_atualizacao": "2025-09-14T03:40:37.529Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:52:38.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860988720254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161053",
+      "data_ultima_atualizacao": "2025-09-14T03:40:38.715Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:51:49.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861014220254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161053",
+      "data_ultima_atualizacao": "2025-09-14T03:40:39.796Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:51:57.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51861074920254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731161053",
+      "data_ultima_atualizacao": "2025-09-14T03:40:39.944Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:52:12.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860840620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10309,
+          "nome": "Adicional de Produtividade"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731155945",
+      "data_ultima_atualizacao": "2025-09-14T03:40:40.816Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:50:19.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50948139420254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731154235",
+      "data_ultima_atualizacao": "2025-09-14T06:21:13.487Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T06:51:45.000Z"
+      }
+    },
+    {
+      "numero_cnj": "50948164920254049445",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731154235",
+      "data_ultima_atualizacao": "2025-09-14T06:21:13.789Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T06:51:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860477620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731154010",
+      "data_ultima_atualizacao": "2025-09-14T03:40:36.769Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:47:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860469120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731154010",
+      "data_ultima_atualizacao": "2025-09-14T03:40:36.861Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:46:59.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860486120254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6048,
+          "nome": "Contribuições Previdenciárias"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731154010",
+      "data_ultima_atualizacao": "2025-09-14T03:40:38.363Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:47:05.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860373220254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6118,
+          "nome": "Aposentadoria por Tempo de Contribuição (Art. 55/6)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731152347",
+      "data_ultima_atualizacao": "2025-09-14T03:40:39.428Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:46:06.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51860226320254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731151134",
+      "data_ultima_atualizacao": "2025-09-14T03:40:36.780Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:44:34.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51859992020254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731151131",
+      "data_ultima_atualizacao": "2025-09-14T03:40:38.733Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:43:10.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51859559820254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5919,
+          "nome": "Incidência sobre Aposentadoria"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731150933",
+      "data_ultima_atualizacao": "2025-09-14T03:30:43.805Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:40:18.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51859524620254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 5917,
+          "nome": "IRPF/Imposto de Renda de Pessoa Física"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731150932",
+      "data_ultima_atualizacao": "2025-09-14T03:30:43.506Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:39:52.000Z"
+      }
+    },
+    {
+      "numero_cnj": "51858294820254049666",
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14828,
+          "nome": "Urbano"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20250731140837",
+      "data_ultima_atualizacao": "2025-09-14T03:30:43.031Z",
+      "orgao_julgador": {
+        "codigo": 44508,
+        "nome": "Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-08-01T01:31:42.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60027014620244069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6104,
+          "nome": "Pensão por Morte (Art. 74/9)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "9025-09-26T21:18:28.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:00:22.165Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-09-27T01:06:34.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60026970920244069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6104,
+          "nome": "Pensão por Morte (Art. 74/9)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "9025-09-26T21:18:28.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:00:22.165Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-09-27T01:06:31.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60313208820254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14808,
+          "nome": "Rural (art. 59/63)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "8050-03-27T22:10:35.000Z",
+      "data_ultima_atualizacao": "2025-06-07T07:10:13.971Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-03-28T01:21:09.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60086097320254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6097,
+          "nome": "Urbana (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "8025-03-14T14:07:58.000Z",
+      "data_ultima_atualizacao": "2025-06-07T02:40:24.633Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-03-15T01:09:41.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60361806920244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "8024-08-16T14:16:44.000Z",
+      "data_ultima_atualizacao": "2025-06-04T14:40:02.792Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-08-17T01:06:47.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60172515120254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "7025-03-26T13:43:44.000Z",
+      "data_ultima_atualizacao": "2025-06-05T12:00:07.611Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 5,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-27T01:15:38.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60294537820244069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "6024-11-11T16:14:42.000Z",
+      "data_ultima_atualizacao": "2025-06-04T18:40:19.603Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-11-12T06:35:17.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60559747620244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5858-10-01T17:18:36.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:20:01.894Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-10-02T01:11:15.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60018007820244069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6095,
+          "nome": "Aposentadoria por Incapacidade Permanente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5702-08-23T13:20:40.000Z",
+      "data_ultima_atualizacao": "2025-06-04T14:50:06.986Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-08-24T06:35:54.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60069184020254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5555-01-31T14:55:33.000Z",
+      "data_ultima_atualizacao": "2025-06-05T06:30:03.245Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-01T01:17:07.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60028098020254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 11947,
+          "nome": "Idoso"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5525-01-24T12:55:39.000Z",
+      "data_ultima_atualizacao": "2025-06-05T04:40:03.399Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-01-25T01:06:46.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60108694220254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14808,
+          "nome": "Rural (art. 59/63)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5253-05-27T12:26:27.000Z",
+      "data_ultima_atualizacao": "2025-06-05T08:40:02.844Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-12T14:47:16.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60108685720254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5250-02-27T12:26:27.000Z",
+      "data_ultima_atualizacao": "2025-06-05T08:40:02.844Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-12T14:47:15.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60014594120254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5250-01-24T17:02:11.000Z",
+      "data_ultima_atualizacao": "2025-06-05T04:50:04.655Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-01-25T06:35:09.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60082642620254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6107,
+          "nome": "Auxílio-Acidente (Art. 86)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5025-02-05T14:11:46.000Z",
+      "data_ultima_atualizacao": "2025-06-05T07:20:04.033Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-06T01:06:07.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60082634120254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5025-02-05T14:11:46.000Z",
+      "data_ultima_atualizacao": "2025-06-05T07:20:04.033Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-06T01:06:06.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60292103720244069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "5024-11-08T15:41:03.000Z",
+      "data_ultima_atualizacao": "2025-06-06T22:02:13.154Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-11-09T06:35:32.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60246938620244069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6095,
+          "nome": "Aposentadoria por Incapacidade Permanente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "4747-10-15T18:36:41.000Z",
+      "data_ultima_atualizacao": "2025-06-04T17:00:54.302Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-10-16T06:37:34.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60160765620244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "4242-06-24T22:16:42.000Z",
+      "data_ultima_atualizacao": "2025-06-04T13:20:05.518Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-06-25T01:19:10.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60008055420254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "4225-01-16T11:42:41.000Z",
+      "data_ultima_atualizacao": "2025-06-05T03:40:48.736Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 5,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-01-17T06:35:03.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60793413220244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 11946,
+          "nome": "Deficiente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3838-11-28T16:01:17.000Z",
+      "data_ultima_atualizacao": "2025-06-04T20:40:05.336Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-11-29T01:20:23.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60853077320244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14772,
+          "nome": "Urbana (art. 42/44)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3737-12-13T15:36:36.000Z",
+      "data_ultima_atualizacao": "2025-06-04T23:30:04.835Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-12-14T01:12:38.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60098191520244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3434-05-28T18:36:49.000Z",
+      "data_ultima_atualizacao": "2025-06-04T13:10:03.380Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-05-29T01:09:50.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60026244220254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3434-01-23T22:14:34.000Z",
+      "data_ultima_atualizacao": "2025-06-05T04:30:02.625Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 5,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-01-24T01:08:36.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60029621620254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3325-01-24T16:30:33.000Z",
+      "data_ultima_atualizacao": "2025-06-05T04:40:04.581Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-01-25T01:08:27.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60482311520244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3224-09-16T10:15:47.000Z",
+      "data_ultima_atualizacao": "2025-06-04T15:30:38.257Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-09-17T01:06:05.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60024551620254069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6100,
+          "nome": "Aposentadoria Especial (Art. 57/8)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3027-09-24T13:33:10.000Z",
+      "data_ultima_atualizacao": "2025-06-07T05:20:17.115Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-03-25T01:06:14.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60104328220254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3027-09-24T13:33:10.000Z",
+      "data_ultima_atualizacao": "2025-06-07T05:20:17.115Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-03-25T01:06:15.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60044783220254069388",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1265,
+      "classe_nome": "Precatório",
+      "assuntos": [
+        {
+          "codigo": 6104,
+          "nome": "Pensão por Morte (Art. 74/9)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3025-05-06T16:25:00.000Z",
+      "data_ultima_atualizacao": "2025-06-07T10:40:03.724Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 4,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-04-02T01:11:54.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60020839020254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 11946,
+          "nome": "Deficiente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "3025-01-30T17:44:26.000Z",
+      "data_ultima_atualizacao": "2025-06-05T06:40:16.683Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-01-31T06:35:24.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60115458720254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "2725-02-13T10:24:27.000Z",
+      "data_ultima_atualizacao": "2025-06-05T09:00:05.519Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-02-14T01:08:08.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60252185020254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14808,
+          "nome": "Rural (art. 59/63)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "2719-02-15T00:31:07.000Z",
+      "data_ultima_atualizacao": "2025-06-07T03:00:22.850Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2025-03-15T01:23:26.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60835089220244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "2626-12-11T19:14:27.000Z",
+      "data_ultima_atualizacao": "2025-06-04T22:50:52.984Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-12-12T01:07:43.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60529868220244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "2626-09-24T19:29:24.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:00:12.657Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-09-25T01:12:51.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60548505820244069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 9258,
+          "nome": "Honorários Periciais"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "2624-09-30T16:19:14.000Z",
+      "data_ultima_atualizacao": "2025-06-04T16:10:08.497Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "Gabinete da Presidência"
+      },
+      "grau": "G2",
+      "total_movimentos": 6,
+      "ultima_movimentacao": {
+        "codigo": 11383,
+        "nome": "Ato ordinatório",
+        "data": "2024-10-01T01:10:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60455277620254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10655,
+          "nome": "Honorários Advocatícios"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012741",
+      "data_ultima_atualizacao": "2026-01-13T18:21:06.084000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:31:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "60455269120254069445",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 10318,
+          "nome": "Índice da URV Lei 8.880/1994"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012740",
+      "data_ultima_atualizacao": "2026-01-13T18:20:02.701000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 10,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:31:02.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182909120254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6114,
+          "nome": "Benefício Assistencial (Art. 203,V CF/88)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012738",
+      "data_ultima_atualizacao": "2026-01-13T18:20:08.535000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:57.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182917620254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 11946,
+          "nome": "Deficiente"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012738",
+      "data_ultima_atualizacao": "2026-01-13T18:21:06.202000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:57.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182890920254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012737",
+      "data_ultima_atualizacao": "2026-01-13T18:21:06.196000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:57.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182882420254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14772,
+          "nome": "Urbana (art. 42/44)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012736",
+      "data_ultima_atualizacao": "2026-01-13T18:19:47.832000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:57.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182873920254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012734",
+      "data_ultima_atualizacao": "2026-01-13T18:20:05.003000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182865420254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14823,
+          "nome": "Óbito de Companheiro/Companheira"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012734",
+      "data_ultima_atualizacao": "2026-01-13T18:20:07.996000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182856920254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012733",
+      "data_ultima_atualizacao": "2026-01-13T18:19:47.264000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182848420254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012733",
+      "data_ultima_atualizacao": "2026-01-13T18:20:04.843000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 8,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182821720254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14809,
+          "nome": "Urbano (art. 60)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012731",
+      "data_ultima_atualizacao": "2026-01-13T18:20:03.852000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182830220254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012731",
+      "data_ultima_atualizacao": "2026-01-13T18:20:30.105000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182813220254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14827,
+          "nome": "Rural"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012730",
+      "data_ultima_atualizacao": "2026-01-13T18:21:06.628000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 7,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182804720254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 6098,
+          "nome": "Rural (Art. 48/51)"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012728",
+      "data_ultima_atualizacao": "2026-02-13T17:49:32.388000Z",
+      "orgao_julgador": {
+        "codigo": 85199,
+        "nome": "GABINETE DA PRESIDENCIA"
+      },
+      "grau": "G2",
+      "total_movimentos": 16,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2026-02-10T19:58:58.000Z"
+      }
+    },
+    {
+      "numero_cnj": "61182796220254069666",
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "classe_codigo": 1266,
+      "classe_nome": "Requisição de Pequeno Valor",
+      "assuntos": [
+        {
+          "codigo": 14828,
+          "nome": "Urbano"
+        }
+      ],
+      "situacao": "em_tramitacao",
+      "data_ajuizamento": "20251025012728",
+      "data_ultima_atualizacao": "2026-01-13T18:19:47.646000Z",
+      "orgao_julgador": {
+        "codigo": 87356,
+        "nome": "SUBSECRETARIA DE PRECATORIOS E RPV'S - SUPRE"
+      },
+      "grau": "G2",
+      "total_movimentos": 9,
+      "ultima_movimentacao": {
+        "codigo": 22,
+        "nome": "Baixa Definitiva",
+        "data": "2025-12-26T16:22:58.000Z"
+      }
+    }
+  ],
+  "sources": [
+    {
+      "name": "CNJ DataJud API Publica",
+      "url": "https://api-publica.datajud.cnj.jus.br",
+      "type": "API"
+    }
+  ],
+  "evidencias_count": 6,
+  "hashes": {
+    "output_sha256": "5d08c6b904c510e5cac97d87bf2d760551b6f0f975d18f8c0f808ac7749cb16c"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/19940a36-31a5-4a27-bdc6-adea6edc7bbd"
+}
