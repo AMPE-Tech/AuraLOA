@@ -103,6 +103,61 @@ function formatBRL(valor: number | null): string {
 type SortField = "valor" | "data" | "tribunal";
 type SortDir = "asc" | "desc";
 
+function downloadBlob(content: string, filename: string, mime: string) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function exportProcessosCSV(processos: EstoqueProcesso[], ano: number) {
+  const BOM = "\uFEFF";
+  const sep = ";";
+  const headers = [
+    "Numero CNJ", "Numero Formatado", "Tribunal", "Classe Codigo", "Classe Nome",
+    "Situacao", "Valor Causa", "Data Ajuizamento", "Data Ultima Atualizacao",
+    "Orgao Julgador", "Assuntos", "Total Movimentos", "Ultima Movimentacao",
+    "Data Ultima Movimentacao", "Pagamento Pendente", "Tem Baixa", "Tem Pagamento", "URL Consulta",
+  ];
+  const esc = (v: string) => (v.includes(sep) || v.includes('"') || v.includes("\n")) ? '"' + v.replace(/"/g, '""') + '"' : v;
+  const fmtCnj = (n: string) => (!n || n.length < 20) ? n : `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
+
+  const rows = processos.map((p) => [
+    esc(p.numero_cnj), esc(fmtCnj(p.numero_cnj)), esc(p.tribunal_alias.toUpperCase()),
+    String(p.classe_codigo), esc(p.classe_nome), esc(p.situacao),
+    p.valor_causa !== null ? String(p.valor_causa) : "",
+    p.data_ajuizamento || "", p.data_ultima_atualizacao || "",
+    esc(p.orgao_julgador?.nome || ""), esc(p.assuntos.map((a) => a.nome).join(", ")),
+    String(p.total_movimentos), esc(p.ultima_movimentacao?.nome || ""),
+    p.ultima_movimentacao?.data || "", p.pagamento_pendente ? "Sim" : "Nao",
+    p.tem_baixa ? "Sim" : "Nao", p.tem_pagamento ? "Sim" : "Nao", p.url_consulta || "",
+  ].join(sep));
+
+  const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");
+  const date = new Date().toISOString().slice(0, 10);
+  downloadBlob(csv, `precatorios_pendentes_${ano}_${date}.csv`, "text/csv;charset=utf-8");
+}
+
+function exportProcessosJSON(processos: EstoqueProcesso[], ano: number, result: PrecatorioPendenteResult) {
+  const exportData = {
+    exportado_em: new Date().toISOString(),
+    ano_exercicio: ano,
+    total_pendentes: processos.length,
+    total_precatorios: processos.filter((p) => p.classe_codigo === 1265).length,
+    total_rpvs: processos.filter((p) => p.classe_codigo === 1266).length,
+    process_id_uuid: result.process_id_uuid,
+    output_sha256: result.hashes.output_sha256,
+    processos,
+  };
+  const date = new Date().toISOString().slice(0, 10);
+  downloadBlob(JSON.stringify(exportData, null, 2), `precatorios_pendentes_${ano}_${date}.json`, "application/json;charset=utf-8");
+}
+
 function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProcesso; expanded: boolean; onToggle: () => void }) {
   return (
     <Card className="hover-elevate" data-testid={`card-processo-${processo.numero_cnj}`}>
@@ -567,6 +622,64 @@ export default function PrecatoriosPendentes() {
                       Tribunal
                       {sortField === "tribunal" && (sortDir === "desc" ? <ArrowDown className="w-3 h-3 ml-1" /> : <ArrowUp className="w-3 h-3 ml-1" />)}
                     </Button>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between gap-3 mb-4 p-3 bg-muted/40 rounded-md flex-wrap">
+                  <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <Download className="w-3.5 h-3.5" />
+                    <span className="font-medium">Exportar lista ({filteredProcessos.length} processos):</span>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px]"
+                      onClick={() => exportProcessosCSV(filteredProcessos, parseInt(selectedYear))}
+                      disabled={filteredProcessos.length === 0}
+                      data-testid="button-export-csv"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Baixar CSV
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-[11px]"
+                      onClick={() => result && exportProcessosJSON(filteredProcessos, parseInt(selectedYear), result)}
+                      disabled={filteredProcessos.length === 0}
+                      data-testid="button-export-json"
+                    >
+                      <Download className="w-3 h-3 mr-1" />
+                      Baixar JSON
+                    </Button>
+                    <Separator orientation="vertical" className="h-5" />
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-7 text-[11px]"
+                          onClick={() => {
+                            const urls = filteredProcessos
+                              .filter((p: EstoqueProcesso) => p.url_consulta)
+                              .map((p: EstoqueProcesso) => `${formatCnj(p.numero_cnj)}\t${p.tribunal_alias.toUpperCase()}\t${p.classe_nome}\t${p.url_consulta}`);
+                            if (urls.length > 0) {
+                              const content = "Numero CNJ\tTribunal\tClasse\tURL Consulta\n" + urls.join("\n");
+                              downloadBlob(content, `urls_consulta_${selectedYear}.txt`, "text/plain;charset=utf-8");
+                            }
+                          }}
+                          disabled={filteredProcessos.length === 0}
+                          data-testid="button-export-urls"
+                        >
+                          <ExternalLink className="w-3 h-3 mr-1" />
+                          URLs Consulta
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p className="text-xs">Exportar lista de URLs de consulta dos tribunais para acesso em lote ao oficio requisitorio</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 </div>
 

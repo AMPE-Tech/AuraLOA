@@ -326,4 +326,133 @@ router.post("/api/loa/uniao/precatorios-pendentes", async (req: Request, res: Re
   }
 });
 
+router.post("/api/loa/uniao/precatorios-pendentes/csv", async (req: Request, res: Response) => {
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    const processId = randomUUID();
+    const evidencePack = new EvidencePack(processId);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 2000,
+      evidencePack,
+    });
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+
+    const BOM = "\uFEFF";
+    const sep = ";";
+    const headers = [
+      "Numero CNJ",
+      "Numero Formatado",
+      "Tribunal",
+      "Classe Codigo",
+      "Classe Nome",
+      "Situacao",
+      "Valor Causa",
+      "Data Ajuizamento",
+      "Data Ultima Atualizacao",
+      "Orgao Julgador",
+      "Assuntos",
+      "Total Movimentos",
+      "Ultima Movimentacao",
+      "Data Ultima Movimentacao",
+      "Pagamento Pendente",
+      "Tem Baixa",
+      "Tem Pagamento",
+      "URL Consulta",
+    ];
+
+    const formatCnj = (n: string) => {
+      if (!n || n.length < 20) return n;
+      return `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
+    };
+
+    const escCsv = (v: string) => {
+      if (v.includes(sep) || v.includes('"') || v.includes("\n")) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    };
+
+    const rows = pendentes.map((p) => [
+      escCsv(p.numero_cnj),
+      escCsv(formatCnj(p.numero_cnj)),
+      escCsv(p.tribunal_alias.toUpperCase()),
+      String(p.classe_codigo),
+      escCsv(p.classe_nome),
+      escCsv(p.situacao),
+      p.valor_causa !== null ? String(p.valor_causa) : "",
+      p.data_ajuizamento || "",
+      p.data_ultima_atualizacao || "",
+      escCsv(p.orgao_julgador?.nome || ""),
+      escCsv(p.assuntos.map((a) => a.nome).join(", ")),
+      String(p.total_movimentos),
+      escCsv(p.ultima_movimentacao?.nome || ""),
+      p.ultima_movimentacao?.data || "",
+      p.pagamento_pendente ? "Sim" : "Nao",
+      p.tem_baixa ? "Sim" : "Nao",
+      p.tem_pagamento ? "Sim" : "Nao",
+      p.url_consulta || "",
+    ].join(sep));
+
+    const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");
+    const filename = `precatorios_pendentes_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(csv);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erro ao gerar CSV", message: error.message });
+  }
+});
+
+router.post("/api/loa/uniao/precatorios-pendentes/json-export", async (req: Request, res: Response) => {
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    const processId = randomUUID();
+    const evidencePack = new EvidencePack(processId);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 2000,
+      evidencePack,
+    });
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+    const filename = `precatorios_pendentes_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.json`;
+
+    const exportData = {
+      exportado_em: new Date().toISOString(),
+      ano_exercicio,
+      total_pendentes: pendentes.length,
+      total_precatorios: pendentes.filter((p) => p.classe_codigo === 1265).length,
+      total_rpvs: pendentes.filter((p) => p.classe_codigo === 1266).length,
+      process_id_uuid: processId,
+      output_sha256: computeSHA256(JSON.stringify(pendentes)),
+      processos: pendentes,
+    };
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(JSON.stringify(exportData, null, 2));
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erro ao gerar JSON", message: error.message });
+  }
+});
+
 export default router;
