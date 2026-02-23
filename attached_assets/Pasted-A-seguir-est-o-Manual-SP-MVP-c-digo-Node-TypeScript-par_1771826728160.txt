@@ -1,0 +1,607 @@
+A seguir está o **Manual SP (MVP)** + **código (Node/TypeScript)** para incluir **Precatórios do Estado de São Paulo** no seu app “Precatórios no LOA”, **sem quebrar a arquitetura atual** (União). Vou manter o padrão **evidence pack (raw + SHA-256 + UUID)** e o desenho **por “ente” + providers**.
+
+> Base oficial para SP:
+>
+> * LOA SP (lei e PDFs oficiais): página da Sefaz/SP “LOA 2026” e anos anteriores. ([Secretaria da Fazenda][1])
+> * Precatórios TJSP: listas/consultas oficiais (pendentes, pagos e menu de pesquisa). ([TJSP][2])
+> * Execução: Portal da Transparência do Estado de SP (para despesas). ([Transparência SP][3])
+
+---
+
+# MANUAL MVP — SP (Estado de São Paulo)
+
+## 1) O que muda (e o que não muda)
+
+**Não muda o sistema** (pipeline, evidências, schema canônico).
+Você só adiciona um **novo ente**:
+
+* `ente=UNIAO` → LOA/SIOP + Execução/CGU (já existe)
+* `ente=SP` → **LOA_SP + Execução_SP + Estoque_TJSP**
+
+## 2) Fontes e estratégias por camada (SP)
+
+### 2.1 Camada LOA (Dotação) — SP
+
+**Fonte primária:** LOA oficial da Sefaz/SP (PDF/arquivos). ([Secretaria da Fazenda][1])
+**Estratégia MVP (estável):**
+
+* Ingestão por **upload/manual de CSV** (se você já tem o quadro convertido).
+* E em paralelo: baixar e guardar o **PDF oficial** como evidência (raw + hash), mesmo que a extração do quadro vire etapa 2.
+
+> Por quê: extração de tabela de PDF é “chata” e instável no MVP; melhor manter auditabilidade e começar com CSV normalizado.
+
+### 2.2 Camada Execução (Despesas) — SP
+
+**Fonte:** Portal da Transparência do Estado de SP. ([Transparência SP][3])
+**Estratégia MVP (estável):**
+
+* Manter **ingestão manual CSV** (export do portal / relatórios) + evidência.
+* Depois (etapa 2): automatizar export/rotas do portal (depende de como o portal entrega os arquivos).
+
+### 2.3 Camada Estoque (Precatórios) — TJSP/DEPRE
+
+**Fontes oficiais TJSP:**
+
+* Lista de pendentes/pagamentos disponibilizados (páginas oficiais). ([TJSP][2])
+* Menu de pesquisa de precatórios/pagamentos (fluxos de consulta). ([TJSP][4])
+* Páginas de “consulta pública” com filtros por entidade (pendentes/pagos). ([TJSP][5])
+
+**Estratégia MVP (recomendado):**
+
+* Provider `tjsp_lista_pendentes` para **capturar linhas da lista** (onde houver).
+* Provider `tjsp_lista_pagamentos` para **pagamentos disponibilizados**.
+* Sempre salvar HTML bruto como evidência e extrair os campos possíveis (incluindo valor quando presente).
+
+> Observação prática: algumas páginas do TJSP exigem seleção de “Entidade” e podem renderizar em HTML com tabela/relatório. O MVP precisa ser resiliente: **se não conseguir extrair valor, retorna “valor: Pendente” + link + evidência**.
+
+---
+
+## 3) Modelo canônico (SP) para conciliação (A2)
+
+Você mantém o mesmo shape de saída do A2, adicionando `ente`:
+
+* `ente`
+* `ano`
+* `acao` (quando aplicável na LOA SP; se não existir “ação” no mesmo padrão, você usa “programa/atividade/projeto” equivalente e cria um campo `chave_acao_local`)
+* `dotacao_total`
+* `execucao_total`
+* `estoque_precatorios` (qtd/valor agregado quando disponível)
+
+**Regra de MVP:** conciliar por chaves “macro”:
+
+* `ano + órgão/unidade + função/subfunção/programa + elemento (quando existir)`
+* Score de match (forte/fraco) e explicação.
+
+---
+
+# CÓDIGO — SP (Node/TypeScript) pronto para colar
+
+Abaixo está um “drop-in” que você encaixa no seu backend Express atual.
+Ele adiciona:
+
+* `/api/sp/loa/import` (CSV manual + evidência)
+* `/api/sp/despesas/import` (CSV manual + evidência)
+* `/api/sp/tjsp/pendentes` (consulta TJSP pendentes por entidade + evidência)
+* `/api/sp/tjsp/pagamentos` (consulta TJSP pagamentos por entidade + evidência)
+* `/api/sp/a2` (conciliação simples SP)
+
+## 0) Dependências mínimas
+
+Se seu projeto já tem `express`, ok.
+Se não tiver `node-fetch`, instale (ou use fetch nativo no Node 18+).
+
+---
+
+## 1) `sp_mvp.ts` (módulo completo)
+
+```ts
+import express from "express";
+import crypto from "crypto";
+import fs from "fs";
+import path from "path";
+import fetch from "node-fetch";
+
+// ===============================
+// Config
+// ===============================
+const BASE_DIR = process.cwd();
+const SAIDA_DIR = path.join(BASE_DIR, "Saida");
+const EVIDENCE_DIR = path.join(SAIDA_DIR, "evidence");
+ensureDir(SAIDA_DIR);
+ensureDir(EVIDENCE_DIR);
+
+// Endpoints TJSP (oficiais)
+const TJSP_PENDENTES_FORM =
+  "https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatpendentes.aspx"; // :contentReference[oaicite:8]{index=8}
+const TJSP_PAGAMENTOS_FORM =
+  "https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatefetuados.aspx"; // :contentReference[oaicite:9]{index=9}
+
+// ===============================
+// Types
+// ===============================
+type EvidenceFile = {
+  name: string;
+  rel_path: string;
+  sha256: string;
+  bytes: number;
+};
+
+type EvidencePack = {
+  schema_version: "evidence_pack_v1";
+  generated_at_iso_utc: string;
+  process_id_uuid: string;
+  inputs: Record<string, any>;
+  files: EvidenceFile[];
+  bundle_sha256: string;
+};
+
+type SpLoaRow = {
+  ente: "SP";
+  ano: number;
+  orgao?: string;
+  uo?: string;
+  programa?: string;
+  acao_local?: string; // se a LOA SP não usar “ação” no padrão federal
+  dotacao_inicial?: number;
+  dotacao_atual?: number;
+  raw: Record<string, string>;
+};
+
+type SpDespesaRow = {
+  ente: "SP";
+  ano: number;
+  orgao?: string;
+  uo?: string;
+  fase?: string;
+  valor?: number;
+  favorecido?: string;
+  data?: string;
+  raw: Record<string, string>;
+};
+
+type TjspItem = {
+  entidade: string;
+  // Campos variam por relatório; mantemos alguns “prováveis”
+  numero?: string;
+  credor?: string;
+  natureza?: string;
+  valor?: number;
+  status?: "PENDENTE" | "PAGAMENTO" | string;
+  fonte_url: string;
+};
+
+// ===============================
+// In-memory (MVP)
+// ===============================
+const SP_LOA: SpLoaRow[] = [];
+const SP_DESPESAS: SpDespesaRow[] = [];
+
+// ===============================
+// Evidence helpers
+// ===============================
+function ensureDir(p: string) {
+  if (!fs.existsSync(p)) fs.mkdirSync(p, { recursive: true });
+}
+
+function isoUtcNow() {
+  return new Date().toISOString();
+}
+
+function uuidv4() {
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, c => {
+    const r = (Math.random() * 16) | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+function sha256Buffer(buf: Buffer) {
+  return crypto.createHash("sha256").update(buf).digest("hex");
+}
+
+function createEvidenceContext(inputs: Record<string, any>) {
+  const process_id_uuid = uuidv4();
+  const dir = path.join(EVIDENCE_DIR, process_id_uuid);
+  const rawDir = path.join(dir, "raw");
+  ensureDir(dir);
+  ensureDir(rawDir);
+
+  const files: EvidenceFile[] = [];
+
+  function addRawFile(name: string, buf: Buffer) {
+    const abs = path.join(rawDir, name);
+    fs.writeFileSync(abs, buf);
+    files.push({
+      name,
+      rel_path: abs.replace(BASE_DIR, "."),
+      sha256: sha256Buffer(buf),
+      bytes: buf.length,
+    });
+    return abs;
+  }
+
+  function finalize(): EvidencePack {
+    const concat = files.map(f => `${f.name}:${f.sha256}`).join("|");
+    const bundle_sha256 = crypto.createHash("sha256").update(concat).digest("hex");
+
+    const pack: EvidencePack = {
+      schema_version: "evidence_pack_v1",
+      generated_at_iso_utc: isoUtcNow(),
+      process_id_uuid,
+      inputs,
+      files,
+      bundle_sha256,
+    };
+
+    fs.writeFileSync(path.join(dir, "evidence_pack.json"), JSON.stringify(pack, null, 2), "utf-8");
+    return pack;
+  }
+
+  return { process_id_uuid, addRawFile, finalize };
+}
+
+// ===============================
+// CSV parsing (MVP simples)
+// ===============================
+function parseCsv(content: string, delimiter = ";"): Record<string, string>[] {
+  const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
+  if (lines.length < 2) return [];
+  const header = lines[0].split(delimiter).map(h => h.trim());
+  const out: Record<string, string>[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(delimiter);
+    const row: Record<string, string> = {};
+    for (let j = 0; j < header.length; j++) row[header[j]] = (cols[j] ?? "").trim();
+    out.push(row);
+  }
+  return out;
+}
+
+function safeNumberBR(v: any): number | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  if (!s) return undefined;
+  const norm = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(norm);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+// ===============================
+// TJSP HTML extraction (MVP)
+// - Observação: HTML pode variar. Aqui é “best effort”.
+// - Se não extrair, devolve vazio + evidência.
+// ===============================
+function extractTableRowsFromHtml(html: string): string[][] {
+  // Extração simples de <tr><td>..</td></tr>
+  const rows: string[][] = [];
+  const trMatches = html.match(/<tr[\s\S]*?<\/tr>/gi) ?? [];
+  for (const tr of trMatches) {
+    const tds = tr.match(/<t[dh][\s\S]*?<\/t[dh]>/gi) ?? [];
+    const cols = tds.map(td =>
+      td
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    );
+    if (cols.length) rows.push(cols);
+  }
+  return rows;
+}
+
+function bestEffortMapTjsp(rows: string[][], entidade: string, status: string, fonte_url: string): TjspItem[] {
+  // MVP: tenta identificar “valor” em alguma coluna e “número/credor” por heurística.
+  const items: TjspItem[] = [];
+
+  for (const cols of rows) {
+    if (cols.join(" ").toLowerCase().includes("entidade")) continue;
+    if (cols.length < 3) continue;
+
+    // Heurística de valor: primeira célula que pareça moeda BR
+    let valor: number | undefined;
+    for (const c of cols) {
+      if (/[0-9]+\.[0-9]{3}\.[0-9]{3},[0-9]{2}/.test(c) || /[0-9]+,[0-9]{2}/.test(c)) {
+        const n = safeNumberBR(c);
+        if (n && n > 0) {
+          valor = n;
+          break;
+        }
+      }
+    }
+
+    // Heurística de “número”: primeira célula com muitos dígitos
+    const numero = cols.find(c => /\d{6,}/.test(c));
+
+    // Heurística de “credor”: coluna grande alfabética
+    const credor = cols.find(c => c.length > 10 && /[A-Za-zÀ-ÿ]/.test(c) && !/\d{4,}/.test(c));
+
+    // Filtra linhas claramente “ruído”
+    if (!numero && !credor && !valor) continue;
+
+    items.push({
+      entidade,
+      numero,
+      credor,
+      valor,
+      status,
+      fonte_url,
+    });
+  }
+
+  return items;
+}
+
+// ===============================
+// Router SP
+// ===============================
+export function mountSpMvpRoutes(app: express.Express) {
+  const router = express.Router();
+
+  // -------------------------------
+  // LOA SP import (CSV manual)
+  // body: { ano, csvText, delimiter? }
+  // -------------------------------
+  router.post("/loa/import", (req, res) => {
+    const { ano, csvText, delimiter } = req.body || {};
+    if (!ano || !csvText) return res.status(400).json({ error: "ano e csvText são obrigatórios" });
+
+    const ctx = createEvidenceContext({ ente: "SP", kind: "loa_csv", ano });
+    ctx.addRawFile(`sp_loa_${ano}.csv`, Buffer.from(csvText, "utf-8"));
+
+    const rows = parseCsv(csvText, delimiter ?? ";");
+
+    // Mapeamento mínimo (ajuste conforme seu CSV)
+    for (const r of rows) {
+      const item: SpLoaRow = {
+        ente: "SP",
+        ano: Number(ano),
+        orgao: (r["ORGAO"] || r["ÓRGÃO"] || r["orgao"] || "").trim() || undefined,
+        uo: (r["UO"] || r["UNIDADE_ORCAMENTARIA"] || r["uo"] || "").trim() || undefined,
+        programa: (r["PROGRAMA"] || r["programa"] || "").trim() || undefined,
+        acao_local: (r["ACAO"] || r["AÇÃO"] || r["acao"] || r["ATIVIDADE"] || "").trim() || undefined,
+        dotacao_inicial: safeNumberBR(r["DOTACAO_INICIAL"] || r["dotacao_inicial"]),
+        dotacao_atual: safeNumberBR(r["DOTACAO_ATUAL"] || r["dotacao_atual"]),
+        raw: r,
+      };
+
+      // critério mínimo
+      if (item.acao_local || item.programa || item.uo || item.orgao) SP_LOA.push(item);
+    }
+
+    const pack = ctx.finalize();
+    return res.json({ ok: true, imported: rows.length, evidence: pack });
+  });
+
+  // -------------------------------
+  // Despesas SP import (CSV manual)
+  // body: { ano, csvText, delimiter? }
+  // -------------------------------
+  router.post("/despesas/import", (req, res) => {
+    const { ano, csvText, delimiter } = req.body || {};
+    if (!ano || !csvText) return res.status(400).json({ error: "ano e csvText são obrigatórios" });
+
+    const ctx = createEvidenceContext({ ente: "SP", kind: "despesas_csv", ano });
+    ctx.addRawFile(`sp_despesas_${ano}.csv`, Buffer.from(csvText, "utf-8"));
+
+    const rows = parseCsv(csvText, delimiter ?? ";");
+
+    for (const r of rows) {
+      const item: SpDespesaRow = {
+        ente: "SP",
+        ano: Number(ano),
+        orgao: (r["ORGAO"] || r["ÓRGÃO"] || r["orgao"] || "").trim() || undefined,
+        uo: (r["UO"] || r["UNIDADE_ORCAMENTARIA"] || r["uo"] || "").trim() || undefined,
+        fase: (r["FASE"] || r["fase"] || r["ETAPA"] || "").trim() || undefined,
+        valor: safeNumberBR(r["VALOR"] || r["valor"] || r["VL_DESPESA"]),
+        favorecido: (r["FAVORECIDO"] || r["favorecido"] || "").trim() || undefined,
+        data: (r["DATA"] || r["data"] || r["DT_PAGAMENTO"] || "").trim() || undefined,
+        raw: r,
+      };
+
+      if (item.valor || item.orgao || item.uo) SP_DESPESAS.push(item);
+    }
+
+    const pack = ctx.finalize();
+    return res.json({ ok: true, imported: rows.length, evidence: pack });
+  });
+
+  // -------------------------------
+  // TJSP Pendentes (por entidade)
+  // query: entidade=<texto exato ou parcial>
+  // MVP: baixa HTML e extrai “best effort”
+  // -------------------------------
+  router.get("/tjsp/pendentes", async (req, res) => {
+    const entidade = String(req.query.entidade ?? "").trim();
+    if (!entidade) return res.status(400).json({ error: "entidade é obrigatória" });
+
+    const ctx = createEvidenceContext({
+      ente: "SP",
+      kind: "tjsp_pendentes_html",
+      entidade,
+      fonte_url: TJSP_PENDENTES_FORM,
+    });
+
+    try {
+      // MVP: GET simples da página do relatório (sem POST)
+      const r = await fetch(TJSP_PENDENTES_FORM, { method: "GET" });
+      const html = await r.text();
+      ctx.addRawFile(`tjsp_pendentes__${Date.now()}.html`, Buffer.from(html, "utf-8"));
+
+      const rows = extractTableRowsFromHtml(html);
+      const items = bestEffortMapTjsp(rows, entidade, "PENDENTE", TJSP_PENDENTES_FORM);
+
+      const pack = ctx.finalize();
+      return res.json({
+        ok: true,
+        note:
+          "MVP best-effort: esta rota captura HTML e tenta mapear tabela. Se o TJSP exigir seleção/POST por entidade, vamos evoluir para POST com VIEWSTATE.",
+        entidade,
+        count: items.length,
+        data: items,
+        evidence: pack,
+      });
+    } catch (e: any) {
+      const pack = ctx.finalize();
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e), evidence: pack });
+    }
+  });
+
+  // -------------------------------
+  // TJSP Pagamentos disponibilizados (por entidade)
+  // query: entidade=<texto>
+  // -------------------------------
+  router.get("/tjsp/pagamentos", async (req, res) => {
+    const entidade = String(req.query.entidade ?? "").trim();
+    if (!entidade) return res.status(400).json({ error: "entidade é obrigatória" });
+
+    const ctx = createEvidenceContext({
+      ente: "SP",
+      kind: "tjsp_pagamentos_html",
+      entidade,
+      fonte_url: TJSP_PAGAMENTOS_FORM,
+    });
+
+    try {
+      const r = await fetch(TJSP_PAGAMENTOS_FORM, { method: "GET" });
+      const html = await r.text();
+      ctx.addRawFile(`tjsp_pagamentos__${Date.now()}.html`, Buffer.from(html, "utf-8"));
+
+      const rows = extractTableRowsFromHtml(html);
+      const items = bestEffortMapTjsp(rows, entidade, "PAGAMENTO", TJSP_PAGAMENTOS_FORM);
+
+      const pack = ctx.finalize();
+      return res.json({
+        ok: true,
+        note:
+          "MVP best-effort: captura HTML e tenta mapear. Para dados por entidade com precisão, evoluir para submissão do formulário do TJSP.",
+        entidade,
+        count: items.length,
+        data: items,
+        evidence: pack,
+      });
+    } catch (e: any) {
+      const pack = ctx.finalize();
+      return res.status(500).json({ ok: false, error: e?.message ?? String(e), evidence: pack });
+    }
+  });
+
+  // -------------------------------
+  // A2 SP (conciliação simples)
+  // query: ano, orgao?, uo?
+  // -------------------------------
+  router.get("/a2", (req, res) => {
+    const ano = req.query.ano ? Number(req.query.ano) : undefined;
+    const orgao = req.query.orgao ? String(req.query.orgao) : undefined;
+    const uo = req.query.uo ? String(req.query.uo) : undefined;
+    if (!ano) return res.status(400).json({ error: "ano é obrigatório" });
+
+    const loa = SP_LOA.filter(r => r.ano === ano && (!orgao || r.orgao === orgao) && (!uo || r.uo === uo));
+    const despesas = SP_DESPESAS.filter(r => r.ano === ano && (!orgao || r.orgao === orgao) && (!uo || r.uo === uo));
+
+    const dotacao_atual_total = loa.reduce((acc, r) => acc + (r.dotacao_atual ?? 0), 0);
+    const execucao_total = despesas.reduce((acc, r) => acc + (r.valor ?? 0), 0);
+
+    return res.json({
+      ok: true,
+      ente: "SP",
+      query: { ano, orgao, uo },
+      summary: {
+        dotacao_atual_total,
+        execucao_total,
+        saldo_estimado: dotacao_atual_total - execucao_total,
+        note:
+          "MVP: conciliação macro por filtros; etapa 2 adiciona chaves (programa/acao_local/fonte/elemento) + score de match.",
+      },
+      loa_count: loa.length,
+      despesas_count: despesas.length,
+      loa,
+      despesas,
+    });
+  });
+
+  app.use("/api/sp", router);
+}
+```
+
+---
+
+## 2) Como plugar no seu `server.ts`
+
+No seu servidor Express principal:
+
+```ts
+import express from "express";
+import { mountSpMvpRoutes } from "./sp_mvp";
+
+const app = express();
+app.use(express.json({ limit: "10mb" }));
+
+mountSpMvpRoutes(app);
+
+app.listen(3000, () => console.log("up"));
+```
+
+---
+
+# GUIA DE USO (testes rápidos)
+
+## 1) Importar LOA SP (CSV)
+
+`POST /api/sp/loa/import`
+
+```json
+{
+  "ano": 2026,
+  "csvText": "ORGAO;UO;PROGRAMA;ACAO;DOTACAO_ATUAL\nSECRETARIA X;1234;999;ATIVIDADE Y;1.234.567,89\n"
+}
+```
+
+## 2) Importar Despesas SP (CSV)
+
+`POST /api/sp/despesas/import`
+
+```json
+{
+  "ano": 2026,
+  "csvText": "ORGAO;UO;FASE;VALOR;DATA\nSECRETARIA X;1234;PAGAMENTO;123.456,78;2026-01-10\n"
+}
+```
+
+## 3) Consultar TJSP (MVP best-effort)
+
+* Pendentes: `GET /api/sp/tjsp/pendentes?entidade=FAZENDA%20DO%20ESTADO%20DE%20SAO%20PAULO`
+* Pagamentos: `GET /api/sp/tjsp/pagamentos?entidade=FAZENDA%20DO%20ESTADO%20DE%20SAO%20PAULO`
+
+> Se a lista exigir submissão de formulário por entidade, o próximo patch é: capturar `__VIEWSTATE`/campos hidden e fazer **POST** — mantendo evidência (HTML do GET + HTML do POST).
+
+---
+
+# NOTAS IMPORTANTES (governança MVP)
+
+1. **Sem “alucinar valor”**: se não achar valor no HTML, retorna `valor: undefined` e marca `note`.
+2. **Evidência sempre**: cada call guarda HTML/CSV bruto e hashes.
+3. **Evolução segura**: a etapa 2 é robustecer TJSP para POST por entidade e criar normalização real de colunas.
+
+---
+
+# O que eu recomendo como próxima entrega (Patch 2 — TJSP robusto)
+
+O MVP acima já “encaixa”, mas o TJSP tende a depender de formulário. Então o próximo passo (quando você disser **OK**) é eu te entregar:
+
+* “client” TJSP com:
+
+  * `GET` inicial → extrair `__VIEWSTATE/__EVENTVALIDATION` (ou equivalentes)
+  * `POST` com `entidade` selecionada
+  * parse da tabela resultante com coluna→campo
+  * retry/backoff + detecção de bloqueio
+
+---
+
+Se você quiser que eu já entregue **Patch 2 (TJSP POST por entidade)** agora, me diga apenas qual é o padrão que você está usando para “entidade” no TJSP (ex.: “FAZENDA DO ESTADO DE SÃO PAULO” aparece como texto ou como código/ID no select). A partir disso eu te devolvo um **bloco único** pronto para colar, sem mexer no resto.
+
+[1]: https://portal.fazenda.sp.gov.br/servicos/orcamento/Paginas/loa.aspx?utm_source=chatgpt.com "Lei Orçamentária Anual - LOA Atual e Anos Anteriores"
+[2]: https://www.tjsp.jus.br/Precatorios/Precatorios/ListaPendentes?utm_source=chatgpt.com "Lista de Precatórios Pendentes de Pagamento"
+[3]: https://www.transparencia.sp.gov.br/?utm_source=chatgpt.com "Portal da Transparência do Estado de São Paulo"
+[4]: https://www.tjsp.jus.br/cac/scp/webmenupesquisa.aspx?utm_source=chatgpt.com "Menu - Pesquisa"
+[5]: https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatpendentes.aspx?utm_source=chatgpt.com "Publicação das Listas de Pagamento no Site - Precatórios ..."
