@@ -7,6 +7,11 @@ import {
   getTjspUrls,
 } from "../services/sp_tjsp";
 import {
+  importarExecucaoAutomatica,
+  importarDotacaoAutomatica,
+  getAnosDisponiveis,
+} from "../services/sp_auto_import";
+import {
   spLoaImportSchema,
   spDespesasImportSchema,
   spA2RequestSchema,
@@ -256,6 +261,98 @@ router.post("/api/sp/a2", (req: Request, res: Response) => {
     loa,
     despesas,
   });
+});
+
+router.post("/api/sp/auto/execucao", async (req: Request, res: Response) => {
+  const ano = Number(req.body?.ano);
+  if (!ano || ano < 2011 || ano > new Date().getFullYear() + 1) {
+    return res.status(400).json({ error: "ano invalido (2011-" + (new Date().getFullYear() + 1) + ")" });
+  }
+
+  const result = await importarExecucaoAutomatica(ano);
+
+  if (result.ok) {
+    for (const row of result.precatorios) {
+      SP_LOA.push({
+        ente: "SP",
+        ano,
+        orgao: row.desc_orgao || undefined,
+        uo: row.cod_orgao || undefined,
+        programa: row.grupo || undefined,
+        acao_local: row.desc_projeto || undefined,
+        dotacao_inicial: row.dotacao_inicial,
+        dotacao_atual: row.proposta_orcamento || row.dotacao_inicial,
+        raw: row.raw,
+      });
+    }
+
+    for (const row of result.precatorios) {
+      if (row.valor_liquidado && row.valor_liquidado > 0) {
+        SP_DESPESAS.push({
+          ente: "SP",
+          ano,
+          orgao: row.desc_orgao || undefined,
+          uo: row.cod_orgao || undefined,
+          fase: "LIQUIDADO",
+          valor: row.valor_liquidado,
+          raw: row.raw,
+        });
+      }
+    }
+  }
+
+  return res.json({
+    ok: result.ok,
+    tipo: result.tipo,
+    ano: result.ano,
+    total_linhas: result.total_linhas,
+    precatorios_encontrados: result.precatorios_encontrados,
+    precatorios: result.precatorios,
+    fonte_url: result.fonte_url,
+    evidence: result.evidence,
+    note: result.note,
+  });
+});
+
+router.post("/api/sp/auto/dotacao", async (req: Request, res: Response) => {
+  const ano = Number(req.body?.ano);
+  if (!ano || ano < 2011 || ano > new Date().getFullYear() + 1) {
+    return res.status(400).json({ error: "ano invalido (2011-" + (new Date().getFullYear() + 1) + ")" });
+  }
+
+  const result = await importarDotacaoAutomatica(ano);
+
+  if (result.ok) {
+    for (const row of result.precatorios) {
+      SP_LOA.push({
+        ente: "SP",
+        ano,
+        orgao: row.desc_orgao || undefined,
+        uo: row.cod_orgao || undefined,
+        programa: row.grupo || undefined,
+        acao_local: row.desc_projeto || undefined,
+        dotacao_inicial: row.dotacao_inicial,
+        dotacao_atual: row.proposta_orcamento || row.dotacao_inicial,
+        raw: row.raw,
+      });
+    }
+  }
+
+  return res.json({
+    ok: result.ok,
+    tipo: result.tipo,
+    ano: result.ano,
+    total_linhas: result.total_linhas,
+    precatorios_encontrados: result.precatorios_encontrados,
+    precatorios: result.precatorios,
+    fonte_url: result.fonte_url,
+    evidence: result.evidence,
+    note: result.note,
+  });
+});
+
+router.get("/api/sp/auto/anos", (_req: Request, res: Response) => {
+  return res.json({ anos: getAnosDisponiveis() });
 });
 
 router.get("/api/sp/status", (_req: Request, res: Response) => {

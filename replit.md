@@ -70,6 +70,9 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `GET /api/sp/tjsp/pagamentos?entidade=X` - TJSP pagamentos disponibilizados (HTML scraping)
 - `POST /api/sp/a2` - A2 conciliation SP (input: `{ ano, orgao?, uo? }`)
 - `GET /api/sp/status` - SP module status (imported data counts)
+- `POST /api/sp/auto/execucao` - Auto-download execution CSV from Sefaz/SP (input: `{ ano: number }`)
+- `POST /api/sp/auto/dotacao` - Auto-download dotação CSV from Sefaz/SP (input: `{ ano: number }`)
+- `GET /api/sp/auto/anos` - List available years for auto-import (2011-current+1)
 
 ## Data Sources
 - **Execução (Empenho/Liquidação/Pagamento)**: Portal da Transparência REST API - requires API key (env: PORTAL_TRANSPARENCIA_API_KEY). Uses endpoint `/api-de-dados/despesas/por-funcional-programatica` with `chave-api-dados` header.
@@ -77,6 +80,7 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - **ZIP Downloads**: `https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/despesas/YYYYMM01_Despesas.zip` - Monthly despesas ZIP files with evidence tracking
 - **Estoque (CNJ DataJud)**: Public Elasticsearch API at `https://api-publica.datajud.cnj.jus.br/api_publica_{tribunal}/_search`. Uses class codes 1265 (Precatório) and 1266 (RPV). Federal tribunals: TRF1-TRF6. TRF3/TRF4/TRF6 have data; TRF1/TRF2/TRF5 return empty.
 - **Valores (PDF Oficial Tribunal)**: TRF6 publishes official PDF with precatório values for budget inclusion. URL: `https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf`. Parsed with pdfjs-dist, cached in `./Saida/cache/pdf_valores/`. Contains ~9500 entries with VALOR(R$) and preferência (IDOSO/NÃO/PcD).
+- **SP Execução/Dotação (Sefaz/SP)**: Direct CSV download from `https://dworcamento.fazenda.sp.gov.br/DadosXML/{ANO}_INVESTIMENTOS_EXECUCAO_ORCAMENTO.csv` and `{ANO}_INVESTIMENTO_DOTACAO_INICIAL.csv`. No API key required. Data from 2011 onwards. Auto-identifies precatórios by keyword matching (precatório, sentença judicial, RPV, depósitos judiciais).
 - **Consulta TRF6**: Per official TRF6 guidance, PJe cases should be consulted via TRF1 processual (`processual.trf1.jus.br`) with `secao=TRF6`; eProc cases via `eproc2g.trf6.jus.br`.
 
 ## Precatório Actions Catalog (2025)

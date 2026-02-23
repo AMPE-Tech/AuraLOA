@@ -28,6 +28,8 @@ import {
   AlertTriangle,
   BarChart3,
   Info,
+  Download,
+  Zap,
 } from "lucide-react";
 import type { SpA2Result, SpImportResult, SpTjspResult, TjspItem } from "../../shared/loa_types";
 
@@ -91,6 +93,60 @@ export default function SpDashboard() {
     },
     onError: (err: any) => {
       toast({ title: "Erro", description: err?.message || "Falha ao importar despesas SP.", variant: "destructive" });
+    },
+  });
+
+  const autoExecucaoMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/sp/auto/execucao", {
+        ano: parseInt(selectedYear),
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.ok) {
+        toast({
+          title: "Execucao SP Importada Automaticamente",
+          description: `${data.total_linhas} linhas baixadas, ${data.precatorios_encontrados} precatorios encontrados.`,
+        });
+      } else {
+        toast({
+          title: "Dados nao disponiveis",
+          description: data.note || `Arquivo nao disponivel para ${selectedYear}.`,
+          variant: "destructive",
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/sp/status"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err?.message || "Falha ao importar automaticamente.", variant: "destructive" });
+    },
+  });
+
+  const autoDotacaoMutation = useMutation({
+    mutationFn: async () => {
+      const res = await apiRequest("POST", "/api/sp/auto/dotacao", {
+        ano: parseInt(selectedYear),
+      });
+      return res.json();
+    },
+    onSuccess: (data: any) => {
+      if (data.ok) {
+        toast({
+          title: "Dotacao SP Importada Automaticamente",
+          description: `${data.total_linhas} linhas baixadas, ${data.precatorios_encontrados} precatorios encontrados.`,
+        });
+      } else {
+        toast({
+          title: "Dados nao disponiveis",
+          description: data.note || `Arquivo nao disponivel para ${selectedYear}.`,
+          variant: "destructive",
+        });
+      }
+      queryClient.invalidateQueries({ queryKey: ["/api/sp/status"] });
+    },
+    onError: (err: any) => {
+      toast({ title: "Erro", description: err?.message || "Falha ao importar automaticamente.", variant: "destructive" });
     },
   });
 
@@ -277,7 +333,111 @@ export default function SpDashboard() {
           </TabsList>
 
           <TabsContent value="importar" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <Card className="border-blue-200 dark:border-blue-800 bg-blue-50/30 dark:bg-blue-950/20">
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Zap className="w-4 h-4 text-blue-600" />
+                  Importacao Automatica (Sefaz/SP - dworcamento.fazenda.sp.gov.br)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-md">
+                  <p className="text-xs text-blue-800 dark:text-blue-300 flex items-start gap-1.5">
+                    <Info className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                    Baixa automaticamente os CSVs oficiais da Sefaz/SP com dados de dotacao e execucao orcamentaria. Os registros de precatorios sao identificados e importados com evidencia SHA-256. Dados de 2011 ate o ano corrente.
+                  </p>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <Button
+                    onClick={() => autoExecucaoMutation.mutate()}
+                    disabled={autoExecucaoMutation.isPending || autoDotacaoMutation.isPending}
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    data-testid="button-auto-execucao"
+                  >
+                    {autoExecucaoMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    Baixar Execucao ({selectedYear})
+                  </Button>
+                  <Button
+                    onClick={() => autoDotacaoMutation.mutate()}
+                    disabled={autoDotacaoMutation.isPending || autoExecucaoMutation.isPending}
+                    className="w-full bg-indigo-600 hover:bg-indigo-700 text-white"
+                    data-testid="button-auto-dotacao"
+                  >
+                    {autoDotacaoMutation.isPending ? (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <Download className="w-4 h-4 mr-2" />
+                    )}
+                    Baixar Dotacao ({selectedYear})
+                  </Button>
+                </div>
+                {autoExecucaoMutation.data && (
+                  <div className={`p-3 rounded-md ${(autoExecucaoMutation.data as any).ok ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
+                    {(autoExecucaoMutation.data as any).ok ? (
+                      <>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Execucao {(autoExecucaoMutation.data as any).ano}: {(autoExecucaoMutation.data as any).total_linhas} linhas, {(autoExecucaoMutation.data as any).precatorios_encontrados} precatorios identificados
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1 font-mono" data-testid="text-auto-exec-sha">
+                          <Hash className="w-3 h-3 inline mr-1" />
+                          CSV: {(autoExecucaoMutation.data as any).evidence?.csv_sha256?.slice(0, 24)}...
+                        </p>
+                        {(autoExecucaoMutation.data as any).precatorios?.map((p: any, i: number) => (
+                          <p key={i} className="text-[11px] mt-1 text-foreground/80" data-testid={`text-prec-exec-${i}`}>
+                            {p.desc_projeto}: Dot. {formatCurrency(p.dotacao_inicial)} | Liq. {formatCurrency(p.valor_liquidado)}
+                          </p>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="text-xs text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        {(autoExecucaoMutation.data as any).note}
+                      </p>
+                    )}
+                  </div>
+                )}
+                {autoDotacaoMutation.data && (
+                  <div className={`p-3 rounded-md ${(autoDotacaoMutation.data as any).ok ? "bg-emerald-50 dark:bg-emerald-950/30" : "bg-red-50 dark:bg-red-950/30"}`}>
+                    {(autoDotacaoMutation.data as any).ok ? (
+                      <>
+                        <p className="text-xs text-emerald-700 dark:text-emerald-300 flex items-center gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          Dotacao {(autoDotacaoMutation.data as any).ano}: {(autoDotacaoMutation.data as any).total_linhas} linhas, {(autoDotacaoMutation.data as any).precatorios_encontrados} precatorios identificados
+                        </p>
+                        <p className="text-[10px] text-muted-foreground mt-1 font-mono" data-testid="text-auto-dot-sha">
+                          <Hash className="w-3 h-3 inline mr-1" />
+                          CSV: {(autoDotacaoMutation.data as any).evidence?.csv_sha256?.slice(0, 24)}...
+                        </p>
+                        {(autoDotacaoMutation.data as any).precatorios?.map((p: any, i: number) => (
+                          <p key={i} className="text-[11px] mt-1 text-foreground/80" data-testid={`text-prec-dot-${i}`}>
+                            {p.desc_projeto}: Dot. Inicial {formatCurrency(p.dotacao_inicial)}
+                          </p>
+                        ))}
+                      </>
+                    ) : (
+                      <p className="text-xs text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        {(autoDotacaoMutation.data as any).note}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <Separator />
+
+            <details className="group">
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-1.5" data-testid="toggle-manual-import">
+                <Upload className="w-3.5 h-3.5" />
+                Importacao Manual (CSV colado)
+              </summary>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-3">
               <Card>
                 <CardHeader>
                   <CardTitle className="text-base flex items-center gap-2">
@@ -376,6 +536,7 @@ export default function SpDashboard() {
                 </CardContent>
               </Card>
             </div>
+            </details>
           </TabsContent>
 
           <TabsContent value="tjsp" className="space-y-4">
