@@ -36,6 +36,7 @@ interface DataJudHit {
     movimentos?: { codigo?: number; nome?: string; dataHora?: string }[];
     tribunal?: string;
     nivelSigilo?: number;
+    valorCausa?: number;
   };
 }
 
@@ -132,6 +133,7 @@ function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome
       nome: a.nome || "",
     })),
     situacao,
+    valor_causa: typeof src.valorCausa === "number" ? src.valorCausa : null,
     data_ajuizamento: src.dataAjuizamento || null,
     data_ultima_atualizacao: src.dataHoraUltimaAtualizacao || null,
     orgao_julgador: src.orgaoJulgador

@@ -29,6 +29,9 @@ import {
   Download,
   Eye,
   Info,
+  ArrowUpDown,
+  ArrowDown,
+  ArrowUp,
 } from "lucide-react";
 import type {
   PrecatorioPendenteResult,
@@ -92,6 +95,14 @@ function formatDate(dateStr: string | null): string {
   return dateStr;
 }
 
+function formatBRL(valor: number | null): string {
+  if (valor === null || valor === undefined) return "-";
+  return valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+}
+
+type SortField = "valor" | "data" | "tribunal";
+type SortDir = "asc" | "desc";
+
 function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProcesso; expanded: boolean; onToggle: () => void }) {
   return (
     <Card className="hover-elevate" data-testid={`card-processo-${processo.numero_cnj}`}>
@@ -109,6 +120,11 @@ function ProcessoCard({ processo, expanded, onToggle }: { processo: EstoqueProce
             </div>
             <div className="flex items-center gap-3 text-xs text-muted-foreground flex-wrap">
               <span className="font-mono">{processo.tribunal_alias.toUpperCase()}</span>
+              {processo.valor_causa !== null && (
+                <span className="font-semibold text-amber-700 dark:text-amber-400" data-testid={`text-valor-${processo.numero_cnj}`}>
+                  {formatBRL(processo.valor_causa)}
+                </span>
+              )}
               <span>Ajuiz.: {formatDate(processo.data_ajuizamento)}</span>
               <span>Atualiz.: {formatDate(processo.data_ultima_atualizacao)}</span>
               {processo.orgao_julgador && (
@@ -183,6 +199,8 @@ export default function PrecatoriosPendentes() {
   const [expandedProcessos, setExpandedProcessos] = useState<Set<string>>(new Set());
   const [filtroTribunal, setFiltroTribunal] = useState<string>("todos");
   const [filtroClasse, setFiltroClasse] = useState<string>("todos");
+  const [sortField, setSortField] = useState<SortField>("data");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const { toast } = useToast();
 
   const currentYear = new Date().getFullYear();
@@ -226,12 +244,43 @@ export default function PrecatoriosPendentes() {
     });
   };
 
-  const filteredProcessos = result?.processos.filter((p: EstoqueProcesso) => {
+  const toggleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDir((d) => (d === "desc" ? "asc" : "desc"));
+    } else {
+      setSortField(field);
+      setSortDir("desc");
+    }
+  };
+
+  const filteredProcessos = (result?.processos.filter((p: EstoqueProcesso) => {
     if (filtroTribunal !== "todos" && p.tribunal_alias !== filtroTribunal) return false;
     if (filtroClasse === "precatorio" && p.classe_codigo !== 1265) return false;
     if (filtroClasse === "rpv" && p.classe_codigo !== 1266) return false;
     return true;
-  }) || [];
+  }) || []).slice().sort((a: EstoqueProcesso, b: EstoqueProcesso) => {
+    const dir = sortDir === "desc" ? -1 : 1;
+    if (sortField === "valor") {
+      const va = a.valor_causa ?? -1;
+      const vb = b.valor_causa ?? -1;
+      return (va - vb) * dir;
+    }
+    if (sortField === "data") {
+      const da = a.data_ajuizamento || "";
+      const db = b.data_ajuizamento || "";
+      return da.localeCompare(db) * dir;
+    }
+    if (sortField === "tribunal") {
+      return a.tribunal_alias.localeCompare(b.tribunal_alias) * dir;
+    }
+    return 0;
+  });
+
+  const totalValorPendente = filteredProcessos.reduce((sum: number, p: EstoqueProcesso) => {
+    return sum + (p.valor_causa ?? 0);
+  }, 0);
+
+  const processosComValor = filteredProcessos.filter((p: EstoqueProcesso) => p.valor_causa !== null && p.valor_causa > 0).length;
 
   const tribunaisDisponiveis: string[] = result
     ? Array.from(new Set(result.processos.map((p: EstoqueProcesso) => p.tribunal_alias)))
@@ -433,10 +482,32 @@ export default function PrecatoriosPendentes() {
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <Scale className="w-4 h-4 text-primary" />
                     <span className="text-sm font-medium">Processos Pendentes</span>
                     <Badge variant="secondary">{filteredProcessos.length} processos</Badge>
+                    {totalValorPendente > 0 && (
+                      <Badge variant="default" className="bg-amber-600 text-white" data-testid="badge-valor-total">
+                        <Banknote className="w-3 h-3 mr-1" />
+                        {formatBRL(totalValorPendente)}
+                      </Badge>
+                    )}
+                    {processosComValor > 0 && processosComValor < filteredProcessos.length && (
+                      <span className="text-[10px] text-muted-foreground">({processosComValor} de {filteredProcessos.length} com valor)</span>
+                    )}
+                    {filteredProcessos.length > 0 && processosComValor === 0 && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant="outline" className="text-[10px] text-muted-foreground cursor-help">
+                            <Info className="w-2.5 h-2.5 mr-1" />
+                            Valor indisponivel no DataJud
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[280px]">
+                          <p className="text-xs">A API publica do CNJ DataJud nao disponibiliza o valor da causa para precatorios/RPVs. O valor sera exibido quando disponivel via outra fonte de dados.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 flex-wrap">
                     <Filter className="w-3 h-3 text-muted-foreground" />
@@ -461,6 +532,41 @@ export default function PrecatoriosPendentes() {
                         <SelectItem value="rpv">RPV</SelectItem>
                       </SelectContent>
                     </Select>
+                    <Separator orientation="vertical" className="h-6" />
+                    <span className="text-[10px] text-muted-foreground">Ordenar:</span>
+                    <Button
+                      variant={sortField === "valor" ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-[11px] px-2"
+                      onClick={() => toggleSort("valor")}
+                      disabled={processosComValor === 0}
+                      data-testid="button-sort-valor"
+                    >
+                      <Banknote className="w-3 h-3 mr-1" />
+                      Valor
+                      {sortField === "valor" && (sortDir === "desc" ? <ArrowDown className="w-3 h-3 ml-1" /> : <ArrowUp className="w-3 h-3 ml-1" />)}
+                    </Button>
+                    <Button
+                      variant={sortField === "data" ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-[11px] px-2"
+                      onClick={() => toggleSort("data")}
+                      data-testid="button-sort-data"
+                    >
+                      <Clock className="w-3 h-3 mr-1" />
+                      Data
+                      {sortField === "data" && (sortDir === "desc" ? <ArrowDown className="w-3 h-3 ml-1" /> : <ArrowUp className="w-3 h-3 ml-1" />)}
+                    </Button>
+                    <Button
+                      variant={sortField === "tribunal" ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-[11px] px-2"
+                      onClick={() => toggleSort("tribunal")}
+                      data-testid="button-sort-tribunal"
+                    >
+                      Tribunal
+                      {sortField === "tribunal" && (sortDir === "desc" ? <ArrowDown className="w-3 h-3 ml-1" /> : <ArrowUp className="w-3 h-3 ml-1" />)}
+                    </Button>
                   </div>
                 </div>
 

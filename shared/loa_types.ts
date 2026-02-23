@@ -191,6 +191,7 @@ export interface EstoqueProcesso {
   classe_nome: string;
   assuntos: { codigo: number; nome: string }[];
   situacao: string;
+  valor_causa: number | null;
   data_ajuizamento: string | null;
   data_ultima_atualizacao: string | null;
   orgao_julgador: { codigo: number | null; nome: string } | null;
