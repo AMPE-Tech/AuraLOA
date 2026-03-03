@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Shield, LogIn, Loader2 } from "lucide-react";
+import { Zap, LogIn, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -61,28 +61,24 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gradient-to-br from-blue-950/40 via-background to-purple-950/30 pointer-events-none" />
-      <div className="relative w-full max-w-sm">
-        <div className="flex flex-col items-center mb-6">
-          <div className="p-3 rounded-md bg-primary/10 mb-3">
-            <Shield className="w-8 h-8 text-primary" />
+      <div className="w-full max-w-sm">
+        <div className="flex flex-col items-center mb-5">
+          <div className="p-2 rounded-md bg-primary/15 mb-3">
+            <Zap className="w-5 h-5 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight" data-testid="text-login-title">
+          <h1 className="text-lg font-semibold tracking-tight" data-testid="text-login-title">
             AuraLOA
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs text-muted-foreground mt-0.5">
             Acesse a plataforma de pesquisa
           </p>
         </div>
 
         <Card>
-          <CardHeader className="pb-4">
-            <CardTitle className="text-lg text-center">Entrar</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+          <CardContent className="p-5">
+            <form onSubmit={handleSubmit} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="email" className="text-xs">Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -91,10 +87,11 @@ export default function LoginPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   data-testid="input-email"
                   autoComplete="email"
+                  className="h-9 text-sm"
                 />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="password" className="text-xs">Senha</Label>
                 <Input
                   id="password"
                   type="password"
@@ -103,18 +100,19 @@ export default function LoginPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   data-testid="input-password"
                   autoComplete="current-password"
+                  className="h-9 text-sm"
                 />
               </div>
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full h-9 text-sm"
                 disabled={isLoading}
                 data-testid="button-login"
               >
                 {isLoading ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
                 ) : (
-                  <LogIn className="w-4 h-4 mr-2" />
+                  <LogIn className="w-3.5 h-3.5 mr-1.5" />
                 )}
                 Entrar
               </Button>
@@ -122,8 +120,8 @@ export default function LoginPage() {
           </CardContent>
         </Card>
 
-        <p className="text-xs text-muted-foreground text-center mt-4">
-          Plataforma de pesquisa e validacao de precatorios com cadeia de custodia
+        <p className="text-[10px] text-muted-foreground text-center mt-3">
+          Cadeia de custodia com SHA-256
         </p>
       </div>
     </div>

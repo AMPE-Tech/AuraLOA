@@ -21,9 +21,10 @@ import {
   Database,
   CheckCircle2,
   FileSearch,
-  PackageCheck,
   Send,
-  ChevronRight,
+  Zap,
+  TrendingUp,
+  BarChart3,
 } from "lucide-react";
 
 const loaProjectionData = [
@@ -34,9 +35,9 @@ const loaProjectionData = [
 ];
 
 const esferaBreakdownData = [
-  { esfera: "Federal", valor: 100, color: "hsl(217, 91%, 50%)" },
-  { esfera: "Estadual", valor: 130, color: "hsl(142, 76%, 40%)" },
-  { esfera: "Municipal", valor: 70, color: "hsl(24, 90%, 50%)" },
+  { esfera: "Federal", valor: 100 },
+  { esfera: "Estadual", valor: 130 },
+  { esfera: "Municipal", valor: 70 },
 ];
 
 const areaChartConfig = {
@@ -53,13 +54,13 @@ const pipelineSteps = [
   {
     icon: Database,
     title: "Coleta",
-    description: "Dados oficiais de Portal da Transparencia, SIOP, CNJ DataJud e Tribunais",
+    description: "Portal da Transparencia, SIOP, CNJ DataJud e Tribunais",
     hash: "a3f2b1c8d4e5...",
   },
   {
     icon: FileSearch,
     title: "Validacao",
-    description: "Verificacao cruzada de dotacao, execucao e estoque orcamentario",
+    description: "Cruzamento de dotacao, execucao e estoque orcamentario",
     hash: "7e9f0a2b3c4d...",
   },
   {
@@ -71,13 +72,13 @@ const pipelineSteps = [
   {
     icon: Shield,
     title: "Evidencia",
-    description: "SHA-256 de cada payload, timestamps ISO e raw payloads preservados",
+    description: "SHA-256 de cada payload, timestamps e raw payloads preservados",
     hash: "c9e2d5f8a1b4...",
   },
   {
     icon: Send,
     title: "Entrega",
-    description: "Pacote de evidencia auditavel com cadeia de custodia completa",
+    description: "Pacote auditavel com cadeia de custodia completa",
     hash: "f1a4d7e0b3c6...",
   },
 ];
@@ -85,7 +86,7 @@ const pipelineSteps = [
 const features = [
   {
     icon: Search,
-    title: "Pesquisa e Validacao LOA",
+    title: "Pesquisa LOA",
     description: "Pesquisa e validacao de precatorios inscritos na Lei Orcamentaria Anual com dados reais.",
   },
   {
@@ -128,140 +129,172 @@ const dataSources = [
   "TJSP",
 ];
 
-function formatBRL(value: number): string {
-  return `R$ ${value.toFixed(1)}B`;
-}
-
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-background">
-      <section className="relative overflow-visible py-20 md:py-32">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-slate-900 to-purple-950 dark:from-blue-950/80 dark:via-slate-950 dark:to-purple-950/80" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-blue-500/10 via-transparent to-purple-500/10" />
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <Badge variant="secondary" className="mb-6 bg-blue-500/20 text-blue-200 border-blue-500/30" data-testid="badge-beta">
-            <PackageCheck className="w-3 h-3 mr-1" />
-            Plataforma de Pesquisa Orcamentaria
-          </Badge>
-          <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight" data-testid="text-hero-title">
-            Aura<span className="text-blue-400">LOA</span>
-          </h1>
-          <p className="text-lg md:text-xl text-blue-100/80 max-w-2xl mx-auto mb-8 leading-relaxed">
-            Pesquisa e validacao de precatorios com cadeia de custodia SHA-256.
-            Dados reais de fontes oficiais. Cruzamento de 4 camadas orcamentarias.
-          </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
-            <Link href="/login">
-              <Button size="lg" className="bg-blue-600 border-blue-500" data-testid="button-cta-hero">
-                Acessar Plataforma
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
-            <a href="#overview">
-              <Button size="lg" variant="outline" className="text-blue-100 border-blue-400/40 bg-white/5 backdrop-blur-sm" data-testid="button-view-dashboard">
-                Ver Dashboard Publico
-                <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </a>
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-primary/15">
+              <Zap className="w-4 h-4 text-primary" />
+            </div>
+            <div>
+              <span className="font-semibold text-sm tracking-tight">AuraLOA</span>
+              <span className="text-[10px] text-muted-foreground ml-2 hidden sm:inline">Pesquisa Orcamentaria de Precatorios</span>
+            </div>
+          </div>
+          <Link href="/login">
+            <Button size="sm" data-testid="button-header-login">
+              Acessar Plataforma
+            </Button>
+          </Link>
+        </div>
+      </header>
+
+      <section className="relative py-16 md:py-24 overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
+        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="max-w-2xl">
+            <Badge variant="secondary" className="mb-4 text-[10px] font-medium" data-testid="badge-beta">
+              <TrendingUp className="w-3 h-3 mr-1" />
+              Plataforma de Pesquisa
+            </Badge>
+            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3 leading-tight" data-testid="text-hero-title">
+              Aura<span className="text-primary">LOA</span>
+            </h1>
+            <p className="text-muted-foreground text-sm md:text-base leading-relaxed mb-6 max-w-lg">
+              Pesquisa e validacao de precatorios com cadeia de custodia SHA-256.
+              Dados reais de fontes oficiais. Cruzamento de 4 camadas orcamentarias.
+            </p>
+            <div className="flex items-center gap-2.5">
+              <Link href="/login">
+                <Button data-testid="button-cta-hero">
+                  Acessar Plataforma
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
+                </Button>
+              </Link>
+              <a href="#overview">
+                <Button variant="outline" data-testid="button-view-dashboard">
+                  Ver Dashboard
+                </Button>
+              </a>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="py-16 md:py-20 max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3" data-testid="text-features-title">
-            Funcionalidades Principais
+      <section className="py-12 md:py-16 max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="mb-8">
+          <h2 className="text-lg font-semibold mb-1" data-testid="text-features-title">
+            Funcionalidades
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Ferramenta completa para pesquisa, validacao e auditoria de precatorios no orcamento publico.
+          <p className="text-sm text-muted-foreground">
+            Ferramenta completa para pesquisa, validacao e auditoria de precatorios.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {features.map((feature) => (
             <Card key={feature.title} className="hover-elevate" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}>
-              <CardContent className="p-5">
-                <div className="p-2 rounded-md bg-primary/10 w-fit mb-3">
-                  <feature.icon className="w-5 h-5 text-primary" />
+              <CardContent className="p-4">
+                <div className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-md bg-primary/10 shrink-0 mt-0.5">
+                    <feature.icon className="w-3.5 h-3.5 text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium mb-0.5">{feature.title}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{feature.description}</p>
+                  </div>
                 </div>
-                <h3 className="font-semibold mb-1">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </CardContent>
             </Card>
           ))}
         </div>
       </section>
 
-      <section id="overview" className="py-16 md:py-20 bg-muted/30">
+      <section id="overview" className="py-12 md:py-16 border-t border-border/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-12">
-            <h2 className="text-2xl md:text-3xl font-bold mb-3" data-testid="text-overview-title">
-              Visao Geral do Mercado
-            </h2>
-            <p className="text-muted-foreground max-w-xl mx-auto">
-              Dados agregados do mercado de precatorios no Brasil. Acesso publico.
-            </p>
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="w-4 h-4 text-primary" />
+                <h2 className="text-lg font-semibold" data-testid="text-overview-title">
+                  Visao Geral do Mercado
+                </h2>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Dados agregados do mercado de precatorios no Brasil
+              </p>
+            </div>
+            <Badge variant="outline" className="text-[10px]">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 inline-block" />
+              Dados publicos
+            </Badge>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             <Card data-testid="kpi-total-precatorios">
-              <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground mb-1">Estoque Total Estimado</p>
-                <p className="text-2xl font-bold">R$ 300B+</p>
-                <p className="text-xs text-muted-foreground mt-1">Em precatorios no Brasil</p>
+              <CardContent className="p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Estoque Total</p>
+                <p className="text-xl font-bold text-emerald-400">R$ 300B+</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Em precatorios no Brasil</p>
               </CardContent>
             </Card>
             <Card data-testid="kpi-processos-ativos">
-              <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground mb-1">Processos Ativos</p>
-                <p className="text-2xl font-bold">~1.2M</p>
-                <p className="text-xs text-muted-foreground mt-1">Precatorios e RPVs</p>
+              <CardContent className="p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Processos Ativos</p>
+                <p className="text-xl font-bold text-emerald-400">~1.2M</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Precatorios e RPVs</p>
               </CardContent>
             </Card>
             <Card data-testid="kpi-loa-2026">
-              <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground mb-1">LOA 2026 (Projecao)</p>
-                <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">R$ 144B</p>
-                <p className="text-xs text-muted-foreground mt-1">Federal + Estadual + Municipal</p>
+              <CardContent className="p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">LOA 2026</p>
+                <p className="text-xl font-bold text-primary">R$ 144B</p>
+                <p className="text-[10px] text-muted-foreground mt-1">Projecao consolidada</p>
               </CardContent>
             </Card>
             <Card data-testid="kpi-tribunais">
-              <CardContent className="p-5">
-                <p className="text-sm text-muted-foreground mb-1">Tribunais Cobertos</p>
-                <p className="text-2xl font-bold">10+</p>
-                <p className="text-xs text-muted-foreground mt-1">TRF1-6, TJSP e mais</p>
+              <CardContent className="p-4">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Tribunais</p>
+                <p className="text-xl font-bold">10+</p>
+                <p className="text-[10px] text-muted-foreground mt-1">TRF1-6, TJSP e mais</p>
               </CardContent>
             </Card>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <Card>
-              <CardContent className="p-5">
-                <h3 className="text-sm font-semibold mb-1" data-testid="text-chart-breakdown">Estoque por Esfera</h3>
-                <p className="text-xs text-muted-foreground mb-4">Distribuicao estimada em bilhoes (R$)</p>
-                <ChartContainer config={barChartConfig} className="h-[220px] w-full">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground" data-testid="text-chart-breakdown">Estoque por Esfera</h3>
+                  <span className="text-[10px] text-muted-foreground">R$ Bilhoes</span>
+                </div>
+                <ChartContainer config={barChartConfig} className="h-[200px] w-full">
                   <BarChart data={esferaBreakdownData} accessibilityLayer>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                    <XAxis dataKey="esfera" tickLine={false} axisLine={false} />
-                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}B`} />
+                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                    <XAxis dataKey="esfera" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="valor" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="valor" fill="hsl(var(--chart-1))" radius={[3, 3, 0, 0]} />
                   </BarChart>
                 </ChartContainer>
               </CardContent>
             </Card>
             <Card>
-              <CardContent className="p-5">
-                <h3 className="text-sm font-semibold mb-1" data-testid="text-chart-projection">Projecao LOA 2025-2028</h3>
-                <p className="text-xs text-muted-foreground mb-4">Valores aproximados por esfera em bilhoes (R$)</p>
-                <ChartContainer config={areaChartConfig} className="h-[220px] w-full">
+              <CardContent className="p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-muted-foreground" data-testid="text-chart-projection">Projecao LOA 2025-2028</h3>
+                  <span className="text-[10px] text-muted-foreground">R$ Bilhoes</span>
+                </div>
+                <ChartContainer config={areaChartConfig} className="h-[200px] w-full">
                   <AreaChart data={loaProjectionData} accessibilityLayer>
-                    <CartesianGrid vertical={false} strokeDasharray="3 3" />
-                    <XAxis dataKey="year" tickLine={false} axisLine={false} />
-                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}B`} />
+                    <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area type="monotone" dataKey="federal" stackId="1" fill="hsl(var(--chart-1))" stroke="hsl(var(--chart-1))" fillOpacity={0.3} />
-                    <Area type="monotone" dataKey="estadual" stackId="1" fill="hsl(var(--chart-2))" stroke="hsl(var(--chart-2))" fillOpacity={0.3} />
-                    <Area type="monotone" dataKey="municipal" stackId="1" fill="hsl(var(--chart-3))" stroke="hsl(var(--chart-3))" fillOpacity={0.3} />
+                    <Area type="monotone" dataKey="federal" stackId="1" fill="hsl(var(--chart-1))" stroke="hsl(var(--chart-1))" fillOpacity={0.15} strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="estadual" stackId="1" fill="hsl(var(--chart-2))" stroke="hsl(var(--chart-2))" fillOpacity={0.15} strokeWidth={1.5} />
+                    <Area type="monotone" dataKey="municipal" stackId="1" fill="hsl(var(--chart-3))" stroke="hsl(var(--chart-3))" fillOpacity={0.15} strokeWidth={1.5} />
                   </AreaChart>
                 </ChartContainer>
               </CardContent>
@@ -270,51 +303,54 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-16 md:py-20 max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3" data-testid="text-custody-title">
-            Cadeia de Custodia
-          </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto">
-            Cada etapa do pipeline gera evidencias com hash SHA-256, garantindo rastreabilidade total.
+      <section className="py-12 md:py-16 max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-1">
+            <Shield className="w-4 h-4 text-primary" />
+            <h2 className="text-lg font-semibold" data-testid="text-custody-title">
+              Cadeia de Custodia
+            </h2>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Cada etapa gera evidencias com hash SHA-256, garantindo rastreabilidade total.
           </p>
         </div>
-        <div className="flex flex-col md:flex-row items-stretch gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
           {pipelineSteps.map((step, idx) => (
-            <div key={step.title} className="flex-1 flex flex-col md:flex-row items-center gap-3">
-              <Card className="flex-1 w-full hover-elevate" data-testid={`card-pipeline-${step.title.toLowerCase()}`}>
-                <CardContent className="p-5 text-center">
-                  <div className="p-2 rounded-md bg-primary/10 w-fit mx-auto mb-3">
-                    <step.icon className="w-5 h-5 text-primary" />
+            <div key={step.title} className="flex items-center gap-2">
+              <Card className="flex-1 hover-elevate" data-testid={`card-pipeline-${step.title.toLowerCase()}`}>
+                <CardContent className="p-3 text-center">
+                  <div className="p-1.5 rounded-md bg-primary/10 w-fit mx-auto mb-2">
+                    <step.icon className="w-3.5 h-3.5 text-primary" />
                   </div>
-                  <h3 className="font-semibold mb-1 text-sm">{step.title}</h3>
-                  <p className="text-xs text-muted-foreground leading-relaxed mb-3">{step.description}</p>
-                  <div className="flex items-center justify-center gap-1 text-[10px] font-mono text-muted-foreground">
-                    <Hash className="w-3 h-3" />
+                  <h3 className="text-xs font-medium mb-0.5">{step.title}</h3>
+                  <p className="text-[10px] text-muted-foreground leading-relaxed mb-2">{step.description}</p>
+                  <div className="flex items-center justify-center gap-1 text-[9px] font-mono text-muted-foreground/60">
+                    <Hash className="w-2.5 h-2.5" />
                     {step.hash}
                   </div>
                 </CardContent>
               </Card>
               {idx < pipelineSteps.length - 1 && (
-                <ArrowRight className="w-5 h-5 text-muted-foreground shrink-0 hidden md:block" />
+                <ArrowRight className="w-3.5 h-3.5 text-muted-foreground/40 shrink-0 hidden md:block" />
               )}
             </div>
           ))}
         </div>
       </section>
 
-      <section className="py-16 md:py-20 bg-muted/30">
+      <section className="py-12 md:py-16 border-t border-border/50">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3" data-testid="text-sources-title">
-            Fontes de Dados Oficiais
+          <h2 className="text-lg font-semibold mb-1" data-testid="text-sources-title">
+            Fontes Oficiais
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto mb-8">
-            Dados coletados exclusivamente de fontes governamentais e judiciais oficiais.
+          <p className="text-xs text-muted-foreground mb-6">
+            Dados exclusivamente de fontes governamentais e judiciais.
           </p>
-          <div className="flex items-center justify-center gap-3 flex-wrap">
+          <div className="flex items-center justify-center gap-2 flex-wrap">
             {dataSources.map((source) => (
-              <Badge key={source} variant="outline" className="text-sm py-1.5 px-3" data-testid={`badge-source-${source.toLowerCase().replace(/\s+/g, '-')}`}>
-                <CheckCircle2 className="w-3 h-3 mr-1.5 text-emerald-500" />
+              <Badge key={source} variant="outline" className="text-[11px] py-1 px-2.5 font-normal" data-testid={`badge-source-${source.toLowerCase().replace(/\s+/g, '-')}`}>
+                <CheckCircle2 className="w-2.5 h-2.5 mr-1 text-emerald-500" />
                 {source}
               </Badge>
             ))}
@@ -322,31 +358,35 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20 md:py-28">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 text-center">
-          <div className="relative overflow-visible rounded-md p-10 md:p-16">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-950 via-slate-900 to-purple-950 rounded-md" />
-            <div className="relative z-10">
-              <h2 className="text-2xl md:text-3xl font-bold text-white mb-3" data-testid="text-cta-title">
+      <section className="py-12 md:py-16">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6">
+          <Card className="border-primary/20">
+            <CardContent className="p-8 text-center">
+              <h2 className="text-lg font-semibold mb-2" data-testid="text-cta-title">
                 Comece Agora
               </h2>
-              <p className="text-blue-100/80 mb-6 max-w-md mx-auto">
+              <p className="text-sm text-muted-foreground mb-5 max-w-sm mx-auto">
                 Acesse a plataforma e pesquise precatorios com cadeia de custodia completa.
               </p>
               <Link href="/login">
-                <Button size="lg" className="bg-blue-600 border-blue-500" data-testid="button-cta-footer">
+                <Button data-testid="button-cta-footer">
                   Acessar Plataforma
-                  <ArrowRight className="w-4 h-4 ml-2" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
                 </Button>
               </Link>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
 
-      <footer className="border-t py-8">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center text-sm text-muted-foreground">
-          <p data-testid="text-footer">AuraLOA - Plataforma de Pesquisa Orcamentaria de Precatorios</p>
+      <footer className="border-t border-border/50 py-6">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between">
+          <p className="text-[11px] text-muted-foreground" data-testid="text-footer">
+            AuraLOA - Pesquisa Orcamentaria de Precatorios
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Cadeia de custodia com <span className="font-mono">SHA-256</span>
+          </p>
         </div>
       </footer>
     </div>

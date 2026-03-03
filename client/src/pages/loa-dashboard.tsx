@@ -1639,18 +1639,18 @@ export default function LOADashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-primary/10">
-                <Scale className="w-5 h-5 text-primary" />
+      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 rounded-md bg-primary/15">
+                <Scale className="w-4 h-4 text-primary" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight" data-testid="text-app-title">
+                <h1 className="text-sm font-semibold tracking-tight" data-testid="text-app-title">
                   AuraLOA
                 </h1>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground">
                   Precatorios inscritos na LOA
                 </p>
               </div>

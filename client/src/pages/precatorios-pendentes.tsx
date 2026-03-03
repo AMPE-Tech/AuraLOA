@@ -453,28 +453,28 @@ export default function PrecatoriosPendentes() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
-          <div className="flex items-center justify-between gap-4 flex-wrap">
-            <div className="flex items-center gap-3">
+      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div className="flex items-center gap-2.5">
               <Link href="/dashboard">
                 <Button variant="ghost" size="sm" data-testid="button-voltar">
-                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
                   Dashboard
                 </Button>
               </Link>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="p-2 rounded-md bg-amber-500/10">
-                <Scale className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+              <Separator orientation="vertical" className="h-5" />
+              <div className="p-1.5 rounded-md bg-amber-500/10">
+                <Scale className="w-4 h-4 text-amber-400" />
               </div>
               <div>
-                <h1 className="text-xl font-bold tracking-tight" data-testid="text-page-title">
+                <h1 className="text-sm font-semibold tracking-tight" data-testid="text-page-title">
                   Precatorios Pendentes {selectedEnte === "SP" ? "— SP" : "— Federal"}
                 </h1>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-[10px] text-muted-foreground">
                   {selectedEnte === "SP"
                     ? "TJSP — Processos com pagamento pendente via CNJ DataJud"
-                    : "TRF1-TRF6 — Processos com pagamento pendente - Acesso ao Oficio Requisitorio"}
+                    : "TRF1-TRF6 — Processos com pagamento pendente"}
                 </p>
               </div>
             </div>
