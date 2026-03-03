@@ -460,4 +460,95 @@ router.post("/api/loa/uniao/precatorios-pendentes/json-export", async (req: Requ
   }
 });
 
+router.post("/api/loa/uniao/estoque/csv", async (req: Request, res: Response) => {
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    const processId = randomUUID();
+    const evidencePack = new EvidencePack(processId);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 10000,
+      evidencePack,
+    });
+
+    const processos = estoqueResult.processos;
+    const tribunalLabel = tribunais && tribunais.length === 1 ? tribunais[0] : "todos";
+
+    const BOM = "\uFEFF";
+    const sep = ";";
+    const headers = [
+      "Numero CNJ",
+      "Numero Formatado",
+      "Tribunal",
+      "Classe Codigo",
+      "Classe Nome",
+      "Situacao",
+      "Valor Causa",
+      "Fonte Valor",
+      "Data Ajuizamento",
+      "Data Ultima Atualizacao",
+      "Orgao Julgador",
+      "Assuntos",
+      "Total Movimentos",
+      "Ultima Movimentacao",
+      "Data Ultima Movimentacao",
+      "Pagamento Pendente",
+      "Tem Baixa",
+      "Tem Pagamento",
+      "URL Consulta",
+    ];
+
+    const formatCnj = (n: string) => {
+      if (!n || n.length < 20) return n;
+      return `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
+    };
+
+    const escCsv = (v: string) => {
+      if (v.includes(sep) || v.includes('"') || v.includes("\n")) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    };
+
+    const rows = processos.map((p) => [
+      escCsv(p.numero_cnj),
+      escCsv(formatCnj(p.numero_cnj)),
+      escCsv(p.tribunal_alias.toUpperCase()),
+      String(p.classe_codigo),
+      escCsv(p.classe_nome),
+      escCsv(p.situacao),
+      p.valor_causa !== null ? String(p.valor_causa) : "",
+      p.valor_fonte || "",
+      p.data_ajuizamento || "",
+      p.data_ultima_atualizacao || "",
+      escCsv(p.orgao_julgador?.nome || ""),
+      escCsv(p.assuntos.map((a) => a.nome).join(", ")),
+      String(p.total_movimentos),
+      escCsv(p.ultima_movimentacao?.nome || ""),
+      p.ultima_movimentacao?.data || "",
+      p.pagamento_pendente ? "Sim" : "Nao",
+      p.tem_baixa ? "Sim" : "Nao",
+      p.tem_pagamento ? "Sim" : "Nao",
+      p.url_consulta || "",
+    ].join(sep));
+
+    const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");
+    const filename = `estoque_${tribunalLabel}_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(csv);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erro ao gerar CSV de estoque", message: error.message });
+  }
+});
+
 export default router;

@@ -1,0 +1,16 @@
+[
+  {
+    "ano": 2025,
+    "funcao": "Encargos especiais",
+    "codigoFuncao": "28",
+    "subfuncao": "Outros encargos especiais",
+    "codigoSubfuncao": "846",
+    "programa": "OPERACOES ESPECIAIS: CUMPRIMENTO DE SENTENCAS JUDICIAIS",
+    "codigoPrograma": "0901",
+    "acao": "SENTENCAS JUDICIAIS TRANSITADAS EM JULGADO DE PEQUENO VALOR",
+    "codigoAcao": "0625",
+    "empenhado": "2.102.324.412,90",
+    "liquidado": "2.081.861.438,62",
+    "pago": "2.081.477.908,81"
+  }
+]

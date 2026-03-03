@@ -243,6 +243,7 @@ export interface EstoqueSummaryByTribunal {
   tribunal: string;
   tribunal_alias: string;
   total_processos: number;
+  total_disponivel: number | null;
   precatorios: number;
   rpvs: number;
   provider: EstoqueProvider;

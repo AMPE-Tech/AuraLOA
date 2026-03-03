@@ -646,7 +646,47 @@ function EmpenhoDetalheTable({ empenhos }: { empenhos: ZipEmpenhoDetalhe[] }) {
   );
 }
 
-function EstoquePanel({ data }: { data: EstoqueResult }) {
+function EstoquePanel({ data, onFetchAll }: { data: EstoqueResult; onFetchAll?: (tribunal: string) => void }) {
+  const { toast } = useToast();
+  const [filterTribunal, setFilterTribunal] = useState<string>("todos");
+  const [downloadingTribunal, setDownloadingTribunal] = useState<string | null>(null);
+
+  const filteredProcessos = filterTribunal === "todos"
+    ? data.processos
+    : data.processos.filter((p) => p.tribunal_alias === filterTribunal);
+
+  const tribunaisComProcessos = data.summary.por_tribunal.filter((t) => t.total_processos > 0);
+
+  const totalDisponivel = data.summary.por_tribunal.reduce((sum, t) => sum + (t.total_disponivel || t.total_processos), 0);
+  const hasMoreAvailable = totalDisponivel > data.summary.total_processos;
+
+  const handleDownloadCSV = async (tribunalAlias?: string) => {
+    const label = tribunalAlias || "todos";
+    setDownloadingTribunal(label);
+    try {
+      const body: any = {
+        ano_exercicio: data.ano_exercicio,
+        max_por_tribunal: 10000,
+      };
+      if (tribunalAlias) {
+        body.tribunais = [tribunalAlias];
+      }
+      const res = await apiRequest("POST", "/api/loa/uniao/estoque/csv", body);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `estoque_${label}_${data.ano_exercicio}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV baixado", description: `Estoque ${label.toUpperCase()} exportado` });
+    } catch (err: any) {
+      toast({ title: "Erro no download", description: err.message, variant: "destructive" });
+    } finally {
+      setDownloadingTribunal(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -670,10 +710,10 @@ function EstoquePanel({ data }: { data: EstoqueResult }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <KPICard
-          title="Total Processos"
+          title="Processos Carregados"
           value={String(data.summary.total_processos)}
           icon={FileText}
-          subtitle="Precatorios + RPVs"
+          subtitle={hasMoreAvailable ? `de ${totalDisponivel.toLocaleString("pt-BR")} disponiveis no DataJud` : "Precatorios + RPVs"}
         />
         <KPICard
           title="Precatorios"
@@ -691,47 +731,101 @@ function EstoquePanel({ data }: { data: EstoqueResult }) {
 
       <Card>
         <CardContent className="p-4">
-          <p className="text-sm font-medium mb-3">Resumo por Tribunal</p>
+          <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+            <p className="text-sm font-medium">Resumo por Tribunal</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleDownloadCSV()}
+              disabled={downloadingTribunal !== null || data.summary.total_processos === 0}
+              data-testid="button-download-estoque-all-csv"
+            >
+              {downloadingTribunal === "todos" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Download className="w-3 h-3 mr-1" />}
+              Baixar Todos CSV
+            </Button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-xs border-collapse" data-testid="table-estoque-tribunal">
               <thead>
                 <tr className="border-b bg-muted/50">
                   <th className="text-left p-2 font-medium text-muted-foreground">Tribunal</th>
-                  <th className="text-right p-2 font-medium text-muted-foreground">Total</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Carregados</th>
+                  <th className="text-right p-2 font-medium text-muted-foreground">Disponiveis</th>
                   <th className="text-right p-2 font-medium text-muted-foreground">Prec.</th>
                   <th className="text-right p-2 font-medium text-muted-foreground">RPVs</th>
-                  <th className="text-center p-2 font-medium text-muted-foreground">Provider</th>
                   <th className="text-center p-2 font-medium text-muted-foreground">Status</th>
-                  <th className="text-left p-2 font-medium text-muted-foreground">Obs.</th>
+                  <th className="text-center p-2 font-medium text-muted-foreground">Ações</th>
                 </tr>
               </thead>
               <tbody>
-                {data.summary.por_tribunal.map((t: EstoqueSummaryByTribunal) => (
-                  <tr key={t.tribunal_alias} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-tribunal-${t.tribunal_alias}`}>
-                    <td className="p-2">
-                      <span className="font-mono font-semibold">{t.tribunal_alias.toUpperCase()}</span>
-                      <span className="text-muted-foreground ml-2 hidden sm:inline">{t.tribunal}</span>
-                    </td>
-                    <td className="p-2 text-right font-semibold">{t.total_processos}</td>
-                    <td className="p-2 text-right text-blue-600 dark:text-blue-400">{t.precatorios}</td>
-                    <td className="p-2 text-right text-emerald-600 dark:text-emerald-400">{t.rpvs}</td>
-                    <td className="p-2 text-center">
-                      <Badge variant="secondary" className="text-[10px]">{t.provider}</Badge>
-                    </td>
-                    <td className="p-2 text-center">
-                      <StatusBadge status={t.status === "ERRO" ? "NAO_LOCALIZADO" : t.status} />
-                    </td>
-                    <td className="p-2 text-muted-foreground max-w-[200px] truncate" title={t.observacoes}>{t.observacoes}</td>
-                  </tr>
-                ))}
+                {data.summary.por_tribunal.map((t: EstoqueSummaryByTribunal) => {
+                  const hasMore = t.total_disponivel !== null && t.total_disponivel > t.total_processos;
+                  return (
+                    <tr key={t.tribunal_alias} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-tribunal-${t.tribunal_alias}`}>
+                      <td className="p-2">
+                        <span className="font-mono font-semibold">{t.tribunal_alias.toUpperCase()}</span>
+                        <span className="text-muted-foreground ml-2 hidden sm:inline">{t.tribunal}</span>
+                      </td>
+                      <td className="p-2 text-right font-semibold">{t.total_processos}</td>
+                      <td className="p-2 text-right">
+                        {t.total_disponivel !== null ? (
+                          <span className={hasMore ? "text-amber-600 dark:text-amber-400 font-semibold" : ""}>
+                            {t.total_disponivel.toLocaleString("pt-BR")}
+                          </span>
+                        ) : (
+                          <span className="text-muted-foreground">-</span>
+                        )}
+                      </td>
+                      <td className="p-2 text-right text-blue-600 dark:text-blue-400">{t.precatorios}</td>
+                      <td className="p-2 text-right text-emerald-600 dark:text-emerald-400">{t.rpvs}</td>
+                      <td className="p-2 text-center">
+                        <StatusBadge status={t.status === "ERRO" ? "NAO_LOCALIZADO" : t.status} />
+                      </td>
+                      <td className="p-2 text-center">
+                        <div className="flex items-center gap-1 justify-center">
+                          {t.total_processos > 0 && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px]"
+                              onClick={() => handleDownloadCSV(t.tribunal_alias)}
+                              disabled={downloadingTribunal !== null}
+                              data-testid={`button-download-csv-${t.tribunal_alias}`}
+                            >
+                              {downloadingTribunal === t.tribunal_alias ? (
+                                <Loader2 className="w-3 h-3 animate-spin" />
+                              ) : (
+                                <Download className="w-3 h-3" />
+                              )}
+                              <span className="ml-1">CSV</span>
+                            </Button>
+                          )}
+                          {hasMore && onFetchAll && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-[10px] text-amber-600 dark:text-amber-400"
+                              onClick={() => onFetchAll(t.tribunal_alias)}
+                              data-testid={`button-fetch-all-${t.tribunal_alias}`}
+                            >
+                              <RefreshCw className="w-3 h-3" />
+                              <span className="ml-1">Buscar {t.total_disponivel?.toLocaleString("pt-BR")}</span>
+                            </Button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
               <tfoot>
                 <tr className="border-t-2 bg-muted/30 font-semibold">
                   <td className="p-2">TOTAL</td>
                   <td className="p-2 text-right">{data.summary.total_processos}</td>
+                  <td className="p-2 text-right">{totalDisponivel > 0 ? totalDisponivel.toLocaleString("pt-BR") : "-"}</td>
                   <td className="p-2 text-right text-blue-700 dark:text-blue-300">{data.summary.total_precatorios}</td>
                   <td className="p-2 text-right text-emerald-700 dark:text-emerald-300">{data.summary.total_rpvs}</td>
-                  <td className="p-2" colSpan={3}></td>
+                  <td className="p-2" colSpan={2}></td>
                 </tr>
               </tfoot>
             </table>
@@ -742,36 +836,72 @@ function EstoquePanel({ data }: { data: EstoqueResult }) {
       {data.processos.length > 0 && (
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm font-medium mb-3">Processos ({data.processos.length})</p>
-            <div className="overflow-x-auto">
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <p className="text-sm font-medium">
+                Processos ({filteredProcessos.length}{filterTribunal !== "todos" ? ` de ${data.processos.length}` : ""})
+              </p>
+              {tribunaisComProcessos.length > 1 && (
+                <Select value={filterTribunal} onValueChange={setFilterTribunal}>
+                  <SelectTrigger className="w-[180px] h-8 text-xs" data-testid="select-filter-tribunal">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="todos">Todos os Tribunais</SelectItem>
+                    {tribunaisComProcessos.map((t) => (
+                      <SelectItem key={t.tribunal_alias} value={t.tribunal_alias}>
+                        {t.tribunal_alias.toUpperCase()} ({t.total_processos})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+            <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
               <table className="w-full text-[11px] border-collapse" data-testid="table-estoque-processos">
-                <thead>
+                <thead className="sticky top-0 bg-background z-10">
                   <tr className="border-b bg-muted/50">
                     <th className="text-left p-1.5 font-medium text-muted-foreground">Numero CNJ</th>
                     <th className="text-left p-1.5 font-medium text-muted-foreground">Tribunal</th>
                     <th className="text-left p-1.5 font-medium text-muted-foreground">Classe</th>
-                    <th className="text-left p-1.5 font-medium text-muted-foreground">Assuntos</th>
+                    <th className="text-left p-1.5 font-medium text-muted-foreground">Situação</th>
                     <th className="text-left p-1.5 font-medium text-muted-foreground">Dt. Ajuizamento</th>
                     <th className="text-left p-1.5 font-medium text-muted-foreground">Orgao Julgador</th>
+                    <th className="text-right p-1.5 font-medium text-muted-foreground">Valor</th>
                     <th className="text-right p-1.5 font-medium text-muted-foreground">Movs.</th>
+                    <th className="text-center p-1.5 font-medium text-muted-foreground">Consulta</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {data.processos.map((p: EstoqueProcesso, idx: number) => (
+                  {filteredProcessos.map((p: EstoqueProcesso, idx: number) => (
                     <tr key={p.numero_cnj || idx} className="border-b hover:bg-muted/30 transition-colors" data-testid={`row-processo-${idx}`}>
-                      <td className="p-1.5 font-mono">{p.numero_cnj || "-"}</td>
+                      <td className="p-1.5 font-mono text-[10px]">{p.numero_cnj || "-"}</td>
                       <td className="p-1.5 font-mono">{p.tribunal_alias.toUpperCase()}</td>
                       <td className="p-1.5">
                         <Badge variant={p.classe_codigo === 1265 ? "default" : "secondary"} className="text-[10px]">
                           {p.classe_nome || p.classe_codigo}
                         </Badge>
                       </td>
-                      <td className="p-1.5 max-w-[200px] truncate" title={p.assuntos.map((a: {codigo: number; nome: string}) => a.nome).join(", ")}>
-                        {p.assuntos.map((a: {codigo: number; nome: string}) => a.nome).join(", ") || "-"}
+                      <td className="p-1.5">
+                        <Badge variant={p.pagamento_pendente ? "destructive" : "secondary"} className="text-[10px]">
+                          {p.situacao}
+                        </Badge>
                       </td>
                       <td className="p-1.5">{p.data_ajuizamento ? p.data_ajuizamento.substring(0, 8).replace(/(\d{4})(\d{2})(\d{2})/, "$3/$2/$1") : "-"}</td>
                       <td className="p-1.5 max-w-[180px] truncate" title={p.orgao_julgador?.nome || ""}>{p.orgao_julgador?.nome || "-"}</td>
+                      <td className="p-1.5 text-right font-mono">
+                        {p.valor_causa !== null ? p.valor_causa.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "-"}
+                      </td>
                       <td className="p-1.5 text-right">{p.total_movimentos}</td>
+                      <td className="p-1.5 text-center">
+                        {p.url_consulta && (
+                          <a href={p.url_consulta} target="_blank" rel="noopener noreferrer">
+                            <Badge variant="outline" className="text-[9px] cursor-pointer hover:bg-primary/10">
+                              <ExternalLink className="w-2.5 h-2.5 mr-0.5" />
+                              PJe
+                            </Badge>
+                          </a>
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -1269,10 +1399,11 @@ export default function LOADashboard() {
   });
 
   const estoqueMutation = useMutation({
-    mutationFn: async (ano: number) => {
+    mutationFn: async (params: { ano: number; tribunais?: string[]; max_por_tribunal?: number }) => {
       const res = await apiRequest("POST", "/api/loa/uniao/estoque", {
-        ano_exercicio: ano,
-        max_por_tribunal: 50,
+        ano_exercicio: params.ano,
+        tribunais: params.tribunais,
+        max_por_tribunal: params.max_por_tribunal || 500,
       });
       return res.json();
     },
@@ -1328,7 +1459,7 @@ export default function LOADashboard() {
   };
 
   const handleEstoque = () => {
-    estoqueMutation.mutate(parseInt(selectedYear));
+    estoqueMutation.mutate({ ano: parseInt(selectedYear) });
   };
 
   const handleGapAnalysis = () => {
@@ -1540,7 +1671,50 @@ export default function LOADashboard() {
         </Card>
 
         {activeView === "a2" && currentResult && <ResultPanel data={currentResult} />}
-        {activeView === "estoque" && estoqueResult && <EstoquePanel data={estoqueResult} />}
+        {activeView === "estoque" && estoqueResult && (
+          <EstoquePanel
+            data={estoqueResult}
+            onFetchAll={async (tribunal) => {
+              const tribunalData = estoqueResult.summary.por_tribunal.find((t) => t.tribunal_alias === tribunal);
+              const maxNeeded = tribunalData?.total_disponivel || 10000;
+              toast({ title: `Buscando todos processos ${tribunal.toUpperCase()}...`, description: `Pode levar alguns segundos para ${maxNeeded.toLocaleString("pt-BR")} processos` });
+              try {
+                const res = await apiRequest("POST", "/api/loa/uniao/estoque", {
+                  ano_exercicio: estoqueResult.ano_exercicio,
+                  tribunais: [tribunal],
+                  max_por_tribunal: maxNeeded,
+                });
+                const singleResult: EstoqueResult = await res.json();
+                setEstoqueResult((prev) => {
+                  if (!prev) return singleResult;
+                  const otherProcessos = prev.processos.filter((p) => p.tribunal_alias !== tribunal);
+                  const mergedProcessos = [...otherProcessos, ...singleResult.processos];
+                  const mergedPorTribunal = prev.summary.por_tribunal.map((t) =>
+                    t.tribunal_alias === tribunal
+                      ? (singleResult.summary.por_tribunal[0] || t)
+                      : t
+                  );
+                  const totalPrec = mergedProcessos.filter((p) => p.classe_codigo === 1265).length;
+                  const totalRpv = mergedProcessos.filter((p) => p.classe_codigo === 1266).length;
+                  return {
+                    ...prev,
+                    processos: mergedProcessos,
+                    summary: {
+                      ...prev.summary,
+                      total_processos: mergedProcessos.length,
+                      total_precatorios: totalPrec,
+                      total_rpvs: totalRpv,
+                      por_tribunal: mergedPorTribunal,
+                    },
+                  };
+                });
+                toast({ title: `${tribunal.toUpperCase()} completo`, description: `${singleResult.summary.total_processos} processos carregados` });
+              } catch (err: any) {
+                toast({ title: "Erro ao buscar todos", description: err.message, variant: "destructive" });
+              }
+            }}
+          />
+        )}
         {activeView === "gap" && gapResult && <GapAnalysisPanel data={gapResult} />}
 
         {(activeView === "a2" ? currentResult : activeView === "estoque" ? estoqueResult : gapResult) && (

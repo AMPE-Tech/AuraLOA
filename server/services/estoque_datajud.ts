@@ -189,6 +189,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
   const endpoint = `${DATAJUD_BASE}/api_publica_${tribunal_alias}/_search`;
   const processos: EstoqueProcesso[] = [];
   const evidences: { source_name: string; source_url: string; captured_at_iso: string; raw_payload_sha256: string; raw_payload_path: string; bytes: number }[] = [];
+  let totalDisponivel: number | null = null;
 
   let searchAfter: (string | number)[] | undefined;
   let page = 0;
@@ -222,6 +223,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
             tribunal: tribunalNome,
             tribunal_alias,
             total_processos: 0,
+            total_disponivel: null,
             precatorios: 0,
             rpvs: 0,
             provider: "datajud",
@@ -249,6 +251,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
       const totalValue = data.hits?.total?.value || 0;
 
       if (page === 0) {
+        totalDisponivel = totalValue;
         evidencePack.log(`DataJud ${tribunal_alias}: total_hits=${totalValue} (capped at ${max_results})`);
       }
 
@@ -270,17 +273,22 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
 
     evidencePack.log(`DataJud ${tribunal_alias}: fetched ${processos.length} processos (${precatorios} prec, ${rpvs} RPV) in ${page + 1} pages`);
 
+    const loadedObs = totalDisponivel && totalDisponivel > processos.length
+      ? `${processos.length} de ${totalDisponivel} processos via DataJud`
+      : `${processos.length} processos via DataJud`;
+
     return {
       processos,
       summary: {
         tribunal: tribunalNome,
         tribunal_alias,
         total_processos: processos.length,
+        total_disponivel: totalDisponivel,
         precatorios,
         rpvs,
         provider: "datajud",
         status: processos.length > 0 ? "OK" : "PARCIAL",
-        observacoes: processos.length === 0 ? "Nenhum processo encontrado para o ano" : `${processos.length} processos via DataJud`,
+        observacoes: processos.length === 0 ? "Nenhum processo encontrado para o ano" : loadedObs,
       },
       evidences,
     };
@@ -292,6 +300,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
         tribunal: tribunalNome,
         tribunal_alias,
         total_processos: 0,
+        total_disponivel: null,
         precatorios: 0,
         rpvs: 0,
         provider: "datajud",
