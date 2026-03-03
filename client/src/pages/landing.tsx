@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import heroBgPath from "@assets/hero-dashboard-bg.png";
 import {
   ChartContainer,
   ChartTooltip,
@@ -235,34 +236,69 @@ export default function LandingPage() {
         </div>
       </header>
 
-      <section className="relative py-16 md:py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="max-w-2xl">
-            <Badge variant="secondary" className="mb-4 text-[10px] font-medium" data-testid="badge-beta">
-              <TrendingUp className="w-3 h-3 mr-1" />
-              Plataforma de Pesquisa
-            </Badge>
-            <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-3 leading-tight" data-testid="text-hero-title">
-              Aura<span className="text-primary">LOA</span>
-            </h1>
-            <p className="text-muted-foreground text-sm md:text-base leading-relaxed mb-6 max-w-lg">
-              Pesquisa e validacao de precatorios com cadeia de custodia SHA-256.
-              Dados reais de fontes oficiais. Cruzamento de 4 camadas orcamentarias.
-            </p>
-            <div className="flex items-center gap-2.5">
-              <Link href="/login">
-                <Button data-testid="button-cta-hero">
-                  Acessar Plataforma
-                  <ArrowRight className="w-3.5 h-3.5 ml-1.5" />
-                </Button>
-              </Link>
-              <a href="#overview">
-                <Button variant="outline" data-testid="button-view-dashboard">
-                  Ver Dashboard
-                </Button>
-              </a>
+      <section className="relative overflow-hidden" data-testid="section-hero">
+        <div className="absolute inset-0">
+          <img
+            src={heroBgPath}
+            alt=""
+            className="w-full h-full object-cover opacity-[0.07]"
+            aria-hidden="true"
+          />
+        </div>
+        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-blue-950/90 to-slate-950" />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-blue-500/8 blur-3xl" />
+        <div className="absolute bottom-0 right-0 w-[400px] h-[200px] rounded-full bg-purple-500/5 blur-3xl" />
+        <div className="relative z-10 px-8 md:px-12 py-14 md:py-20 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-blue-500/20 bg-blue-500/10 mb-5" data-testid="badge-beta">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+            <span className="text-[10px] text-blue-200 font-medium">Plataforma ativa — dados em tempo real</span>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight mb-3" data-testid="text-hero-title">
+            Aura<span className="text-blue-400">LOA</span>
+          </h1>
+          <p className="text-sm md:text-base text-blue-100/60 max-w-xl mx-auto leading-relaxed mb-8">
+            Due diligence digital de precatorios com cadeia de custodia criptografica.
+            4 camadas de cruzamento orcamentario. Anti-alucinacao. Dados reais.
+          </p>
+
+          <div className="flex items-center justify-center gap-6 md:gap-10 mb-8">
+            <div>
+              <p className="text-3xl md:text-4xl font-bold text-white">R$ 300B<span className="text-lg text-blue-400">+</span></p>
+              <p className="text-[10px] text-blue-200/40 uppercase tracking-widest mt-1">Mercado de precatorios</p>
             </div>
+            <div className="w-px h-12 bg-white/10" />
+            <div>
+              <p className="text-3xl md:text-4xl font-bold text-emerald-400">40<span className="text-lg">x</span></p>
+              <p className="text-[10px] text-blue-200/40 uppercase tracking-widest mt-1">Mais rapido que manual</p>
+            </div>
+            <div className="w-px h-12 bg-white/10" />
+            <div>
+              <p className="text-3xl md:text-4xl font-bold text-white">97<span className="text-lg text-blue-400">%</span></p>
+              <p className="text-[10px] text-blue-200/40 uppercase tracking-widest mt-1">Economia de tempo</p>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-center gap-2.5 mb-8">
+            <Link href="/login">
+              <Button size="lg" className="bg-blue-600 hover:bg-blue-500 border-blue-500" data-testid="button-cta-hero">
+                Acessar Plataforma
+                <ArrowRight className="w-4 h-4 ml-1.5" />
+              </Button>
+            </Link>
+            <a href="#overview">
+              <Button size="lg" variant="outline" className="text-blue-200 border-blue-400/25 bg-white/5 backdrop-blur-sm" data-testid="button-view-dashboard">
+                Ver Dashboard
+              </Button>
+            </a>
+          </div>
+
+          <div className="flex items-center justify-center gap-2 flex-wrap" data-testid="badges-data-sources">
+            {["Portal da Transparencia", "SIOP", "CNJ DataJud", "TRF1-6", "TJSP"].map((s) => (
+              <span key={s} className="inline-flex items-center gap-1 text-[9px] text-blue-200/40 px-2 py-0.5 rounded border border-blue-400/10 bg-blue-500/5">
+                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500/60" />
+                {s}
+              </span>
+            ))}
           </div>
         </div>
       </section>
