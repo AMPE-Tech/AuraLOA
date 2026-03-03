@@ -9,7 +9,7 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { Bar, BarChart, XAxis, YAxis, Area, AreaChart, CartesianGrid } from "recharts";
+import { Bar, BarChart, XAxis, YAxis, Area, AreaChart, CartesianGrid, Cell, PieChart, Pie, ResponsiveContainer, LabelList, Tooltip, Legend, RadialBarChart, RadialBar } from "recharts";
 import {
   Search,
   Shield,
@@ -43,9 +43,24 @@ const loaProjectionData = [
 ];
 
 const esferaBreakdownData = [
-  { esfera: "Federal", valor: 100 },
-  { esfera: "Estadual", valor: 130 },
-  { esfera: "Municipal", valor: 70 },
+  { esfera: "Federal", valor: 100, fill: "hsl(217 80% 58%)" },
+  { esfera: "Estadual", valor: 130, fill: "hsl(155 55% 48%)" },
+  { esfera: "Municipal", valor: 70, fill: "hsl(220 20% 52%)" },
+];
+
+const donutData = [
+  { name: "Federal", value: 100, fill: "hsl(217 80% 58%)" },
+  { name: "Estadual", value: 130, fill: "hsl(155 55% 48%)" },
+  { name: "Municipal", value: 70, fill: "hsl(220 20% 52%)" },
+];
+
+const tribunaisData = [
+  { tribunal: "TRF3", processos: 9250, valor: 42.1, fill: "hsl(217 80% 58%)" },
+  { tribunal: "TRF4", processos: 8900, valor: 38.7, fill: "hsl(210 65% 52%)" },
+  { tribunal: "TRF6", processos: 7200, valor: 31.2, fill: "hsl(200 55% 48%)" },
+  { tribunal: "TRF1", processos: 5100, valor: 22.8, fill: "hsl(220 40% 55%)" },
+  { tribunal: "TRF5", processos: 4300, valor: 18.9, fill: "hsl(230 35% 52%)" },
+  { tribunal: "TRF2", processos: 3800, valor: 15.6, fill: "hsl(155 55% 48%)" },
 ];
 
 const timelineCompareData = [
@@ -135,6 +150,16 @@ const areaChartConfig = {
 
 const barChartConfig = {
   valor: { label: "R$ Bilhoes", color: "hsl(var(--chart-1))" },
+} satisfies ChartConfig;
+
+const tribunaisChartConfig = {
+  valor: { label: "R$ Bilhoes", color: "hsl(var(--chart-1))" },
+} satisfies ChartConfig;
+
+const donutChartConfig = {
+  Federal: { label: "Federal", color: "hsl(217 80% 58%)" },
+  Estadual: { label: "Estadual", color: "hsl(155 55% 48%)" },
+  Municipal: { label: "Municipal", color: "hsl(220 20% 52%)" },
 } satisfies ChartConfig;
 
 const pipelineSteps = [
@@ -414,9 +439,9 @@ export default function LandingPage() {
                   </div>
                   <ChartContainer config={timelineChartConfig} className="h-[220px] w-full">
                     <BarChart data={timelineCompareData} layout="vertical" accessibilityLayer barGap={2} barSize={14}>
-                      <CartesianGrid horizontal={false} stroke="hsl(220 10% 15%)" strokeDasharray="3 3" />
-                      <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 10, fill: "hsl(220 10% 40%)" }} tickFormatter={(v) => `${v}h`} />
-                      <YAxis type="category" dataKey="etapa" tickLine={false} axisLine={false} width={100} tick={{ fontSize: 10, fill: "hsl(220 10% 40%)" }} />
+                      <CartesianGrid horizontal={false} stroke="hsl(220 10% 18%)" strokeDasharray="3 3" />
+                      <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }} tickFormatter={(v) => `${v}h`} />
+                      <YAxis type="category" dataKey="etapa" tickLine={false} axisLine={false} width={100} tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }} />
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Bar dataKey="manual" fill="hsl(0 65% 42%)" radius={[0, 3, 3, 0]} name="Manual" />
                       <Bar dataKey="digital" fill="hsl(142 72% 42%)" radius={[0, 3, 3, 0]} name="AuraLOA" />
@@ -600,6 +625,81 @@ export default function LandingPage() {
             </Card>
           </div>
 
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 mb-3">
+            <Card className="bg-white/[0.02] border-white/[0.06]">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-white/40" data-testid="text-chart-breakdown">Distribuicao por Esfera</h3>
+                </div>
+                <ChartContainer config={donutChartConfig} className="h-[200px] w-full">
+                  <PieChart>
+                    <Pie
+                      data={donutData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={85}
+                      paddingAngle={3}
+                      dataKey="value"
+                      strokeWidth={0}
+                    >
+                      {donutData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <ChartTooltip content={<ChartTooltipContent nameKey="name" />} />
+                    <text x="50%" y="46%" textAnchor="middle" className="fill-white text-xl font-bold">R$ 300B</text>
+                    <text x="50%" y="58%" textAnchor="middle" className="fill-white/40 text-[10px]">Estoque Total</text>
+                  </PieChart>
+                </ChartContainer>
+                <div className="flex items-center justify-center gap-4 mt-2">
+                  {donutData.map((d) => (
+                    <div key={d.name} className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: d.fill }} />
+                      <span className="text-[10px] text-white/50">{d.name}</span>
+                      <span className="text-[10px] font-medium text-white/70">R$ {d.value}B</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2 bg-white/[0.02] border-white/[0.06]">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-medium uppercase tracking-wider text-white/40" data-testid="text-chart-tribunais">Estoque por Tribunal Federal</h3>
+                  <span className="text-[10px] text-white/35">R$ Bilhoes</span>
+                </div>
+                <ChartContainer config={tribunaisChartConfig} className="h-[200px] w-full">
+                  <BarChart data={tribunaisData} layout="vertical" accessibilityLayer barSize={18}>
+                    <CartesianGrid horizontal={false} stroke="hsl(220 10% 18%)" strokeDasharray="3 3" />
+                    <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }} tickFormatter={(v) => `R$${v}B`} />
+                    <YAxis type="category" dataKey="tribunal" tickLine={false} axisLine={false} width={45} tick={{ fontSize: 11, fill: "hsl(220 10% 55%)", fontWeight: 500 }} />
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload;
+                        return (
+                          <div className="rounded-lg border border-white/10 bg-[hsl(225_10%_10%)] p-3 shadow-xl">
+                            <p className="text-xs font-semibold text-white mb-1">{d.tribunal}</p>
+                            <p className="text-[10px] text-white/60">Valor: <span className="text-white font-medium">R$ {d.valor}B</span></p>
+                            <p className="text-[10px] text-white/60">Processos: <span className="text-white font-medium">{d.processos.toLocaleString()}</span></p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="valor" radius={[0, 4, 4, 0]}>
+                      {tribunaisData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill} />
+                      ))}
+                      <LabelList dataKey="valor" position="right" formatter={(v: number) => `R$${v}B`} style={{ fontSize: 11, fill: "hsl(220 10% 60%)" }} />
+                    </Bar>
+                  </BarChart>
+                </ChartContainer>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
             <Card className="bg-white/[0.02] border-white/[0.06]">
               <CardContent className="p-5">
@@ -608,12 +708,28 @@ export default function LandingPage() {
                   <span className="text-[10px] text-white/35">R$ Bilhoes</span>
                 </div>
                 <ChartContainer config={barChartConfig} className="h-[200px] w-full">
-                  <BarChart data={esferaBreakdownData} accessibilityLayer>
-                    <CartesianGrid vertical={false} stroke="hsl(220 10% 15%)" strokeDasharray="3 3" />
-                    <XAxis dataKey="esfera" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 40%)" }} />
-                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} tick={{ fontSize: 11, fill: "hsl(220 10% 40%)" }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Bar dataKey="valor" fill="hsl(217 91% 55%)" radius={[4, 4, 0, 0]} />
+                  <BarChart data={esferaBreakdownData} accessibilityLayer barSize={40}>
+                    <CartesianGrid vertical={false} stroke="hsl(220 10% 18%)" strokeDasharray="3 3" />
+                    <XAxis dataKey="esfera" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(220 10% 50%)" }} />
+                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} tick={{ fontSize: 11, fill: "hsl(220 10% 45%)" }} />
+                    <ChartTooltip
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload;
+                        return (
+                          <div className="rounded-lg border border-white/10 bg-[hsl(225_10%_10%)] p-3 shadow-xl">
+                            <p className="text-xs font-semibold text-white">{d.esfera}</p>
+                            <p className="text-[10px] text-white/60 mt-1">R$ <span className="text-white font-medium">{d.valor}B</span></p>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Bar dataKey="valor" radius={[6, 6, 0, 0]}>
+                      {esferaBreakdownData.map((entry, idx) => (
+                        <Cell key={idx} fill={entry.fill} />
+                      ))}
+                      <LabelList dataKey="valor" position="top" formatter={(v: number) => `R$${v}B`} style={{ fontSize: 11, fill: "hsl(220 10% 65%)", fontWeight: 600 }} />
+                    </Bar>
                   </BarChart>
                 </ChartContainer>
               </CardContent>
@@ -621,18 +737,69 @@ export default function LandingPage() {
             <Card className="bg-white/[0.02] border-white/[0.06]">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-white/40" data-testid="text-chart-projection">Projecao LOA 2025-2028</h3>
-                  <span className="text-[10px] text-white/35">R$ Bilhoes</span>
+                  <div>
+                    <h3 className="text-xs font-medium uppercase tracking-wider text-white/40" data-testid="text-chart-projection">Projecao LOA 2025-2028</h3>
+                    <p className="text-[9px] text-white/25 mt-0.5">Crescimento estimado por esfera</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    {[
+                      { label: "Federal", color: "hsl(217 80% 58%)" },
+                      { label: "Estadual", color: "hsl(155 55% 48%)" },
+                      { label: "Municipal", color: "hsl(220 20% 52%)" },
+                    ].map((l) => (
+                      <div key={l.label} className="flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: l.color }} />
+                        <span className="text-[9px] text-white/40">{l.label}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
                 <ChartContainer config={areaChartConfig} className="h-[200px] w-full">
                   <AreaChart data={loaProjectionData} accessibilityLayer>
-                    <CartesianGrid vertical={false} stroke="hsl(220 10% 15%)" strokeDasharray="3 3" />
-                    <XAxis dataKey="year" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 40%)" }} />
-                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} tick={{ fontSize: 11, fill: "hsl(220 10% 40%)" }} />
-                    <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area type="monotone" dataKey="federal" stackId="1" fill="hsl(217 91% 55%)" stroke="hsl(217 91% 55%)" fillOpacity={0.12} strokeWidth={1.5} />
-                    <Area type="monotone" dataKey="estadual" stackId="1" fill="hsl(142 72% 45%)" stroke="hsl(142 72% 45%)" fillOpacity={0.12} strokeWidth={1.5} />
-                    <Area type="monotone" dataKey="municipal" stackId="1" fill="hsl(24 90% 50%)" stroke="hsl(24 90% 50%)" fillOpacity={0.12} strokeWidth={1.5} />
+                    <defs>
+                      <linearGradient id="gradFederal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(217 80% 58%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(217 80% 58%)" stopOpacity={0.03} />
+                      </linearGradient>
+                      <linearGradient id="gradEstadual" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(155 55% 48%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(155 55% 48%)" stopOpacity={0.03} />
+                      </linearGradient>
+                      <linearGradient id="gradMunicipal" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(220 20% 52%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(220 20% 52%)" stopOpacity={0.03} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid vertical={false} stroke="hsl(220 10% 18%)" strokeDasharray="3 3" />
+                    <XAxis dataKey="year" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(220 10% 50%)" }} />
+                    <YAxis tickLine={false} axisLine={false} tickFormatter={(v) => `${v}`} tick={{ fontSize: 11, fill: "hsl(220 10% 45%)" }} domain={[0, 200]} />
+                    <ChartTooltip
+                      content={({ active, payload, label }) => {
+                        if (!active || !payload?.length) return null;
+                        const total = payload.reduce((sum, p) => sum + (p.value as number), 0);
+                        return (
+                          <div className="rounded-lg border border-white/10 bg-[hsl(225_10%_10%)] p-3 shadow-xl">
+                            <p className="text-xs font-semibold text-white mb-2">LOA {label}</p>
+                            {payload.map((p) => (
+                              <div key={p.dataKey as string} className="flex items-center justify-between gap-4 mb-0.5">
+                                <div className="flex items-center gap-1.5">
+                                  <span className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
+                                  <span className="text-[10px] text-white/60 capitalize">{p.dataKey as string}</span>
+                                </div>
+                                <span className="text-[10px] text-white font-medium">R$ {(p.value as number).toFixed(1)}B</span>
+                              </div>
+                            ))}
+                            <div className="border-t border-white/10 mt-1.5 pt-1.5 flex justify-between">
+                              <span className="text-[10px] text-white/50">Total</span>
+                              <span className="text-[10px] text-white font-bold">R$ {total.toFixed(1)}B</span>
+                            </div>
+                          </div>
+                        );
+                      }}
+                    />
+                    <Area type="monotone" dataKey="federal" stackId="1" fill="url(#gradFederal)" stroke="hsl(217 80% 58%)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="estadual" stackId="1" fill="url(#gradEstadual)" stroke="hsl(155 55% 48%)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="municipal" stackId="1" fill="url(#gradMunicipal)" stroke="hsl(220 20% 52%)" strokeWidth={2} />
                   </AreaChart>
                 </ChartContainer>
               </CardContent>
