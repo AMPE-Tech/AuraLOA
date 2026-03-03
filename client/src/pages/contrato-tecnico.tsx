@@ -27,6 +27,7 @@ import {
   ShieldCheck,
   ShieldAlert,
   RefreshCw,
+  LogOut,
 } from "lucide-react";
 
 function formatBRL(v: number): string {
@@ -96,17 +97,30 @@ export default function ContratoTecnico() {
   return (
     <div className="min-h-screen bg-background p-4 md:p-6 max-w-7xl mx-auto">
       <div className="flex items-center gap-3 mb-6">
-        <Link href="/">
+        <Link href="/dashboard">
           <Button variant="ghost" size="sm" data-testid="btn-back-home">
             <ArrowLeft className="w-4 h-4 mr-1" />
             Dashboard
           </Button>
         </Link>
-        <Link href="/pendentes">
+        <Link href="/dashboard/pendentes">
           <Button variant="ghost" size="sm" data-testid="btn-goto-pendentes">
             Pendentes
           </Button>
         </Link>
+        <Button
+          variant="ghost"
+          size="sm"
+          data-testid="button-logout"
+          onClick={() => {
+            localStorage.removeItem("aura_token");
+            localStorage.removeItem("aura_email");
+            window.location.href = "/";
+          }}
+        >
+          <LogOut className="w-3.5 h-3.5 mr-1" />
+          Sair
+        </Button>
         <div className="flex-1" />
         <Badge variant="outline" className="text-xs font-mono" data-testid="badge-schema">
           <Hash className="w-3 h-3 mr-1" />

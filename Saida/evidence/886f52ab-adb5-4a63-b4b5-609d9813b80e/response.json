@@ -1,0 +1,239 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "886f52ab-adb5-4a63-b4b5-609d9813b80e",
+  "ano_exercicio": 2026,
+  "generated_at_iso": "2026-03-03T13:53:55.288Z",
+  "status_geral": "PARCIAL",
+  "totais": {
+    "dotacao_total": null,
+    "pago_total": 272347479.21000004,
+    "empenhado_total": 597092855.04,
+    "estoque_total_processos": 29083,
+    "estoque_total_precatorios": 6387,
+    "estoque_total_rpvs": 22696,
+    "gap_dotacao_vs_pago": null,
+    "cobertura_pct": 45.61224890084393
+  },
+  "por_acao": [
+    {
+      "codigo_acao": "0005",
+      "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+      "dotacao_atual": null,
+      "total_pago": null,
+      "total_empenhado": null,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": null,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "Indisponivel",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    },
+    {
+      "codigo_acao": "0EC7",
+      "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Relativos a Complementacao da Uniao ao FUNDEF)",
+      "dotacao_atual": null,
+      "total_pago": null,
+      "total_empenhado": null,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": null,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "Indisponivel",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    },
+    {
+      "codigo_acao": "0EC8",
+      "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios Parcelados ou Objetos de Acordos)",
+      "dotacao_atual": null,
+      "total_pago": null,
+      "total_empenhado": null,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": null,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "Indisponivel",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    },
+    {
+      "codigo_acao": "0625",
+      "descricao_acao": "Sentencas Judiciais Transitadas em Julgado de Pequeno Valor (RPV)",
+      "dotacao_atual": null,
+      "total_pago": 246548892.36,
+      "total_empenhado": 514891243.37,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": 47.8836833087935,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "API REST Portal Transparencia",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    },
+    {
+      "codigo_acao": "00WU",
+      "descricao_acao": "Sentencas Judiciais Transitadas em Julgado (Precatorios) - Excedentes ao Sublimite",
+      "dotacao_atual": null,
+      "total_pago": null,
+      "total_empenhado": null,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": null,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "Indisponivel",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    },
+    {
+      "codigo_acao": "00G5",
+      "descricao_acao": "Contribuicao da Uniao para Custeio do Regime de Previdencia Decorrente do Pagamento de Precatorios e RPV",
+      "dotacao_atual": null,
+      "total_pago": null,
+      "total_empenhado": null,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": null,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "Indisponivel",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    },
+    {
+      "codigo_acao": "0022",
+      "descricao_acao": "Sentencas Judiciais Devidas por Empresas Estatais",
+      "dotacao_atual": null,
+      "total_pago": 25798586.85,
+      "total_empenhado": 82201611.67,
+      "estoque_processos": 29083,
+      "estoque_precatorios": 6387,
+      "estoque_rpvs": 22696,
+      "gap_dotacao_vs_pago": null,
+      "cobertura_pct": 31.38452680656547,
+      "fonte_dotacao": "Indisponivel",
+      "fonte_execucao": "API REST Portal Transparencia",
+      "fonte_estoque": "CNJ DataJud",
+      "status": "PARCIAL"
+    }
+  ],
+  "estoque_por_tribunal": [
+    {
+      "tribunal": "Tribunal Regional Federal da 1ª Região",
+      "tribunal_alias": "trf1",
+      "total_processos": 0,
+      "total_disponivel": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "PARCIAL",
+      "observacoes": "Nenhum processo encontrado para o ano"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 2ª Região",
+      "tribunal_alias": "trf2",
+      "total_processos": 0,
+      "total_disponivel": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "PARCIAL",
+      "observacoes": "Nenhum processo encontrado para o ano"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 3ª Região",
+      "tribunal_alias": "trf3",
+      "total_processos": 9083,
+      "total_disponivel": 9250,
+      "precatorios": 5908,
+      "rpvs": 3175,
+      "provider": "datajud",
+      "status": "OK",
+      "observacoes": "9083 de 9250 processos via DataJud"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 4ª Região",
+      "tribunal_alias": "trf4",
+      "total_processos": 10000,
+      "total_disponivel": 756487,
+      "precatorios": 21,
+      "rpvs": 9979,
+      "provider": "datajud",
+      "status": "OK",
+      "observacoes": "10000 de 756487 processos via DataJud"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 5ª Região",
+      "tribunal_alias": "trf5",
+      "total_processos": 0,
+      "total_disponivel": 0,
+      "precatorios": 0,
+      "rpvs": 0,
+      "provider": "datajud",
+      "status": "PARCIAL",
+      "observacoes": "Nenhum processo encontrado para o ano"
+    },
+    {
+      "tribunal": "Tribunal Regional Federal da 6ª Região",
+      "tribunal_alias": "trf6",
+      "total_processos": 10000,
+      "total_disponivel": 304695,
+      "precatorios": 458,
+      "rpvs": 9542,
+      "provider": "datajud",
+      "status": "OK",
+      "observacoes": "10000 de 304695 processos via DataJud"
+    }
+  ],
+  "pdf_orcamento_summaries": [
+    {
+      "tribunal": "TRF6",
+      "ano_orcamento": 2026,
+      "total_precatorios_pdf": 9585,
+      "valor_total_orcamento": 1697717219.4800043,
+      "valor_alimentar": 1697717219.4800043,
+      "valor_comum": 0,
+      "total_idoso": 5628,
+      "total_deficiencia": 329,
+      "fonte_url": "https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf",
+      "sha256": "07365776301a3da833d09800281a1f7e2c491ebbe95d2d7fdcda627306b2c78e"
+    }
+  ],
+  "sources": [
+    {
+      "name": "Portal da Transparencia",
+      "url": "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+      "type": "API"
+    },
+    {
+      "name": "SIOP Acesso Publico",
+      "url": "https://www1.siop.planejamento.gov.br/acessopublico/",
+      "type": "SPARQL"
+    },
+    {
+      "name": "CNJ DataJud API Publica",
+      "url": "https://api-publica.datajud.cnj.jus.br",
+      "type": "API"
+    },
+    {
+      "name": "Relacao Precatorios TRF6 (PDF Oficial)",
+      "url": "https://portal.trf6.jus.br/rpv-e-precatorios/consulta-precatorio-e-rpv/",
+      "type": "WEB"
+    }
+  ],
+  "hashes": {
+    "output_sha256": "df583bc20ec0841c33c8cbacd390f98ad9813ae04fe80473d3b6ad18c6269d67"
+  },
+  "evidence_pack_path": "/home/runner/workspace/Saida/evidence/886f52ab-adb5-4a63-b4b5-609d9813b80e"
+}

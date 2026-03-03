@@ -34,6 +34,7 @@ import {
   ArrowDown,
   ArrowUp,
   FileSpreadsheet,
+  LogOut,
 } from "lucide-react";
 import type {
   PrecatorioPendenteResult,
@@ -456,7 +457,7 @@ export default function PrecatoriosPendentes() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 py-4">
           <div className="flex items-center justify-between gap-4 flex-wrap">
             <div className="flex items-center gap-3">
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button variant="ghost" size="sm" data-testid="button-voltar">
                   <ArrowLeft className="w-4 h-4 mr-1" />
                   Dashboard
@@ -478,12 +479,25 @@ export default function PrecatoriosPendentes() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/contrato">
+              <Link href="/dashboard/contrato">
                 <Button variant="outline" size="sm" data-testid="link-contrato-dpo">
                   <Shield className="w-3.5 h-3.5 mr-1" />
                   Contrato DPO
                 </Button>
               </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid="button-logout"
+                onClick={() => {
+                  localStorage.removeItem("aura_token");
+                  localStorage.removeItem("aura_email");
+                  window.location.href = "/";
+                }}
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1" />
+                Sair
+              </Button>
               {result && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="w-3 h-3" />

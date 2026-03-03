@@ -10,9 +10,12 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `client/src/pages/precatorios-pendentes.tsx` - Dedicated page for pending precatórios with tribunal consultation links and ofício requisitório access
 - `client/src/pages/contrato-tecnico.tsx` - Contrato Técnico Master page with DPO controls, anti-regression checks, audit log, and pipeline documentation
 - `client/src/pages/sp-dashboard.tsx` - SP (Estado de São Paulo) dashboard with CSV import, TJSP scraping, and A2 conciliation
-- `client/src/App.tsx` - Routes configuration (/, /pendentes, /contrato, /sp)
+- `client/src/pages/landing.tsx` - Public marketing landing page with market KPIs, LOA projection charts, chain of custody pipeline, and CTA
+- `client/src/pages/login.tsx` - Login page with email/password authentication
+- `client/src/App.tsx` - Routes configuration with AuthGuard (/ landing, /login, /dashboard, /dashboard/pendentes, /dashboard/contrato, /dashboard/sp)
 
 ### Backend (Express)
+- `server/routes/auth.ts` - Authentication endpoints (login, me, logout) with HMAC-SHA256 token validation
 - `server/routes/loa_uniao_a2.ts` - Main endpoint `POST /api/loa/uniao/a2` and history/catalog endpoints
 - `server/routes/loa_estoque.ts` - Estoque and Gap Analysis endpoints
 - `server/catalog/acoes_precatorios_uniao.ts` - Catalog of 7 precatório actions (0005, 0EC7, 0EC8, 0625, 00WU, 00G5, 0022)

@@ -32,6 +32,7 @@ import {
   Upload,
   TrendingUp,
   Clock,
+  LogOut,
 } from "lucide-react";
 import type { SpA2Result, SpImportResult, SpTjspResult, TjspItem } from "../../shared/loa_types";
 
@@ -274,30 +275,43 @@ export default function SpDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href="/">
+              <Link href="/dashboard">
                 <Button variant="outline" size="sm" data-testid="link-federal" className="border-blue-400 text-blue-700 dark:text-blue-400">
                   <Scale className="w-3.5 h-3.5 mr-1" />
                   Federal
                 </Button>
               </Link>
-              <Link href="/sp">
+              <Link href="/dashboard/sp">
                 <Button variant="outline" size="sm" data-testid="link-sp" className="border-amber-400 text-amber-700 dark:text-amber-400">
                   <Scale className="w-3.5 h-3.5 mr-1" />
                   SP (Estado)
                 </Button>
               </Link>
-              <Link href="/pendentes">
+              <Link href="/dashboard/pendentes">
                 <Button variant="outline" size="sm" data-testid="link-pendentes">
                   <Scale className="w-3.5 h-3.5 mr-1" />
                   Pendentes
                 </Button>
               </Link>
-              <Link href="/contrato">
+              <Link href="/dashboard/contrato">
                 <Button variant="outline" size="sm" data-testid="link-contrato">
                   <Shield className="w-3.5 h-3.5 mr-1" />
                   Contrato DPO
                 </Button>
               </Link>
+              <Button
+                variant="ghost"
+                size="sm"
+                data-testid="button-logout"
+                onClick={() => {
+                  localStorage.removeItem("aura_token");
+                  localStorage.removeItem("aura_email");
+                  window.location.href = "/";
+                }}
+              >
+                <LogOut className="w-3.5 h-3.5 mr-1" />
+                Sair
+              </Button>
             </div>
           </div>
         </div>
