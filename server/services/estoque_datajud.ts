@@ -74,6 +74,7 @@ function buildElasticsearchQuery(classeCodigos: number[], ano: number | null, si
     },
     size,
     sort: [{ dataAjuizamento: "desc" }],
+    track_total_hits: true,
   };
 
   if (searchAfter && searchAfter.length > 0) {

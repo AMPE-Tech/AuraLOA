@@ -41,7 +41,7 @@ export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise
     ano_exercicio,
     tribunais,
     classes,
-    max_por_tribunal = 500,
+    max_por_tribunal = 10000,
     evidencePack,
   } = options;
 

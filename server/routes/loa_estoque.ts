@@ -42,7 +42,7 @@ router.post("/api/loa/uniao/estoque", async (req: Request, res: Response) => {
       ano_exercicio,
       tribunais,
       classes,
-      max_por_tribunal: max_por_tribunal || 500,
+      max_por_tribunal: max_por_tribunal || 10000,
       evidencePack,
     });
 
@@ -128,7 +128,7 @@ router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) =
       fetchEstoque({
         ano_exercicio,
         tribunais,
-        max_por_tribunal: 500,
+        max_por_tribunal: 10000,
         evidencePack,
       }),
     ]);
@@ -482,7 +482,7 @@ router.post("/api/loa/uniao/gap-analysis/csv", async (req: Request, res: Respons
       fetchEstoque({
         ano_exercicio,
         tribunais,
-        max_por_tribunal: 500,
+        max_por_tribunal: 10000,
         evidencePack,
       }),
     ]);

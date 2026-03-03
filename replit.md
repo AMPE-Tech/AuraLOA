@@ -104,6 +104,8 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - ZIP downloads are server-side with full evidence pack integration (SHA-256, file paths, HTTP status)
 - Automatic monthly cron runs on day 1 at 03:00 to download all 12 ZIPs
 - CNJ DataJud is primary estoque provider; CSV secondary, scraping tertiary (feature flag)
+- Estoque default max_por_tribunal = 10000 (Elasticsearch API limit); uses track_total_hits=true for accurate totals
+- DataJud real totals: TRF3 ~9,250, TRF4/TRF6 ~300,000+ (only 10,000 fetchable per query via search_after)
 - Estoque retrieves full court backlog (all years), not filtered by single year
 - Federal tribunals TRF1-TRF6 as primary targets
 - Provider pattern for estoque with graceful degradation and evidence tracking per provider
