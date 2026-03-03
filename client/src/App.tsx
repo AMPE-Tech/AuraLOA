@@ -11,6 +11,7 @@ import LOADashboard from "@/pages/loa-dashboard";
 import PrecatoriosPendentes from "@/pages/precatorios-pendentes";
 import ContratoTecnico from "@/pages/contrato-tecnico";
 import SpDashboard from "@/pages/sp-dashboard";
+import ChartPreview from "@/pages/chart-preview";
 
 function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -62,6 +63,7 @@ function Router() {
     <Switch>
       <Route path="/" component={LandingPage} />
       <Route path="/login" component={LoginPage} />
+      <Route path="/preview/charts" component={ChartPreview} />
       <Route path="/dashboard">
         <AuthGuard component={LOADashboard} />
       </Route>
