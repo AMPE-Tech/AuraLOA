@@ -944,6 +944,32 @@ function EstoquePanel({ data, onFetchAll }: { data: EstoqueResult; onFetchAll?: 
 }
 
 function GapAnalysisPanel({ data }: { data: GapResult }) {
+  const { toast } = useToast();
+  const [downloading, setDownloading] = useState<string | null>(null);
+
+  const handleDownload = async (type: "gap-csv" | "cruzamento") => {
+    setDownloading(type);
+    try {
+      const endpoint = type === "gap-csv"
+        ? "/api/loa/uniao/gap-analysis/csv"
+        : "/api/loa/uniao/cruzamento-completo";
+      const res = await apiRequest("POST", endpoint, { ano_exercicio: data.ano_exercicio });
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const suffix = type === "gap-csv" ? "gap_analysis_completo" : "cruzamento_4_camadas";
+      a.download = `${suffix}_${data.ano_exercicio}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast({ title: "CSV baixado", description: type === "gap-csv" ? "Gap Analysis completo exportado" : "Cruzamento 4 camadas exportado" });
+    } catch (err: any) {
+      toast({ title: "Erro no download", description: err.message, variant: "destructive" });
+    } finally {
+      setDownloading(null);
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -957,6 +983,27 @@ function GapAnalysisPanel({ data }: { data: GapResult }) {
           </p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownload("gap-csv")}
+            disabled={downloading !== null}
+            data-testid="button-download-gap-csv"
+          >
+            {downloading === "gap-csv" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Download className="w-3 h-3 mr-1" />}
+            Gap CSV
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleDownload("cruzamento")}
+            disabled={downloading !== null}
+            data-testid="button-download-cruzamento"
+            className="border-violet-400 text-violet-700 dark:text-violet-400"
+          >
+            {downloading === "cruzamento" ? <Loader2 className="w-3 h-3 mr-1 animate-spin" /> : <Download className="w-3 h-3 mr-1" />}
+            4 Camadas CSV
+          </Button>
           <StatusBadge status={data.status_geral} />
           <Badge variant="outline" className="font-mono text-[10px]">
             <Hash className="w-3 h-3 mr-1" />

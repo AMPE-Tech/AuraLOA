@@ -460,6 +460,181 @@ router.post("/api/loa/uniao/precatorios-pendentes/json-export", async (req: Requ
   }
 });
 
+router.post("/api/loa/uniao/gap-analysis/csv", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = gapRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais } = parsed.data;
+    evidencePack.log(`start gap-analysis CSV export process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const [execucaoResults, dotacaoResults, estoqueResult] = await Promise.all([
+      fetchExecucaoFromTransparencia(ano_exercicio, evidencePack),
+      fetchDotacaoFromSIOP(ano_exercicio, evidencePack),
+      fetchEstoque({
+        ano_exercicio,
+        tribunais,
+        max_por_tribunal: 500,
+        evidencePack,
+      }),
+    ]);
+
+    const BOM = "\uFEFF";
+    const sep = ";";
+    const fmtNum = (v: number | null) => v !== null ? v.toFixed(2) : "";
+    const fmtPct = (v: number | null) => v !== null ? v.toFixed(2) + "%" : "";
+    const escCsv = (v: string) => {
+      if (v.includes(sep) || v.includes('"') || v.includes("\n")) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    };
+
+    const lines: string[] = [];
+
+    lines.push(["=== CAMADA 1+2: DOTACAO x EXECUCAO POR ACAO ==="].join(sep));
+    lines.push(["Codigo Acao", "Descricao", "Dotacao Inicial", "Dotacao Atual", "Empenhado", "Liquidado", "Pago", "Gap (Dotacao-Pago)", "Cobertura %", "Fonte Dotacao", "Fonte Execucao", "Status"].join(sep));
+
+    let totalDotAtual = 0, totalEmp = 0, totalLiq = 0, totalPago = 0;
+
+    for (const acao of ACOES_PRECATORIOS_UNIAO) {
+      const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
+      const dot = dotacaoResults.find((d) => d.codigo_acao === acao.codigo_acao);
+
+      const dotAtual = dot?.dotacao_atual ?? null;
+      const dotInicial = dot?.dotacao_inicial ?? null;
+      const empApi = exec?.empenhado ?? null;
+      const liqApi = exec?.liquidado ?? null;
+      const pagApi = exec?.pago ?? null;
+      const fonteDot = dotAtual !== null ? "SIOP SPARQL" : "Indisponivel";
+      const fonteExec = empApi !== null || pagApi !== null ? "API REST Portal Transparencia" : "Indisponivel";
+
+      let gap: number | null = null;
+      let cobertura: number | null = null;
+      if (dotAtual !== null && pagApi !== null) {
+        gap = dotAtual - pagApi;
+        cobertura = dotAtual > 0 ? (pagApi / dotAtual) * 100 : null;
+      }
+
+      const hasDot = dotAtual !== null;
+      const hasExec = empApi !== null || pagApi !== null;
+      let status = "OK";
+      if (!hasDot && !hasExec) status = "NAO_LOCALIZADO";
+      else if (!hasDot || !hasExec) status = "PARCIAL";
+
+      if (dotAtual) totalDotAtual += dotAtual;
+      if (empApi) totalEmp += empApi;
+      if (liqApi) totalLiq += liqApi;
+      if (pagApi) totalPago += pagApi;
+
+      lines.push([
+        acao.codigo_acao,
+        escCsv(acao.descricao),
+        fmtNum(dotInicial),
+        fmtNum(dotAtual),
+        fmtNum(empApi),
+        fmtNum(liqApi),
+        fmtNum(pagApi),
+        fmtNum(gap),
+        fmtPct(cobertura),
+        fonteDot,
+        fonteExec,
+        status,
+      ].join(sep));
+    }
+
+    const totalGap = totalDotAtual > 0 ? totalDotAtual - totalPago : null;
+    const totalCobertura = totalDotAtual > 0 ? (totalPago / totalDotAtual) * 100 : (totalEmp > 0 ? (totalPago / totalEmp) * 100 : null);
+
+    lines.push(["TOTAL", "", "", fmtNum(totalDotAtual || null), fmtNum(totalEmp || null), fmtNum(totalLiq || null), fmtNum(totalPago || null), fmtNum(totalGap), fmtPct(totalCobertura), "", "", ""].join(sep));
+
+    lines.push("");
+    lines.push(["=== CAMADA 3: ESTOQUE POR TRIBUNAL (CNJ DataJud) ==="].join(sep));
+    lines.push(["Tribunal", "Alias", "Total Processos", "Total Disponivel DataJud", "Precatorios", "RPVs", "Provider", "Status", "Observacoes"].join(sep));
+
+    for (const t of estoqueResult.por_tribunal) {
+      lines.push([
+        escCsv(t.tribunal),
+        t.tribunal_alias.toUpperCase(),
+        String(t.total_processos),
+        t.total_disponivel !== null ? String(t.total_disponivel) : "",
+        String(t.precatorios),
+        String(t.rpvs),
+        t.provider,
+        t.status,
+        escCsv(t.observacoes),
+      ].join(sep));
+    }
+
+    lines.push(["TOTAL", "", String(estoqueResult.total_processos), "", String(estoqueResult.total_precatorios), String(estoqueResult.total_rpvs), "", "", ""].join(sep));
+
+    if (estoqueResult.pdf_orcamento_summaries && estoqueResult.pdf_orcamento_summaries.length > 0) {
+      lines.push("");
+      lines.push(["=== VALORES OFICIAIS (PDF Tribunal) ==="].join(sep));
+      lines.push(["Tribunal", "Ano Orcamento", "Total Precatorios PDF", "Valor Total Orcamento", "Valor Alimentar", "Valor Comum", "Total Idoso", "Total PcD", "Fonte URL", "SHA-256"].join(sep));
+      for (const pdf of estoqueResult.pdf_orcamento_summaries) {
+        lines.push([
+          escCsv(pdf.tribunal),
+          String(pdf.ano_orcamento),
+          String(pdf.total_precatorios_pdf),
+          fmtNum(pdf.valor_total_orcamento),
+          fmtNum(pdf.valor_alimentar),
+          fmtNum(pdf.valor_comum),
+          String(pdf.total_idoso),
+          String(pdf.total_deficiencia),
+          pdf.fonte_url,
+          pdf.sha256,
+        ].join(sep));
+      }
+    }
+
+    lines.push("");
+    lines.push(["=== PROCESSOS PENDENTES (Sem Baixa) ==="].join(sep));
+    lines.push(["Numero CNJ", "Tribunal", "Classe", "Situacao", "Valor Causa", "Fonte Valor", "Data Ajuizamento", "Orgao Julgador", "Ultima Movimentacao", "URL Consulta"].join(sep));
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+    for (const p of pendentes) {
+      lines.push([
+        p.numero_cnj,
+        p.tribunal_alias.toUpperCase(),
+        escCsv(p.classe_nome),
+        p.situacao,
+        p.valor_causa !== null ? String(p.valor_causa) : "",
+        p.valor_fonte || "",
+        p.data_ajuizamento || "",
+        escCsv(p.orgao_julgador?.nome || ""),
+        escCsv(p.ultima_movimentacao?.nome || ""),
+        p.url_consulta || "",
+      ].join(sep));
+    }
+
+    lines.push("");
+    lines.push(["=== METADADOS ==="].join(sep));
+    lines.push(["Process ID", processId].join(sep));
+    lines.push(["Gerado em", new Date().toISOString()].join(sep));
+    lines.push(["Ano Exercicio", String(ano_exercicio)].join(sep));
+    lines.push(["Total Pendentes", String(pendentes.length)].join(sep));
+    lines.push(["Output SHA-256", computeSHA256(lines.join("\n"))].join(sep));
+
+    const csv = BOM + lines.join("\n");
+    const filename = `gap_analysis_completo_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(csv);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({ error: "Erro ao gerar CSV de gap analysis", message: error.message });
+  }
+});
+
 router.post("/api/loa/uniao/estoque/csv", async (req: Request, res: Response) => {
   try {
     const parsed = estoqueRequestSchema.safeParse(req.body);

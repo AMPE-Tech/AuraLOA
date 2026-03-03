@@ -54,6 +54,7 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 - `POST /api/loa/uniao/estoque` - Query CNJ DataJud estoque (input: `{ ano_exercicio: number, tribunais?: string[], max_por_tribunal?: number }`)
 - `POST /api/loa/uniao/estoque/csv` - Export estoque to CSV (input: `{ ano_exercicio: number, tribunais?: string[], max_por_tribunal?: number }`)
 - `POST /api/loa/uniao/gap-analysis` - Cross Dotação x Execução x Estoque (input: `{ ano_exercicio: number, mes?: number }`)
+- `POST /api/loa/uniao/gap-analysis/csv` - Export full 4-layer Gap Analysis as CSV (Dotação x Execução x Estoque x Valores x Pendentes)
 - `POST /api/loa/uniao/precatorios-pendentes` - Filter pending precatórios only (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
 - `POST /api/loa/uniao/cruzamento-completo` - Full 4-layer crossed evidence spreadsheet (Dotação x Execução x Estoque x Valores)
 - `GET /api/loa/uniao/contrato-tecnico` - Contrato Técnico Master with all clauses
