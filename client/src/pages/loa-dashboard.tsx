@@ -52,6 +52,7 @@ import type {
   EstoqueSummaryByTribunal,
   GapResult,
   GapAcaoItem,
+  PDFOrcamentoSummary,
 } from "../../shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
@@ -911,6 +912,70 @@ function EstoquePanel({ data, onFetchAll }: { data: EstoqueResult; onFetchAll?: 
         </Card>
       )}
 
+      {data.pdf_orcamento_summaries && data.pdf_orcamento_summaries.length > 0 && (
+        <Card className="border-amber-200 dark:border-amber-800">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <div className="flex items-center gap-2">
+                <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm font-medium">Relação Oficial de Precatórios (PDF Tribunal)</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {data.pdf_orcamento_summaries.map((pdf: PDFOrcamentoSummary, idx: number) => (
+                <div key={idx} className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <div>
+                      <p className="font-semibold text-sm">{pdf.tribunal}</p>
+                      <p className="text-xs text-muted-foreground">Orçamento {pdf.ano_orcamento}</p>
+                    </div>
+                    <a
+                      href={pdf.fonte_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid={`button-download-pdf-${idx}`}
+                    >
+                      <Button variant="default" size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+                        <Download className="w-3.5 h-3.5 mr-1.5" />
+                        Baixar PDF Oficial
+                      </Button>
+                    </a>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">Total Precatórios</p>
+                      <p className="font-semibold text-lg">{pdf.total_precatorios_pdf.toLocaleString("pt-BR")}</p>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">Valor Total Orçamento</p>
+                      <p className="font-semibold text-lg text-emerald-600 dark:text-emerald-400">
+                        {pdf.valor_total_orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </p>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">Idosos (preferência)</p>
+                      <p className="font-semibold">{pdf.total_idoso.toLocaleString("pt-BR")}</p>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">PcD (preferência)</p>
+                      <p className="font-semibold">{pdf.total_deficiencia.toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <Shield className="w-3 h-3" />
+                    <span>SHA-256: {pdf.sha256.slice(0, 16)}...</span>
+                    <span className="mx-1">|</span>
+                    <a href={pdf.fonte_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 dark:text-blue-400 underline break-all">
+                      {pdf.fonte_url}
+                    </a>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardContent className="p-4 space-y-3">
           <div className="flex items-center gap-2">
@@ -1118,6 +1183,64 @@ function GapAnalysisPanel({ data }: { data: GapResult }) {
                       <p className="text-emerald-600 dark:text-emerald-400">RPVs</p>
                       <p className="font-semibold">{t.rpvs}</p>
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {data.pdf_orcamento_summaries && data.pdf_orcamento_summaries.length > 0 && (
+        <Card className="border-amber-200 dark:border-amber-800">
+          <CardContent className="p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <FileText className="w-4 h-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-medium">Relação Oficial de Precatórios (PDF Tribunal)</span>
+            </div>
+            <div className="grid grid-cols-1 gap-3">
+              {data.pdf_orcamento_summaries.map((pdf: PDFOrcamentoSummary, idx: number) => (
+                <div key={idx} className="p-3 bg-amber-50 dark:bg-amber-950/30 rounded-md border border-amber-200 dark:border-amber-800">
+                  <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
+                    <div>
+                      <p className="font-semibold text-sm">{pdf.tribunal}</p>
+                      <p className="text-xs text-muted-foreground">Orçamento {pdf.ano_orcamento}</p>
+                    </div>
+                    <a
+                      href={pdf.fonte_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      data-testid={`button-gap-download-pdf-${idx}`}
+                    >
+                      <Button variant="default" size="sm" className="bg-amber-600 hover:bg-amber-700 text-white">
+                        <Download className="w-3.5 h-3.5 mr-1.5" />
+                        Baixar PDF Oficial
+                      </Button>
+                    </a>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">Total Precatórios</p>
+                      <p className="font-semibold text-lg">{pdf.total_precatorios_pdf.toLocaleString("pt-BR")}</p>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">Valor Total Orçamento</p>
+                      <p className="font-semibold text-lg text-emerald-600 dark:text-emerald-400">
+                        {pdf.valor_total_orcamento.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                      </p>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">Idosos (preferência)</p>
+                      <p className="font-semibold">{pdf.total_idoso.toLocaleString("pt-BR")}</p>
+                    </div>
+                    <div className="p-2 bg-background rounded">
+                      <p className="text-muted-foreground">PcD (preferência)</p>
+                      <p className="font-semibold">{pdf.total_deficiencia.toLocaleString("pt-BR")}</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center gap-2 text-[10px] text-muted-foreground">
+                    <Shield className="w-3 h-3" />
+                    <span>SHA-256: {pdf.sha256.slice(0, 16)}...</span>
                   </div>
                 </div>
               ))}

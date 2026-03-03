@@ -272,6 +272,7 @@ export interface EstoqueResult {
     output_sha256: string;
   };
   evidence_pack_path: string;
+  pdf_orcamento_summaries?: PDFOrcamentoSummary[];
 }
 
 export const estoqueRequestSchema = z.object({
@@ -318,6 +319,7 @@ export interface GapResult {
   };
   por_acao: GapAcaoItem[];
   estoque_por_tribunal: EstoqueSummaryByTribunal[];
+  pdf_orcamento_summaries?: PDFOrcamentoSummary[];
   sources: SourceInfo[];
   hashes: {
     output_sha256: string;

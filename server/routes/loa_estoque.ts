@@ -72,6 +72,7 @@ router.post("/api/loa/uniao/estoque", async (req: Request, res: Response) => {
         output_sha256: "PLACEHOLDER",
       },
       evidence_pack_path: evidencePack.getBasePath(),
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
     };
 
     const preHash = JSON.stringify(responseObj, null, 2);
@@ -211,6 +212,7 @@ router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) =
       totais: gapResult.totais,
       por_acao: gapResult.por_acao,
       estoque_por_tribunal: estoqueResult.por_tribunal,
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
       sources,
       hashes: {
         output_sha256: "PLACEHOLDER",
