@@ -1,0 +1,4272 @@
+================================================================================
+ EXPORT: AuraLOA - Código de conexão direta com tribunais e fontes oficiais
+ Sem Firecrawl - conexões diretas via API, SPARQL, scraping HTML e download PDF
+ Total: 16 arquivos
+================================================================================
+
+## ÍNDICE DE ARQUIVOS:
+1.  server/services/estoque_datajud.ts      - CNJ DataJud Elasticsearch API (TRF1-6, TJSP)
+2.  server/services/estoque_tribunais.ts    - Orquestrador com fallback de providers
+3.  server/services/sp_tjsp.ts              - TJSP HTML scraping (pendentes + pagamentos)
+4.  server/services/valor_precatorio_pdf.ts - Download/parse PDF oficial TRF6 (pdfjs-dist)
+5.  server/services/transparencia_execucao.ts - Portal da Transparência REST API
+6.  server/services/transparencia_download.ts - Download ZIPs Portal da Transparência
+7.  server/services/siop_dotacao.ts         - SPARQL dotação orçamentária
+8.  server/services/a2_execucao_from_zip.ts - Parse execução de ZIPs (CSV join)
+9.  server/services/gap_analysis.ts         - Cruzamento 4 camadas
+10. server/services/evidence_pack.ts        - Sistema de evidências SHA-256
+11. server/services/sp_auto_import.ts       - Auto-import CSV Sefaz/SP
+12. server/services/cron_download.ts        - Cron mensal de downloads
+13. server/catalog/acoes_precatorios_uniao.ts - Catálogo 7 ações orçamentárias
+14. server/routes/loa_estoque.ts            - Rotas estoque + gap analysis
+15. server/routes/loa_sp.ts                 - Rotas módulo SP
+16. shared/loa_types.ts                     - Tipos TypeScript compartilhados
+
+## FONTES DE DADOS (sem Firecrawl):
+- CNJ DataJud: api-publica.datajud.cnj.jus.br (Elasticsearch, APIKey pública)
+- Portal da Transparência: api.portaldatransparencia.gov.br (REST, requer API key)
+- Portal da Transparência ZIPs: dadosabertos-download.cgu.gov.br
+- SIOP/Orçamento: orcamento.dados.gov.br (SPARQL) + www1.siop.planejamento.gov.br
+- TJSP: tjsp.jus.br/cac/scp/ (HTML scraping direto)
+- TRF6 PDF: portal.trf6.jus.br (PDF oficial com valores)
+- Sefaz/SP: dworcamento.fazenda.sp.gov.br (CSV direto, sem API key)
+- Consulta processual: processual.trf1.jus.br, esaj.tjsp.jus.br, eproc2g.trf6.jus.br
+
+================================================================================
+
+================================================================================
+FILE: server/services/estoque_datajud.ts
+================================================================================
+import type { EstoqueProcesso, EstoqueSummaryByTribunal, MovimentoProcesso } from "../../shared/loa_types";
+import { EvidencePack, computeSHA256 } from "./evidence_pack";
+
+const DATAJUD_BASE = "https://api-publica.datajud.cnj.jus.br";
+const DATAJUD_API_KEY = "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
+
+const CLASSE_PRECATORIO = 1265;
+const CLASSE_RPV = 1266;
+
+export const TRIBUNAIS_FEDERAIS: { alias: string; nome: string }[] = [
+  { alias: "trf1", nome: "Tribunal Regional Federal da 1ª Região" },
+  { alias: "trf2", nome: "Tribunal Regional Federal da 2ª Região" },
+  { alias: "trf3", nome: "Tribunal Regional Federal da 3ª Região" },
+  { alias: "trf4", nome: "Tribunal Regional Federal da 4ª Região" },
+  { alias: "trf5", nome: "Tribunal Regional Federal da 5ª Região" },
+  { alias: "trf6", nome: "Tribunal Regional Federal da 6ª Região" },
+];
+
+export const TRIBUNAIS_SP: { alias: string; nome: string }[] = [
+  { alias: "tjsp", nome: "Tribunal de Justiça do Estado de São Paulo" },
+];
+
+export interface DataJudFetchOptions {
+  tribunal_alias: string;
+  classe_codigos: number[];
+  ano_exercicio: number;
+  max_results: number;
+  evidencePack: EvidencePack;
+}
+
+interface DataJudHit {
+  _source: {
+    numeroProcesso?: string;
+    classe?: { codigo?: number; nome?: string };
+    assuntos?: { codigo?: number; nome?: string; codigoNacional?: number }[];
+    dataAjuizamento?: string;
+    dataHoraUltimaAtualizacao?: string;
+    orgaoJulgador?: { codigo?: number; nome?: string };
+    grau?: string;
+    movimentos?: { codigo?: number; nome?: string; dataHora?: string }[];
+    tribunal?: string;
+    nivelSigilo?: number;
+    valorCausa?: number;
+  };
+}
+
+function buildElasticsearchQuery(classeCodigos: number[], ano: number | null, size: number, searchAfter?: (string | number)[]) {
+  const must: any[] = [
+    {
+      terms: {
+        "classe.codigo": classeCodigos,
+      },
+    },
+  ];
+
+  const filter: any[] = [];
+  if (ano) {
+    filter.push({
+      range: {
+        dataAjuizamento: {
+          gte: `${ano}0101000000`,
+          lte: `${ano}1231235959`,
+        },
+      },
+    });
+  }
+
+  const query: any = {
+    query: {
+      bool: {
+        must,
+        ...(filter.length > 0 ? { filter } : {}),
+      },
+    },
+    size,
+    sort: [{ dataAjuizamento: "desc" }],
+    track_total_hits: true,
+  };
+
+  if (searchAfter && searchAfter.length > 0) {
+    query.search_after = searchAfter;
+  }
+
+  return query;
+}
+
+const CODIGOS_BAIXA = [22, 246, 488, 861];
+const CODIGOS_PAGAMENTO = [848, 12264, 12265];
+
+const TRIBUNAL_CONSULTA_URLS: Record<string, string> = {
+  trf1: "https://processual.trf1.jus.br/consultaProcessual/processo.php",
+  trf2: "https://eproc.trf2.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+  trf3: "https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam",
+  trf4: "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
+  trf5: "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
+  trf6: "https://processual.trf1.jus.br/consultaProcessual/processo.php",
+  tjsp: "https://esaj.tjsp.jus.br/cpopg/open.do",
+};
+
+const TRIBUNAL_CONSULTA_EPROC: Record<string, string> = {
+  trf6: "https://eproc2g.trf6.jus.br/eproc/externo_controlador.php?acao=processo_seleciona_publica",
+};
+
+function buildConsultaUrl(tribunalAlias: string, numeroCnj: string): string | null {
+  const base = TRIBUNAL_CONSULTA_URLS[tribunalAlias];
+  if (!base) return null;
+  if (tribunalAlias === "trf1") {
+    return `${base}?proc=${numeroCnj}&secao=TRF1`;
+  }
+  if (tribunalAlias === "trf6") {
+    return `${base}?proc=${numeroCnj}&secao=TRF6`;
+  }
+  if (tribunalAlias === "tjsp") {
+    return `${base}?processo.numero=${numeroCnj}`;
+  }
+  return base;
+}
+
+function buildConsultaEprocUrl(tribunalAlias: string): string | null {
+  return TRIBUNAL_CONSULTA_EPROC[tribunalAlias] || null;
+}
+
+function parseHitToProcesso(hit: DataJudHit, tribunalAlias: string, tribunalNome: string): EstoqueProcesso {
+  const src = hit._source;
+  const rawMovs = src.movimentos || [];
+  const ultimoMov = rawMovs.length > 0 ? rawMovs[rawMovs.length - 1] : null;
+
+  const movimentos: MovimentoProcesso[] = rawMovs.map((m) => ({
+    codigo: m.codigo ?? null,
+    nome: m.nome || "",
+    data: m.dataHora || null,
+  }));
+
+  const temBaixa = rawMovs.some((m) => m.codigo !== undefined && CODIGOS_BAIXA.includes(m.codigo));
+  const temPagamento = rawMovs.some((m) => m.codigo !== undefined && CODIGOS_PAGAMENTO.includes(m.codigo));
+  const pagamentoPendente = !temBaixa;
+
+  let situacao = "em_tramitacao";
+  if (temBaixa) situacao = "baixado";
+  else if (temPagamento) situacao = "pagamento_parcial";
+  else if (rawMovs.length === 0) situacao = "desconhecido";
+
+  const numeroCnj = src.numeroProcesso || "";
+
+  return {
+    numero_cnj: numeroCnj,
+    tribunal: tribunalNome,
+    tribunal_alias: tribunalAlias,
+    classe_codigo: src.classe?.codigo || 0,
+    classe_nome: src.classe?.nome || "",
+    assuntos: (src.assuntos || []).map((a) => ({
+      codigo: a.codigoNacional || a.codigo || 0,
+      nome: a.nome || "",
+    })),
+    situacao,
+    valor_causa: typeof src.valorCausa === "number" ? src.valorCausa : null,
+    data_ajuizamento: src.dataAjuizamento || null,
+    data_ultima_atualizacao: src.dataHoraUltimaAtualizacao || null,
+    orgao_julgador: src.orgaoJulgador
+      ? { codigo: src.orgaoJulgador.codigo ?? null, nome: src.orgaoJulgador.nome || "" }
+      : null,
+    grau: src.grau || null,
+    total_movimentos: rawMovs.length,
+    ultima_movimentacao: ultimoMov
+      ? {
+          codigo: ultimoMov.codigo ?? null,
+          nome: ultimoMov.nome || "",
+          data: ultimoMov.dataHora || null,
+        }
+      : null,
+    movimentos,
+    pagamento_pendente: pagamentoPendente,
+    tem_baixa: temBaixa,
+    tem_pagamento: temPagamento,
+    url_consulta: buildConsultaUrl(tribunalAlias, numeroCnj),
+    url_consulta_eproc: buildConsultaEprocUrl(tribunalAlias),
+    valor_fonte: typeof src.valorCausa === "number" ? "datajud" : null,
+  };
+}
+
+export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Promise<{
+  processos: EstoqueProcesso[];
+  summary: EstoqueSummaryByTribunal;
+  evidences: { source_name: string; source_url: string; captured_at_iso: string; raw_payload_sha256: string; raw_payload_path: string; bytes: number }[];
+}> {
+  const { tribunal_alias, classe_codigos, ano_exercicio, max_results, evidencePack } = options;
+  const tribunalInfo = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP].find((t) => t.alias === tribunal_alias);
+  const tribunalNome = tribunalInfo?.nome || tribunal_alias.toUpperCase();
+
+  const endpoint = `${DATAJUD_BASE}/api_publica_${tribunal_alias}/_search`;
+  const processos: EstoqueProcesso[] = [];
+  const evidences: { source_name: string; source_url: string; captured_at_iso: string; raw_payload_sha256: string; raw_payload_path: string; bytes: number }[] = [];
+  let totalDisponivel: number | null = null;
+
+  let searchAfter: (string | number)[] | undefined;
+  let page = 0;
+  const pageSize = Math.min(max_results, 1000);
+  const maxPages = Math.ceil(max_results / pageSize);
+
+  evidencePack.log(`DataJud: querying ${tribunal_alias} for classes [${classe_codigos.join(",")}] year=${ano_exercicio} max=${max_results}`);
+
+  try {
+    while (page < maxPages && processos.length < max_results) {
+      const currentSize = Math.min(pageSize, max_results - processos.length);
+      const query = buildElasticsearchQuery(classe_codigos, null, currentSize, searchAfter);
+
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `APIKey ${DATAJUD_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(query),
+      });
+
+      const captured_at_iso = new Date().toISOString();
+
+      if (!response.ok) {
+        const errText = await response.text().catch(() => "");
+        evidencePack.log(`DataJud ${tribunal_alias} HTTP ${response.status}: ${errText.substring(0, 200)}`);
+        return {
+          processos,
+          summary: {
+            tribunal: tribunalNome,
+            tribunal_alias,
+            total_processos: 0,
+            total_disponivel: null,
+            precatorios: 0,
+            rpvs: 0,
+            provider: "datajud",
+            status: "ERRO",
+            observacoes: `HTTP ${response.status}: ${errText.substring(0, 100)}`,
+          },
+          evidences,
+        };
+      }
+
+      const rawText = await response.text();
+      const rawFilename = `datajud_${tribunal_alias}_page${page}.json`;
+      const savedRaw = evidencePack.saveRawPayload(rawFilename, rawText);
+      evidences.push({
+        source_name: `DataJud ${tribunal_alias} page ${page}`,
+        source_url: endpoint,
+        captured_at_iso,
+        raw_payload_sha256: savedRaw.sha256,
+        raw_payload_path: savedRaw.path,
+        bytes: rawText.length,
+      });
+
+      const data = JSON.parse(rawText);
+      const hits: DataJudHit[] = data.hits?.hits || [];
+      const totalValue = data.hits?.total?.value || 0;
+
+      if (page === 0) {
+        totalDisponivel = totalValue;
+        evidencePack.log(`DataJud ${tribunal_alias}: total_hits=${totalValue} (capped at ${max_results})`);
+      }
+
+      if (hits.length === 0) break;
+
+      for (const hit of hits) {
+        processos.push(parseHitToProcesso(hit, tribunal_alias, tribunalNome));
+      }
+
+      const lastHit = data.hits.hits[data.hits.hits.length - 1];
+      searchAfter = lastHit?.sort;
+      if (!searchAfter || searchAfter.length === 0) break;
+
+      page++;
+    }
+
+    const precatorios = processos.filter((p) => p.classe_codigo === CLASSE_PRECATORIO).length;
+    const rpvs = processos.filter((p) => p.classe_codigo === CLASSE_RPV).length;
+
+    evidencePack.log(`DataJud ${tribunal_alias}: fetched ${processos.length} processos (${precatorios} prec, ${rpvs} RPV) in ${page + 1} pages`);
+
+    const loadedObs = totalDisponivel && totalDisponivel > processos.length
+      ? `${processos.length} de ${totalDisponivel} processos via DataJud`
+      : `${processos.length} processos via DataJud`;
+
+    return {
+      processos,
+      summary: {
+        tribunal: tribunalNome,
+        tribunal_alias,
+        total_processos: processos.length,
+        total_disponivel: totalDisponivel,
+        precatorios,
+        rpvs,
+        provider: "datajud",
+        status: processos.length > 0 ? "OK" : "PARCIAL",
+        observacoes: processos.length === 0 ? "Nenhum processo encontrado para o ano" : loadedObs,
+      },
+      evidences,
+    };
+  } catch (err: any) {
+    evidencePack.log(`DataJud ${tribunal_alias} error: ${err.message}`);
+    return {
+      processos: [],
+      summary: {
+        tribunal: tribunalNome,
+        tribunal_alias,
+        total_processos: 0,
+        total_disponivel: null,
+        precatorios: 0,
+        rpvs: 0,
+        provider: "datajud",
+        status: "ERRO",
+        observacoes: `Erro: ${err.message}`,
+      },
+      evidences,
+    };
+  }
+}
+
+export { CLASSE_PRECATORIO, CLASSE_RPV };
+
+================================================================================
+FILE: server/services/estoque_tribunais.ts
+================================================================================
+import type { EstoqueProcesso, EstoqueSummaryByTribunal, EstoqueProvider, SourceInfo } from "../../shared/loa_types";
+import { EvidencePack } from "./evidence_pack";
+import { fetchEstoqueFromDataJud, TRIBUNAIS_FEDERAIS, CLASSE_PRECATORIO, CLASSE_RPV } from "./estoque_datajud";
+import { downloadAndParseTribunalPDF, enrichProcessosWithValores, computePDFSummary } from "./valor_precatorio_pdf";
+
+export interface EstoqueOrchestratorOptions {
+  ano_exercicio: number;
+  tribunais?: string[];
+  classes?: number[];
+  max_por_tribunal?: number;
+  evidencePack: EvidencePack;
+}
+
+export interface PDFOrcamentoSummary {
+  tribunal: string;
+  ano_orcamento: number;
+  total_precatorios_pdf: number;
+  valor_total_orcamento: number;
+  valor_alimentar: number;
+  valor_comum: number;
+  total_idoso: number;
+  total_deficiencia: number;
+  fonte_url: string;
+  sha256: string;
+}
+
+export interface EstoqueOrchestratorResult {
+  processos: EstoqueProcesso[];
+  por_tribunal: EstoqueSummaryByTribunal[];
+  providers_used: EstoqueProvider[];
+  sources: SourceInfo[];
+  evidences: { source_name: string; source_url: string; captured_at_iso: string; raw_payload_sha256: string; raw_payload_path: string; bytes: number }[];
+  total_processos: number;
+  total_precatorios: number;
+  total_rpvs: number;
+  pdf_orcamento_summaries: PDFOrcamentoSummary[];
+}
+
+export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise<EstoqueOrchestratorResult> {
+  const {
+    ano_exercicio,
+    tribunais,
+    classes,
+    max_por_tribunal = 10000,
+    evidencePack,
+  } = options;
+
+  const targetTribunais = tribunais && tribunais.length > 0
+    ? TRIBUNAIS_FEDERAIS.filter((t) => tribunais.includes(t.alias))
+    : TRIBUNAIS_FEDERAIS;
+
+  const classeCodigos = classes && classes.length > 0
+    ? classes
+    : [CLASSE_PRECATORIO, CLASSE_RPV];
+
+  evidencePack.log(`Estoque orchestrator: ${targetTribunais.length} tribunais, classes=[${classeCodigos.join(",")}], max=${max_por_tribunal}/tribunal`);
+
+  const allProcessos: EstoqueProcesso[] = [];
+  const porTribunal: EstoqueSummaryByTribunal[] = [];
+  const allEvidences: EstoqueOrchestratorResult["evidences"] = [];
+  const providersUsed = new Set<EstoqueProvider>();
+
+  const results = await Promise.allSettled(
+    targetTribunais.map((tribunal) =>
+      fetchFromProviders({
+        tribunal_alias: tribunal.alias,
+        classe_codigos: classeCodigos,
+        ano_exercicio,
+        max_results: max_por_tribunal,
+        evidencePack,
+      })
+    )
+  );
+
+  for (const result of results) {
+    if (result.status === "fulfilled") {
+      const { processos, summary, evidences, provider } = result.value;
+      allProcessos.push(...processos);
+      porTribunal.push(summary);
+      allEvidences.push(...evidences);
+      providersUsed.add(provider);
+    } else {
+      evidencePack.log(`Estoque orchestrator: tribunal promise rejected: ${result.reason}`);
+    }
+  }
+
+  const totalPrec = allProcessos.filter((p) => p.classe_codigo === CLASSE_PRECATORIO).length;
+  const totalRpv = allProcessos.filter((p) => p.classe_codigo === CLASSE_RPV).length;
+
+  evidencePack.log(`Estoque orchestrator: total=${allProcessos.length} (prec=${totalPrec}, rpv=${totalRpv}) from ${porTribunal.length} tribunais`);
+
+  const tribunaisComProcessos = Array.from(new Set(allProcessos.map((p) => p.tribunal_alias)));
+  const tribunaisParaEnriquecer = ["trf6"].filter((t) => tribunaisComProcessos.includes(t));
+  const pdfSummaries: PDFOrcamentoSummary[] = [];
+
+  for (const tribunalAlias of tribunaisParaEnriquecer) {
+    try {
+      evidencePack.log(`ValorEnrichment: starting for ${tribunalAlias} year=${ano_exercicio}`);
+      const valorIndex = await downloadAndParseTribunalPDF(tribunalAlias, ano_exercicio, evidencePack);
+      if (valorIndex) {
+        const result = enrichProcessosWithValores(allProcessos, valorIndex, tribunalAlias);
+        evidencePack.log(`ValorEnrichment ${tribunalAlias}: enriched ${result.enriched}/${result.total} processos with values from PDF`);
+
+        const summary = computePDFSummary(valorIndex);
+        pdfSummaries.push({
+          tribunal: valorIndex.tribunal,
+          ano_orcamento: valorIndex.ano_orcamento,
+          ...summary,
+          fonte_url: valorIndex.fonte_url,
+          sha256: valorIndex.sha256,
+        });
+        evidencePack.log(`ValorEnrichment ${tribunalAlias} PDF summary: ${summary.total_precatorios_pdf} prec, valor_total=${summary.valor_total_orcamento.toFixed(2)}`);
+      }
+    } catch (err: any) {
+      evidencePack.log(`ValorEnrichment ${tribunalAlias} error: ${err.message}`);
+    }
+  }
+
+  const sources: SourceInfo[] = [
+    {
+      name: "CNJ DataJud API Publica",
+      url: "https://api-publica.datajud.cnj.jus.br",
+      type: "API",
+    },
+    ...tribunaisParaEnriquecer.length > 0
+      ? [{
+          name: "Relacao Precatorios TRF6 (PDF Oficial)",
+          url: "https://portal.trf6.jus.br/rpv-e-precatorios/consulta-precatorio-e-rpv/",
+          type: "WEB" as const,
+        }]
+      : [],
+  ];
+
+  return {
+    processos: allProcessos,
+    por_tribunal: porTribunal,
+    providers_used: Array.from(providersUsed),
+    sources,
+    evidences: allEvidences,
+    total_processos: allProcessos.length,
+    total_precatorios: totalPrec,
+    total_rpvs: totalRpv,
+    pdf_orcamento_summaries: pdfSummaries,
+  };
+}
+
+async function fetchFromProviders(params: {
+  tribunal_alias: string;
+  classe_codigos: number[];
+  ano_exercicio: number;
+  max_results: number;
+  evidencePack: EvidencePack;
+}): Promise<{
+  processos: EstoqueProcesso[];
+  summary: EstoqueSummaryByTribunal;
+  evidences: EstoqueOrchestratorResult["evidences"];
+  provider: EstoqueProvider;
+}> {
+  const datajudResult = await fetchEstoqueFromDataJud({
+    tribunal_alias: params.tribunal_alias,
+    classe_codigos: params.classe_codigos,
+    ano_exercicio: params.ano_exercicio,
+    max_results: params.max_results,
+    evidencePack: params.evidencePack,
+  });
+
+  if (datajudResult.summary.status !== "ERRO") {
+    return {
+      ...datajudResult,
+      provider: "datajud",
+    };
+  }
+
+  params.evidencePack.log(`DataJud failed for ${params.tribunal_alias}, CSV/scraping providers not yet implemented`);
+
+  return {
+    processos: [],
+    summary: {
+      ...datajudResult.summary,
+      observacoes: `DataJud indisponivel, providers alternativos nao implementados`,
+    },
+    evidences: datajudResult.evidences,
+    provider: "datajud",
+  };
+}
+
+================================================================================
+FILE: server/services/sp_tjsp.ts
+================================================================================
+import { EvidencePack } from "./evidence_pack";
+import type { TjspItem } from "../../shared/loa_types";
+
+const TJSP_PENDENTES_FORM =
+  "https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatpendentes.aspx";
+const TJSP_PAGAMENTOS_FORM =
+  "https://www.tjsp.jus.br/cac/scp/webrelpubliclstpagprecatefetuados.aspx";
+
+function safeNumberBR(v: any): number | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  if (!s) return undefined;
+  const norm = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(norm);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function extractTableRowsFromHtml(html: string): string[][] {
+  const rows: string[][] = [];
+  const trMatches = html.match(/<tr[\s\S]*?<\/tr>/gi) ?? [];
+  for (const tr of trMatches) {
+    const tds = tr.match(/<t[dh][\s\S]*?<\/t[dh]>/gi) ?? [];
+    const cols = tds.map((td) =>
+      td
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim()
+    );
+    if (cols.length) rows.push(cols);
+  }
+  return rows;
+}
+
+function bestEffortMapTjsp(
+  rows: string[][],
+  entidade: string,
+  status: string,
+  fonte_url: string
+): TjspItem[] {
+  const items: TjspItem[] = [];
+
+  for (const cols of rows) {
+    if (cols.join(" ").toLowerCase().includes("entidade")) continue;
+    if (cols.length < 3) continue;
+
+    let valor: number | undefined;
+    for (const c of cols) {
+      if (
+        /[0-9]+\.[0-9]{3}\.[0-9]{3},[0-9]{2}/.test(c) ||
+        /[0-9]+,[0-9]{2}/.test(c)
+      ) {
+        const n = safeNumberBR(c);
+        if (n && n > 0) {
+          valor = n;
+          break;
+        }
+      }
+    }
+
+    const numero = cols.find((c) => /\d{6,}/.test(c));
+    const credor = cols.find(
+      (c) => c.length > 10 && /[A-Za-zÀ-ÿ]/.test(c) && !/\d{4,}/.test(c)
+    );
+
+    if (!numero && !credor && !valor) continue;
+
+    items.push({
+      entidade,
+      numero,
+      credor,
+      valor,
+      status,
+      fonte_url,
+    });
+  }
+
+  return items;
+}
+
+export async function consultarTjspPendentes(
+  entidade: string,
+  pack: EvidencePack
+): Promise<{ items: TjspItem[]; note: string }> {
+  pack.log(`[SP] Consultando TJSP pendentes para entidade: ${entidade}`);
+
+  try {
+    const r = await fetch(TJSP_PENDENTES_FORM, {
+      method: "GET",
+      headers: {
+        "User-Agent": "AuraLOA/1.0 (pesquisa precatorios)",
+        Accept: "text/html",
+      },
+    });
+    const html = await r.text();
+    pack.saveRawPayload(
+      `tjsp_pendentes_${Date.now()}.html`,
+      Buffer.from(html, "utf-8")
+    );
+    pack.log(
+      `[SP] TJSP pendentes HTML capturado: ${html.length} bytes, status=${r.status}`
+    );
+
+    const rows = extractTableRowsFromHtml(html);
+    const items = bestEffortMapTjsp(rows, entidade, "PENDENTE", TJSP_PENDENTES_FORM);
+    pack.log(`[SP] TJSP pendentes extraidos: ${items.length} itens`);
+
+    return {
+      items,
+      note: "MVP best-effort: captura HTML e tenta mapear tabela. Se o TJSP exigir selecao/POST por entidade, evoluir para POST com VIEWSTATE.",
+    };
+  } catch (e: any) {
+    pack.log(`[SP] Erro ao consultar TJSP pendentes: ${e?.message}`);
+    return {
+      items: [],
+      note: `Erro ao acessar TJSP: ${e?.message}. Evidencia salva.`,
+    };
+  }
+}
+
+export async function consultarTjspPagamentos(
+  entidade: string,
+  pack: EvidencePack
+): Promise<{ items: TjspItem[]; note: string }> {
+  pack.log(`[SP] Consultando TJSP pagamentos para entidade: ${entidade}`);
+
+  try {
+    const r = await fetch(TJSP_PAGAMENTOS_FORM, {
+      method: "GET",
+      headers: {
+        "User-Agent": "AuraLOA/1.0 (pesquisa precatorios)",
+        Accept: "text/html",
+      },
+    });
+    const html = await r.text();
+    pack.saveRawPayload(
+      `tjsp_pagamentos_${Date.now()}.html`,
+      Buffer.from(html, "utf-8")
+    );
+    pack.log(
+      `[SP] TJSP pagamentos HTML capturado: ${html.length} bytes, status=${r.status}`
+    );
+
+    const rows = extractTableRowsFromHtml(html);
+    const items = bestEffortMapTjsp(
+      rows,
+      entidade,
+      "PAGAMENTO",
+      TJSP_PAGAMENTOS_FORM
+    );
+    pack.log(`[SP] TJSP pagamentos extraidos: ${items.length} itens`);
+
+    return {
+      items,
+      note: "MVP best-effort: captura HTML e tenta mapear. Para dados por entidade com precisao, evoluir para submissao do formulario do TJSP.",
+    };
+  } catch (e: any) {
+    pack.log(`[SP] Erro ao consultar TJSP pagamentos: ${e?.message}`);
+    return {
+      items: [],
+      note: `Erro ao acessar TJSP: ${e?.message}. Evidencia salva.`,
+    };
+  }
+}
+
+export function getTjspUrls() {
+  return {
+    pendentes: TJSP_PENDENTES_FORM,
+    pagamentos: TJSP_PAGAMENTOS_FORM,
+    pesquisa: "https://www.tjsp.jus.br/cac/scp/webmenupesquisa.aspx",
+    lista_pendentes_oficial: "https://www.tjsp.jus.br/Precatorios/Precatorios/ListaPendentes",
+  };
+}
+
+================================================================================
+FILE: server/services/valor_precatorio_pdf.ts
+================================================================================
+import * as fs from "fs";
+import * as path from "path";
+import { EvidencePack, computeSHA256 } from "./evidence_pack";
+
+export interface PrecatorioValorEntry {
+  numero_precatorio: string;
+  valor: number;
+  preferencia: string;
+  ordem: number;
+  tipo: "ALIMENTAR" | "COMUM" | "DESCONHECIDO";
+}
+
+export interface PrecatorioValorIndex {
+  entries: PrecatorioValorEntry[];
+  by_numero: Map<string, PrecatorioValorEntry>;
+  tribunal: string;
+  ano_orcamento: number;
+  fonte_url: string;
+  sha256: string;
+  total_entries: number;
+}
+
+const CACHE_DIR = path.resolve("./Saida/cache/pdf_valores");
+
+const TRIBUNAL_PDF_URLS: Record<string, { url: string; tribunal: string }[]> = {
+  trf6: [
+    {
+      url: "https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf",
+      tribunal: "TRF6",
+    },
+  ],
+};
+
+function parseBRLValue(raw: string): number | null {
+  const cleaned = raw.replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+}
+
+function extractEntriesFromText(text: string): PrecatorioValorEntry[] {
+  const entries: PrecatorioValorEntry[] = [];
+  let currentTipo: "ALIMENTAR" | "COMUM" | "DESCONHECIDO" = "DESCONHECIDO";
+
+  if (text.includes("ALIMENTAR")) currentTipo = "ALIMENTAR";
+
+  const pattern = /(\d+)\s+(\d{15,20})\s+([\d.,]+)\s+(IDOSO|NÃO|NAO|PESSOA COM DEFICIÊNCIA|DOENÇA GRAVE|SIM|N[AÃ]O)/gi;
+  let match: RegExpExecArray | null;
+
+  while ((match = pattern.exec(text)) !== null) {
+    const ordem = parseInt(match[1], 10);
+    const numeroPrecatorio = match[2].trim();
+    const valorStr = match[3];
+    const preferencia = match[4].trim().toUpperCase();
+
+    const valor = parseBRLValue(valorStr);
+    if (valor === null) continue;
+
+    entries.push({
+      numero_precatorio: numeroPrecatorio,
+      valor,
+      preferencia,
+      ordem,
+      tipo: currentTipo,
+    });
+  }
+
+  return entries;
+}
+
+async function parsePDFBuffer(buffer: Buffer): Promise<string> {
+  const pdfjsPath = "pdfjs-dist/legacy/build/pdf.mjs";
+  const pdfjsLib = await import(pdfjsPath);
+
+  const data = new Uint8Array(buffer);
+  const doc = await pdfjsLib.getDocument({ data }).promise;
+  const numPages = doc.numPages;
+
+  const pages: string[] = [];
+  for (let i = 1; i <= numPages; i++) {
+    const page = await doc.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map((item: any) => item.str).join(" ");
+    pages.push(pageText);
+  }
+
+  return pages.join("\n");
+}
+
+export async function downloadAndParseTribunalPDF(
+  tribunalAlias: string,
+  anoOrcamento: number,
+  evidencePack: EvidencePack,
+): Promise<PrecatorioValorIndex | null> {
+  const configs = TRIBUNAL_PDF_URLS[tribunalAlias];
+  if (!configs || configs.length === 0) {
+    evidencePack.log(`ValorPDF: no PDF configured for ${tribunalAlias}`);
+    return null;
+  }
+
+  const config = configs[0];
+  const cacheFile = path.join(CACHE_DIR, `${tribunalAlias}_${anoOrcamento}_valores.json`);
+
+  if (!fs.existsSync(CACHE_DIR)) {
+    fs.mkdirSync(CACHE_DIR, { recursive: true });
+  }
+
+  if (fs.existsSync(cacheFile)) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(cacheFile, "utf-8"));
+      if (cached.entries && cached.entries.length > 0) {
+        evidencePack.log(`ValorPDF: using cache for ${tribunalAlias} (${cached.entries.length} entries)`);
+
+        const byNumero = new Map<string, PrecatorioValorEntry>();
+        for (const e of cached.entries) {
+          byNumero.set(e.numero_precatorio, e);
+        }
+
+        return {
+          entries: cached.entries,
+          by_numero: byNumero,
+          tribunal: config.tribunal,
+          ano_orcamento: anoOrcamento,
+          fonte_url: config.url,
+          sha256: cached.sha256 || "",
+          total_entries: cached.entries.length,
+        };
+      }
+    } catch {
+      evidencePack.log(`ValorPDF: cache corrupted, re-downloading`);
+    }
+  }
+
+  evidencePack.log(`ValorPDF: downloading PDF from ${config.url}`);
+
+  try {
+    const response = await fetch(config.url, {
+      headers: {
+        "User-Agent": "AuraLOA/1.0 (Pesquisa Academica Precatorios)",
+      },
+    });
+
+    if (!response.ok) {
+      evidencePack.log(`ValorPDF: HTTP ${response.status} for ${config.url}`);
+      return null;
+    }
+
+    const arrayBuf = await response.arrayBuffer();
+    const buffer = Buffer.from(arrayBuf);
+    const sha256 = computeSHA256(buffer);
+
+    evidencePack.log(`ValorPDF: downloaded ${buffer.length} bytes sha256=${sha256}`);
+
+    const rawSaved = evidencePack.saveRawPayload(`pdf_valores_${tribunalAlias}_${anoOrcamento}.pdf`, buffer);
+
+    evidencePack.log(`ValorPDF: parsing PDF (${buffer.length} bytes)...`);
+    const text = await parsePDFBuffer(buffer);
+
+    const entries = extractEntriesFromText(text);
+    evidencePack.log(`ValorPDF: extracted ${entries.length} entries from ${tribunalAlias} PDF`);
+
+    const cacheData = {
+      entries,
+      sha256,
+      fonte_url: config.url,
+      tribunal: config.tribunal,
+      ano_orcamento: anoOrcamento,
+      parsed_at: new Date().toISOString(),
+      total_entries: entries.length,
+    };
+    fs.writeFileSync(cacheFile, JSON.stringify(cacheData, null, 2), "utf-8");
+
+    const byNumero = new Map<string, PrecatorioValorEntry>();
+    for (const e of entries) {
+      byNumero.set(e.numero_precatorio, e);
+    }
+
+    return {
+      entries,
+      by_numero: byNumero,
+      tribunal: config.tribunal,
+      ano_orcamento: anoOrcamento,
+      fonte_url: config.url,
+      sha256,
+      total_entries: entries.length,
+    };
+  } catch (err: any) {
+    evidencePack.log(`ValorPDF: error downloading/parsing: ${err.message}`);
+    return null;
+  }
+}
+
+export function enrichProcessosWithValores(
+  processos: Array<{
+    numero_cnj: string;
+    valor_causa: number | null;
+    valor_fonte: string | null;
+    tribunal_alias: string;
+  }>,
+  valorIndex: PrecatorioValorIndex,
+  tribunalAlias: string,
+): { enriched: number; total: number } {
+  let enriched = 0;
+  const total = processos.filter((p) => p.tribunal_alias === tribunalAlias).length;
+
+  for (const processo of processos) {
+    if (processo.tribunal_alias !== tribunalAlias) continue;
+
+    let entry = valorIndex.by_numero.get(processo.numero_cnj);
+
+    if (!entry && processo.numero_cnj.length === 20) {
+      entry = valorIndex.by_numero.get(processo.numero_cnj.slice(1));
+    }
+
+    if (!entry && processo.numero_cnj.length === 19) {
+      entry = valorIndex.by_numero.get("0" + processo.numero_cnj);
+    }
+
+    if (entry) {
+      processo.valor_causa = entry.valor;
+      processo.valor_fonte = "pdf_oficial";
+      enriched++;
+    }
+  }
+
+  return { enriched, total };
+}
+
+export function computePDFSummary(valorIndex: PrecatorioValorIndex): {
+  total_precatorios_pdf: number;
+  valor_total_orcamento: number;
+  valor_alimentar: number;
+  valor_comum: number;
+  total_idoso: number;
+  total_deficiencia: number;
+} {
+  let valorTotal = 0;
+  let valorAlimentar = 0;
+  let valorComum = 0;
+  let totalIdoso = 0;
+  let totalDeficiencia = 0;
+
+  for (const entry of valorIndex.entries) {
+    valorTotal += entry.valor;
+    if (entry.tipo === "ALIMENTAR") valorAlimentar += entry.valor;
+    else if (entry.tipo === "COMUM") valorComum += entry.valor;
+    if (entry.preferencia.includes("IDOSO")) totalIdoso++;
+    if (entry.preferencia.includes("DEFICIÊNCIA") || entry.preferencia.includes("DEFICIENCIA")) totalDeficiencia++;
+  }
+
+  return {
+    total_precatorios_pdf: valorIndex.entries.length,
+    valor_total_orcamento: valorTotal,
+    valor_alimentar: valorAlimentar,
+    valor_comum: valorComum,
+    total_idoso: totalIdoso,
+    total_deficiencia: totalDeficiencia,
+  };
+}
+
+================================================================================
+FILE: server/services/transparencia_execucao.ts
+================================================================================
+import type { ExecucaoItem, EvidenciaItem } from "../../shared/loa_types";
+import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
+import { EvidencePack } from "./evidence_pack";
+
+const API_BASE_URL = "https://api.portaldatransparencia.gov.br/api-de-dados";
+
+interface DespesaFuncionalDTO {
+  ano: number;
+  funcao: string;
+  codigoFuncao: string;
+  subfuncao: string;
+  codigoSubfuncao: string;
+  programa: string;
+  codigoPrograma: string;
+  acao: string;
+  codigoAcao: string;
+  empenhado: string;
+  liquidado: string;
+  pago: string;
+}
+
+function parseMoneyString(val: string | null | undefined): number | null {
+  if (!val || val === "--" || val.trim() === "") return null;
+  const cleaned = val.replace(/\./g, "").replace(",", ".").trim();
+  if (!cleaned) return null;
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? null : num;
+}
+
+async function fetchApiPage(
+  url: string,
+  apiKey: string,
+  evidencePack: EvidencePack
+): Promise<any[] | null> {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "chave-api-dados": apiKey,
+        Accept: "application/json",
+        "User-Agent": "AuraLOA/1.0 (Pesquisa Orcamentaria)",
+      },
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (!response.ok) {
+      evidencePack.log(`API returned status=${response.status} for url=${url}`);
+      return null;
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : null;
+  } catch (error: any) {
+    evidencePack.log(`API fetch error: ${error.message}`);
+    return null;
+  }
+}
+
+async function fetchAllPages(
+  baseUrl: string,
+  apiKey: string,
+  evidencePack: EvidencePack,
+  maxPages: number = 10
+): Promise<any[]> {
+  const allItems: any[] = [];
+  for (let page = 1; page <= maxPages; page++) {
+    const url = `${baseUrl}&pagina=${page}`;
+    evidencePack.log(`fetching page=${page} url=${url}`);
+    const items = await fetchApiPage(url, apiKey, evidencePack);
+    if (!items || items.length === 0) break;
+    allItems.push(...items);
+    if (items.length < 15) break;
+  }
+  return allItems;
+}
+
+export async function fetchExecucaoFromTransparencia(
+  anoExercicio: number,
+  evidencePack: EvidencePack
+): Promise<ExecucaoItem[]> {
+  const results: ExecucaoItem[] = [];
+  const apiKey = process.env.PORTAL_TRANSPARENCIA_API_KEY;
+
+  evidencePack.log(`start fetching execution data year=${anoExercicio}`);
+
+  if (apiKey) {
+    evidencePack.log(`using Portal da Transparencia REST API with API key`);
+
+    for (const acao of ACOES_PRECATORIOS_UNIAO) {
+      const baseUrl = `${API_BASE_URL}/despesas/por-funcional-programatica?ano=${anoExercicio}&acao=${acao.codigo_acao}`;
+      evidencePack.log(`querying API for action=${acao.codigo_acao}`);
+
+      try {
+        const data = await fetchAllPages(baseUrl, apiKey, evidencePack);
+
+        const payloadStr = JSON.stringify(data, null, 2);
+        const saved = evidencePack.saveRawPayload(
+          `execucao_api_${acao.codigo_acao}.json`,
+          payloadStr
+        );
+
+        const evidencia: EvidenciaItem = {
+          source_name: "Portal da Transparencia API REST",
+          source_url: `${baseUrl}&pagina=1`,
+          captured_at_iso: new Date().toISOString(),
+          raw_payload_sha256: saved.sha256,
+          raw_payload_path: saved.path,
+        };
+
+        if (data.length > 0) {
+          let empenhado: number | null = null;
+          let liquidado: number | null = null;
+          let pago: number | null = null;
+          let descricaoAcao = acao.descricao;
+
+          for (const item of data as DespesaFuncionalDTO[]) {
+            const emp = parseMoneyString(item.empenhado);
+            const liq = parseMoneyString(item.liquidado);
+            const pg = parseMoneyString(item.pago);
+
+            if (emp !== null) empenhado = (empenhado || 0) + emp;
+            if (liq !== null) liquidado = (liquidado || 0) + liq;
+            if (pg !== null) pago = (pago || 0) + pg;
+
+            if (item.acao && item.acao.trim()) {
+              descricaoAcao = item.acao.trim();
+            }
+          }
+
+          const hasValues = empenhado !== null || liquidado !== null || pago !== null;
+
+          results.push({
+            codigo_acao: acao.codigo_acao,
+            descricao_acao: descricaoAcao,
+            empenhado,
+            liquidado,
+            pago,
+            status: hasValues ? "OK" : "PARCIAL",
+            observacoes: hasValues
+              ? `Dados obtidos via API REST do Portal da Transparencia. ${data.length} registros agregados.`
+              : `API retornou ${data.length} registros mas sem valores numericos para acao ${acao.codigo_acao}.`,
+            evidencias: [evidencia],
+          });
+
+          evidencePack.log(
+            `fetched execution action=${acao.codigo_acao} records=${data.length} empenhado=${empenhado} liquidado=${liquidado} pago=${pago}`
+          );
+        } else {
+          results.push({
+            codigo_acao: acao.codigo_acao,
+            descricao_acao: acao.descricao,
+            empenhado: null,
+            liquidado: null,
+            pago: null,
+            status: "NAO_LOCALIZADO",
+            observacoes: `API nao retornou dados para acao ${acao.codigo_acao} no exercicio ${anoExercicio}.`,
+            evidencias: [evidencia],
+          });
+        }
+      } catch (error: any) {
+        evidencePack.log(`API error for action ${acao.codigo_acao}: ${error.message}`);
+        results.push({
+          codigo_acao: acao.codigo_acao,
+          descricao_acao: acao.descricao,
+          empenhado: null,
+          liquidado: null,
+          pago: null,
+          status: "PARCIAL",
+          observacoes: `Erro ao consultar API para acao ${acao.codigo_acao}: ${error.message}`,
+          evidencias: [{
+            source_name: "Portal da Transparencia API REST",
+            source_url: baseUrl,
+            captured_at_iso: new Date().toISOString(),
+            raw_payload_sha256: null,
+            raw_payload_path: null,
+          }],
+        });
+      }
+    }
+
+    return results;
+  }
+
+  evidencePack.log(`no API key available (PORTAL_TRANSPARENCIA_API_KEY). Cannot fetch execution data.`);
+  for (const acao of ACOES_PRECATORIOS_UNIAO) {
+    results.push({
+      codigo_acao: acao.codigo_acao,
+      descricao_acao: acao.descricao,
+      empenhado: null,
+      liquidado: null,
+      pago: null,
+      status: "NAO_LOCALIZADO",
+      observacoes: `Chave de API do Portal da Transparencia nao configurada (PORTAL_TRANSPARENCIA_API_KEY). Cadastre sua chave em https://portaldatransparencia.gov.br/api-de-dados/cadastrar-email`,
+      evidencias: [{
+        source_name: "Portal da Transparencia API REST",
+        source_url: "https://portaldatransparencia.gov.br/api-de-dados",
+        captured_at_iso: new Date().toISOString(),
+        raw_payload_sha256: null,
+        raw_payload_path: null,
+      }],
+    });
+  }
+
+  return results;
+}
+
+================================================================================
+FILE: server/services/transparencia_download.ts
+================================================================================
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import type { EvidenciaItem } from "../../shared/loa_types";
+
+export function buildDespesasZipUrl(ano: number, mes: number): string {
+  const mm = String(mes).padStart(2, "0");
+  return `https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/despesas/${ano}${mm}01_Despesas.zip`;
+}
+
+export interface ZipDownloadResult {
+  ok: boolean;
+  status: number;
+  statusText: string;
+  url: string;
+  filePath: string;
+  sha256: string;
+  bytes: number;
+  captured_at_iso: string;
+  contentType: string | null;
+}
+
+export async function downloadZipToEvidencePack(params: {
+  processId: string;
+  url: string;
+  outBaseDir?: string;
+}): Promise<ZipDownloadResult> {
+  const outBaseDir = params.outBaseDir ?? path.join(".", "Saida", "evidence");
+  const captured_at_iso = new Date().toISOString();
+
+  const rawDir = path.join(outBaseDir, params.processId, "raw");
+  fs.mkdirSync(rawDir, { recursive: true });
+
+  const filename = path.basename(new URL(params.url).pathname) || "download.zip";
+  const filePath = path.join(rawDir, filename);
+
+  const res = await fetch(params.url, { redirect: "follow" });
+
+  const buf = Buffer.from(await res.arrayBuffer());
+  fs.writeFileSync(filePath, buf);
+  const sha256 = crypto.createHash("sha256").update(buf).digest("hex");
+
+  return {
+    ok: res.ok,
+    status: res.status,
+    statusText: res.statusText,
+    url: params.url,
+    filePath,
+    sha256,
+    bytes: buf.length,
+    captured_at_iso,
+    contentType: res.headers.get("content-type"),
+  };
+}
+
+export function buildZipEvidencia(dl: ZipDownloadResult): EvidenciaItem {
+  return {
+    source_name: "PortalTransparencia.DownloadDespesas",
+    source_url: dl.url,
+    captured_at_iso: dl.captured_at_iso,
+    raw_payload_sha256: dl.sha256,
+    raw_payload_path: dl.filePath,
+  };
+}
+
+================================================================================
+FILE: server/services/siop_dotacao.ts
+================================================================================
+import type { DotacaoItem, EvidenciaItem } from "../../shared/loa_types";
+import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
+import { EvidencePack } from "./evidence_pack";
+
+const ORCAMENTO_SPARQL_ENDPOINT = "http://orcamento.dados.gov.br/sparql";
+const SIOP_SPARQL_ENDPOINT = "http://www1.siop.planejamento.gov.br/sparql/";
+
+function buildSparqlQuery(anoExercicio: number, codigosAcao: string[]): string {
+  const filterValues = codigosAcao.map(c => `"${c}"`).join(", ");
+  return `
+    PREFIX loa: <http://orcamento.dados.gov.br/id/2016/VocabularioOrcamento#>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+    SELECT ?codAcao ?descAcao
+      (SUM(?valInicial) AS ?dotacao_inicial)
+      (SUM(?valAtual) AS ?dotacao_atual)
+    WHERE {
+      GRAPH <http://orcamento.dados.gov.br/${anoExercicio}/> {
+        ?i loa:temAcao ?acao .
+        ?acao loa:codigo ?codAcao .
+        ?acao rdfs:label ?descAcao .
+        ?i loa:valorDotacaoInicial ?valInicial .
+        OPTIONAL { ?i loa:valorLeiMaisCredito ?valAtual . }
+        FILTER(?codAcao IN (${filterValues}))
+      }
+    }
+    GROUP BY ?codAcao ?descAcao
+  `.trim();
+}
+
+function buildSiopSparqlQuery(anoExercicio: number, codigoAcao: string): string {
+  return `
+    PREFIX loa: <http://orcamento.dados.gov.br/resource/id/>
+    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+    PREFIX prop: <http://orcamento.dados.gov.br/ontology/property/>
+
+    SELECT ?dotacaoInicial ?dotacaoAtual ?descricao
+    WHERE {
+      ?item prop:exercicio "${anoExercicio}" .
+      ?item prop:codigoAcao "${codigoAcao}" .
+      OPTIONAL { ?item prop:dotacaoInicial ?dotacaoInicial }
+      OPTIONAL { ?item prop:dotacaoAtual ?dotacaoAtual }
+      OPTIONAL { ?item rdfs:label ?descricao }
+    }
+    LIMIT 100
+  `.trim();
+}
+
+async function trySparqlEndpoint(
+  endpoint: string,
+  query: string,
+  evidencePack: EvidencePack,
+  label: string
+): Promise<{ ok: boolean; data: any; rawText: string }> {
+  try {
+    const params = new URLSearchParams({ query, format: "application/sparql-results+json" });
+    const url = `${endpoint}?${params.toString()}`;
+    evidencePack.log(`querying ${label} SPARQL`);
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/sparql-results+json",
+        "User-Agent": "AuraLOA/1.0 (Pesquisa Orcamentaria)",
+      },
+      signal: AbortSignal.timeout(20000),
+    });
+
+    if (!response.ok) {
+      evidencePack.log(`${label} SPARQL returned status=${response.status}`);
+      return { ok: false, data: null, rawText: "" };
+    }
+
+    const rawText = await response.text();
+    try {
+      const data = JSON.parse(rawText);
+      return { ok: true, data, rawText };
+    } catch {
+      evidencePack.log(`${label} SPARQL returned non-JSON response`);
+      return { ok: false, data: null, rawText };
+    }
+  } catch (error: any) {
+    evidencePack.log(`${label} SPARQL error: ${error.message}`);
+    return { ok: false, data: null, rawText: "" };
+  }
+}
+
+export async function fetchDotacaoFromSIOP(
+  anoExercicio: number,
+  evidencePack: EvidencePack
+): Promise<DotacaoItem[]> {
+  const results: DotacaoItem[] = [];
+  const codigosAcao = ACOES_PRECATORIOS_UNIAO.map(a => a.codigo_acao);
+
+  evidencePack.log(`start fetching dotacao data year=${anoExercicio}`);
+
+  const orcamentoQuery = buildSparqlQuery(anoExercicio, codigosAcao);
+  const orcResult = await trySparqlEndpoint(
+    ORCAMENTO_SPARQL_ENDPOINT,
+    orcamentoQuery,
+    evidencePack,
+    "orcamento.dados.gov.br"
+  );
+
+  if (orcResult.ok && orcResult.data?.results?.bindings?.length > 0) {
+    const saved = evidencePack.saveRawPayload(
+      `dotacao_orcamento_sparql_${anoExercicio}.json`,
+      orcResult.rawText
+    );
+
+    const bindings = orcResult.data.results.bindings;
+    const found = new Set<string>();
+
+    for (const binding of bindings) {
+      const codAcao = binding.codAcao?.value;
+      if (!codAcao) continue;
+      found.add(codAcao);
+
+      const dotInicial = binding.dotacao_inicial?.value ? parseFloat(binding.dotacao_inicial.value) : null;
+      const dotAtual = binding.dotacao_atual?.value ? parseFloat(binding.dotacao_atual.value) : null;
+      const desc = binding.descAcao?.value || ACOES_PRECATORIOS_UNIAO.find(a => a.codigo_acao === codAcao)?.descricao || "";
+
+      results.push({
+        codigo_acao: codAcao,
+        descricao_acao: desc,
+        dotacao_inicial: dotInicial,
+        dotacao_atual: dotAtual || dotInicial,
+        status: (dotInicial !== null || dotAtual !== null) ? "OK" : "PARCIAL",
+        observacoes: `Dados obtidos via SPARQL orcamento.dados.gov.br. Exercicio ${anoExercicio}.`,
+        evidencias: [{
+          source_name: "Orcamento Dados Gov BR SPARQL",
+          source_url: ORCAMENTO_SPARQL_ENDPOINT,
+          captured_at_iso: new Date().toISOString(),
+          raw_payload_sha256: saved.sha256,
+          raw_payload_path: saved.path,
+        }],
+      });
+
+      evidencePack.log(`fetched dotacao action=${codAcao} dotInicial=${dotInicial} dotAtual=${dotAtual}`);
+    }
+
+    for (const acao of ACOES_PRECATORIOS_UNIAO) {
+      if (!found.has(acao.codigo_acao)) {
+        results.push({
+          codigo_acao: acao.codigo_acao,
+          descricao_acao: acao.descricao,
+          dotacao_inicial: null,
+          dotacao_atual: null,
+          status: "NAO_LOCALIZADO",
+          observacoes: `Acao ${acao.codigo_acao} nao encontrada no SPARQL para exercicio ${anoExercicio}.`,
+          evidencias: [{
+            source_name: "Orcamento Dados Gov BR SPARQL",
+            source_url: ORCAMENTO_SPARQL_ENDPOINT,
+            captured_at_iso: new Date().toISOString(),
+            raw_payload_sha256: saved.sha256,
+            raw_payload_path: saved.path,
+          }],
+        });
+      }
+    }
+
+    return results;
+  }
+
+  if (anoExercicio > 2016) {
+    evidencePack.log(`orcamento.dados.gov.br has data only up to ~2016, year ${anoExercicio} not available in public SPARQL`);
+  }
+  evidencePack.log(`trying SIOP SPARQL fallback for ${anoExercicio}`);
+
+  for (const acao of ACOES_PRECATORIOS_UNIAO) {
+    const siopQuery = buildSiopSparqlQuery(anoExercicio, acao.codigo_acao);
+    const siopResult = await trySparqlEndpoint(
+      SIOP_SPARQL_ENDPOINT,
+      siopQuery,
+      evidencePack,
+      `SIOP(${acao.codigo_acao})`
+    );
+
+    if (siopResult.ok && siopResult.data?.results?.bindings?.length > 0) {
+      const saved = evidencePack.saveRawPayload(
+        `dotacao_siop_${acao.codigo_acao}.json`,
+        siopResult.rawText
+      );
+
+      const bindings = siopResult.data.results.bindings;
+      let dotacaoInicial = 0;
+      let dotacaoAtual = 0;
+
+      for (const binding of bindings) {
+        if (binding.dotacaoInicial?.value) dotacaoInicial += parseFloat(binding.dotacaoInicial.value) || 0;
+        if (binding.dotacaoAtual?.value) dotacaoAtual += parseFloat(binding.dotacaoAtual.value) || 0;
+      }
+
+      results.push({
+        codigo_acao: acao.codigo_acao,
+        descricao_acao: acao.descricao,
+        dotacao_inicial: dotacaoInicial || null,
+        dotacao_atual: dotacaoAtual || null,
+        status: (dotacaoAtual > 0 || dotacaoInicial > 0) ? "OK" : "PARCIAL",
+        observacoes: `Dados obtidos via SIOP SPARQL. ${bindings.length} registros.`,
+        evidencias: [{
+          source_name: "SIOP SPARQL Endpoint",
+          source_url: SIOP_SPARQL_ENDPOINT,
+          captured_at_iso: new Date().toISOString(),
+          raw_payload_sha256: saved.sha256,
+          raw_payload_path: saved.path,
+        }],
+      });
+
+      evidencePack.log(`fetched dotacao via SIOP action=${acao.codigo_acao} records=${bindings.length}`);
+    } else {
+      const reason = anoExercicio > 2016
+        ? `Dados de dotacao indisponiveis para ${anoExercicio}. O endpoint publico orcamento.dados.gov.br contem dados ate ~2016. O SIOP SPARQL (www1.siop.planejamento.gov.br) esta bloqueado por firewall para acessos externos. Para dados de dotacao de anos recentes, consulte o SIOP Acesso Publico manualmente.`
+        : `Nenhum dado encontrado para acao ${acao.codigo_acao} no exercicio ${anoExercicio} em nenhum endpoint SPARQL disponivel.`;
+
+      results.push({
+        codigo_acao: acao.codigo_acao,
+        descricao_acao: acao.descricao,
+        dotacao_inicial: null,
+        dotacao_atual: null,
+        status: "PARCIAL",
+        observacoes: reason,
+        evidencias: [{
+          source_name: "SPARQL Endpoints",
+          source_url: ORCAMENTO_SPARQL_ENDPOINT,
+          captured_at_iso: new Date().toISOString(),
+          raw_payload_sha256: null,
+          raw_payload_path: null,
+        }],
+      });
+    }
+  }
+
+  return results;
+}
+
+================================================================================
+FILE: server/services/a2_execucao_from_zip.ts
+================================================================================
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { PassThrough } from "node:stream";
+import unzipper from "unzipper";
+import iconv from "iconv-lite";
+import { parse } from "csv-parse";
+import type { ZipEmpenhoDetalhe, ZipExecucaoByAcao, ZipExecucaoRow } from "../../shared/loa_types";
+
+type Evidence = {
+  source_name: string;
+  source_url: string | null;
+  captured_at_iso: string;
+  raw_payload_path: string;
+  raw_payload_sha256: string;
+  bytes: number;
+  note?: string;
+};
+
+export type ExecucaoPagoPorAcaoPoRow = {
+  ano: number | null;
+  codigo_acao: string;
+  codigo_po: string | null;
+  pago: number;
+  moeda: "BRL";
+};
+
+function sha256File(filePath: string): string {
+  const hash = crypto.createHash("sha256");
+  const data = fs.readFileSync(filePath);
+  hash.update(data);
+  return hash.digest("hex");
+}
+
+function ensureDir(p: string) {
+  fs.mkdirSync(p, { recursive: true });
+}
+
+function parseBRL(v: string): number {
+  const s = (v ?? "").toString().trim();
+  if (!s) return 0;
+  const cleaned = s
+    .replace(/\s/g, "")
+    .replace(/\./g, "")
+    .replace(",", ".")
+    .replace(/[^0-9.-]/g, "");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
+
+function normCol(s: string): string {
+  return (s ?? "")
+    .trim()
+    .replace(/^\uFEFF/, "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .replace(/[^\w ]/g, "");
+}
+
+function getCol(r: Record<string, string>, ...keys: string[]): string {
+  for (const k of keys) {
+    const v = r[k];
+    if (v !== undefined && v !== null) return v.trim();
+  }
+  return "";
+}
+
+async function extractEntryToRawAndParseCSV(params: {
+  zipPath: string;
+  entryNameEndsWith: string;
+  rawOutPath: string;
+  encoding: "latin1" | "utf8";
+  delimiter: ";" | ",";
+  onRecord: (row: Record<string, string>) => void | Promise<void>;
+}): Promise<{ bytes: number; found: boolean }> {
+  const zipStream = fs.createReadStream(params.zipPath).pipe(unzipper.Parse({ forceStream: true }));
+
+  for await (const entry of zipStream as any) {
+    const fileName: string = entry.path;
+    const type: string = entry.type;
+
+    if (type !== "File") {
+      entry.autodrain();
+      continue;
+    }
+
+    if (!fileName.endsWith(params.entryNameEndsWith)) {
+      entry.autodrain();
+      continue;
+    }
+
+    ensureDir(path.dirname(params.rawOutPath));
+    const out = fs.createWriteStream(params.rawOutPath);
+
+    const tee = new PassThrough();
+    let bytes = 0;
+
+    entry.on("data", (chunk: Buffer) => {
+      bytes += chunk.length;
+    });
+
+    entry.pipe(tee);
+
+    tee.pipe(out);
+
+    const decoder = params.encoding === "latin1" ? iconv.decodeStream("latin1") : iconv.decodeStream("utf8");
+    const parser = parse({
+      delimiter: params.delimiter,
+      columns: (header: string[]) => header.map(normCol),
+      relax_quotes: true,
+      relax_column_count: true,
+      skip_empty_lines: true,
+      trim: true,
+    });
+
+    const parsePromise = new Promise<void>((resolve, reject) => {
+      parser.on("readable", async () => {
+        try {
+          let record;
+          while ((record = parser.read())) {
+            await params.onRecord(record);
+          }
+        } catch (e) {
+          reject(e);
+        }
+      });
+      parser.on("error", reject);
+      parser.on("end", resolve);
+    });
+
+    tee.pipe(decoder).pipe(parser);
+    await parsePromise;
+
+    await new Promise<void>((resolve) => out.on("finish", resolve));
+    out.end();
+
+    return { bytes, found: true };
+  }
+
+  return { bytes: 0, found: false };
+}
+
+export async function computeExecucaoPagoPorAcaoPoFromZip(params: {
+  processId: string;
+  zipPath: string;
+  evidenceBaseDir?: string;
+  sourceUrlZip?: string | null;
+  ano?: number | null;
+}) {
+  const evidenceBaseDir = params.evidenceBaseDir ?? path.join(".", "Saida", "evidence");
+  const captured_at_iso = new Date().toISOString();
+
+  const evRawDir = path.join(evidenceBaseDir, params.processId, "raw");
+  ensureDir(evRawDir);
+
+  if (!fs.existsSync(params.zipPath)) {
+    throw new Error(`[A2] zipPath nao existe: ${params.zipPath}`);
+  }
+  const zipSha = sha256File(params.zipPath);
+  const zipBytes = fs.statSync(params.zipPath).size;
+
+  const evidences: Evidence[] = [
+    {
+      source_name: "PortalTransparencia.DespostasZip.Raw",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: params.zipPath,
+      raw_payload_sha256: zipSha,
+      bytes: zipBytes,
+      note: "ZIP bruto usado como fonte primaria para execucao (anti-alucinacao).",
+    },
+  ];
+
+  const pagoByEmpenho = new Map<string, number>();
+  const liquidadoByEmpenho = new Map<string, number>();
+
+  const rawPagamentoImpactados = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Pagamento_EmpenhosImpactados.csv"));
+  const pagamentoImpactadosResult = await extractEntryToRawAndParseCSV({
+    zipPath: params.zipPath,
+    entryNameEndsWith: "_Despesas_Pagamento_EmpenhosImpactados.csv",
+    rawOutPath: rawPagamentoImpactados,
+    encoding: "latin1",
+    delimiter: ";",
+    onRecord: (r) => {
+      const codEmp = getCol(r, "codigo empenho");
+      if (!codEmp) return;
+      const valorPago = parseBRL(getCol(r, "valor pago r", "valor pago"));
+      const prev = pagoByEmpenho.get(codEmp) ?? 0;
+      pagoByEmpenho.set(codEmp, prev + valorPago);
+    },
+  });
+
+  if (pagamentoImpactadosResult.found) {
+    evidences.push({
+      source_name: "PortalTransparencia.DespostasZip.PagamentoEmpenhosImpactados",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: rawPagamentoImpactados,
+      raw_payload_sha256: sha256File(rawPagamentoImpactados),
+      bytes: pagamentoImpactadosResult.bytes,
+      note: "Usado para obter Valor Pago por Codigo Empenho (join).",
+    });
+  }
+
+  const rawLiquidacaoImpactados = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Liquidacao_EmpenhosImpactados.csv"));
+  let totalLiquidacoes = 0;
+  const liquidacaoResult = await extractEntryToRawAndParseCSV({
+    zipPath: params.zipPath,
+    entryNameEndsWith: "_Despesas_Liquidacao_EmpenhosImpactados.csv",
+    rawOutPath: rawLiquidacaoImpactados,
+    encoding: "latin1",
+    delimiter: ";",
+    onRecord: (r) => {
+      totalLiquidacoes++;
+      const codEmp = getCol(r, "codigo empenho");
+      if (!codEmp) return;
+      const valorLiq = parseBRL(getCol(r, "valor liquidado r", "valor liquidado"));
+      const prev = liquidadoByEmpenho.get(codEmp) ?? 0;
+      liquidadoByEmpenho.set(codEmp, prev + valorLiq);
+    },
+  });
+
+  if (liquidacaoResult.found) {
+    evidences.push({
+      source_name: "PortalTransparencia.DespostasZip.LiquidacaoEmpenhosImpactados",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: rawLiquidacaoImpactados,
+      raw_payload_sha256: sha256File(rawLiquidacaoImpactados),
+      bytes: liquidacaoResult.bytes,
+      note: "Usado para obter Valor Liquidado por Codigo Empenho (join).",
+    });
+  }
+
+  const pagoPorAcaoPo = new Map<string, number>();
+  const empenhosDetalhe: ZipEmpenhoDetalhe[] = [];
+  let totalEmpenhos = 0;
+
+  const rawEmpenho = path.join(evRawDir, path.basename(params.zipPath).replace(".zip", "_Empenho.csv"));
+  const empenhoResult = await extractEntryToRawAndParseCSV({
+    zipPath: params.zipPath,
+    entryNameEndsWith: "_Despesas_Empenho.csv",
+    rawOutPath: rawEmpenho,
+    encoding: "latin1",
+    delimiter: ";",
+    onRecord: (r) => {
+      totalEmpenhos++;
+      const codEmp = getCol(r, "codigo empenho");
+      if (!codEmp) return;
+
+      const acao = getCol(r, "codigo acao");
+      const po = getCol(r, "codigo plano orcamentario") || null;
+      const valorEmpenho = parseBRL(getCol(r, "valor original do empenho", "valor do empenho convertido pra r"));
+      const pago = pagoByEmpenho.get(codEmp) ?? 0;
+      const liquidado = liquidadoByEmpenho.get(codEmp) ?? 0;
+
+      empenhosDetalhe.push({
+        codigo_empenho: codEmp,
+        data_emissao: getCol(r, "data emissao"),
+        codigo_orgao_superior: getCol(r, "codigo orgao superior"),
+        orgao_superior: getCol(r, "orgao superior"),
+        codigo_orgao: getCol(r, "codigo orgao"),
+        orgao: getCol(r, "orgao"),
+        codigo_ug: getCol(r, "codigo unidade gestora"),
+        unidade_gestora: getCol(r, "unidade gestora"),
+        codigo_favorecido: getCol(r, "codigo favorecido"),
+        favorecido: getCol(r, "favorecido"),
+        codigo_acao: acao,
+        acao: getCol(r, "acao"),
+        codigo_po: po,
+        plano_orcamentario: getCol(r, "plano orcamentario") || null,
+        codigo_programa: getCol(r, "codigo programa"),
+        programa: getCol(r, "programa"),
+        codigo_subfuncao: getCol(r, "codigo subfuncao"),
+        subfuncao: getCol(r, "subfuncao"),
+        codigo_subtitulo: getCol(r, "codigo subtitulo localizador"),
+        subtitulo: getCol(r, "subtitulo localizador"),
+        processo: getCol(r, "processo"),
+        valor_empenho: valorEmpenho,
+        valor_pago: pago,
+        valor_liquidado: liquidado,
+      });
+
+      if (pago > 0 && acao) {
+        const key = `${acao}||${po ?? ""}`;
+        pagoPorAcaoPo.set(key, (pagoPorAcaoPo.get(key) ?? 0) + pago);
+      }
+    },
+  });
+
+  if (empenhoResult.found) {
+    evidences.push({
+      source_name: "PortalTransparencia.DespostasZip.Empenho",
+      source_url: params.sourceUrlZip ?? null,
+      captured_at_iso,
+      raw_payload_path: rawEmpenho,
+      raw_payload_sha256: sha256File(rawEmpenho),
+      bytes: empenhoResult.bytes,
+      note: "Tabela mestre que contem Codigo Acao + Codigo PO por Codigo Empenho.",
+    });
+  }
+
+  const rows: ExecucaoPagoPorAcaoPoRow[] = [];
+  for (const [key, pago] of Array.from(pagoPorAcaoPo.entries())) {
+    const [acao, po] = key.split("||");
+    rows.push({
+      ano: params.ano ?? null,
+      codigo_acao: acao,
+      codigo_po: po ? po : null,
+      pago,
+      moeda: "BRL",
+    });
+  }
+
+  rows.sort((a, b) => {
+    if (a.codigo_acao !== b.codigo_acao) return a.codigo_acao.localeCompare(b.codigo_acao);
+    return (a.codigo_po ?? "").localeCompare(b.codigo_po ?? "");
+  });
+
+  const execucaoPorAcao = buildExecucaoPorAcao(empenhosDetalhe);
+
+  return {
+    result: {
+      pago_por_acao_po: rows,
+      empenhos_detalhe: empenhosDetalhe,
+      execucao_por_acao: execucaoPorAcao,
+      stats: {
+        empenhos_com_pagamento: pagoByEmpenho.size,
+        chaves_acao_po: rows.length,
+        total_empenhos_zip: totalEmpenhos,
+        total_liquidacoes_zip: totalLiquidacoes,
+      },
+    },
+    evidences,
+  };
+}
+
+function buildExecucaoPorAcao(empenhos: ZipEmpenhoDetalhe[]): ZipExecucaoByAcao[] {
+  const byAcao = new Map<string, {
+    descricao: string;
+    empenhado: number;
+    liquidado: number;
+    pago: number;
+    qtd: number;
+    poMap: Map<string, { pago: number; empenhado: number; liquidado: number }>;
+  }>();
+
+  for (const emp of empenhos) {
+    const acao = emp.codigo_acao;
+    if (!acao) continue;
+
+    let entry = byAcao.get(acao);
+    if (!entry) {
+      entry = {
+        descricao: emp.acao || acao,
+        empenhado: 0,
+        liquidado: 0,
+        pago: 0,
+        qtd: 0,
+        poMap: new Map(),
+      };
+      byAcao.set(acao, entry);
+    }
+
+    entry.empenhado += emp.valor_empenho;
+    entry.liquidado += emp.valor_liquidado;
+    entry.pago += emp.valor_pago;
+    entry.qtd++;
+
+    const poKey = emp.codigo_po ?? "-";
+    let poEntry = entry.poMap.get(poKey);
+    if (!poEntry) {
+      poEntry = { pago: 0, empenhado: 0, liquidado: 0 };
+      entry.poMap.set(poKey, poEntry);
+    }
+    poEntry.pago += emp.valor_pago;
+    poEntry.empenhado += emp.valor_empenho;
+    poEntry.liquidado += emp.valor_liquidado;
+  }
+
+  const result: ZipExecucaoByAcao[] = [];
+  for (const [codigo, entry] of Array.from(byAcao.entries()).sort((a, b) => a[0].localeCompare(b[0]))) {
+    result.push({
+      codigo_acao: codigo,
+      descricao_acao: entry.descricao,
+      total_empenhado: entry.empenhado,
+      total_liquidado: entry.liquidado,
+      total_pago: entry.pago,
+      qtd_empenhos: entry.qtd,
+      planos_orcamentarios: Array.from(entry.poMap.entries()).map(([po, v]) => ({
+        codigo_po: po,
+        pago: v.pago,
+        empenhado: v.empenhado,
+        liquidado: v.liquidado,
+      })),
+    });
+  }
+
+  return result;
+}
+
+================================================================================
+FILE: server/services/gap_analysis.ts
+================================================================================
+import type {
+  GapAcaoItem,
+  CruzamentoAcaoItem,
+  EstoqueSummaryByTribunal,
+} from "../../shared/loa_types";
+import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
+
+export interface GapAnalysisInput {
+  cruzamento: CruzamentoAcaoItem[];
+  estoque_por_tribunal: EstoqueSummaryByTribunal[];
+  estoque_total_processos: number;
+  estoque_total_precatorios: number;
+  estoque_total_rpvs: number;
+}
+
+export interface GapAnalysisOutput {
+  por_acao: GapAcaoItem[];
+  totais: {
+    dotacao_total: number | null;
+    pago_total: number | null;
+    empenhado_total: number | null;
+    estoque_total_processos: number;
+    estoque_total_precatorios: number;
+    estoque_total_rpvs: number;
+    gap_dotacao_vs_pago: number | null;
+    cobertura_pct: number | null;
+  };
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+}
+
+export function computeGapAnalysis(input: GapAnalysisInput): GapAnalysisOutput {
+  const { cruzamento, estoque_por_tribunal, estoque_total_processos, estoque_total_precatorios, estoque_total_rpvs } = input;
+
+  const fonteEstoque = estoque_total_processos > 0 ? "CNJ DataJud" : "Indisponivel";
+
+  const por_acao: GapAcaoItem[] = ACOES_PRECATORIOS_UNIAO.map((acao) => {
+    const cruz = cruzamento.find((c) => c.codigo_acao === acao.codigo_acao);
+
+    const dotAtual = cruz?.dotacao_atual ?? null;
+    const totalPago = cruz?.pago_final ?? null;
+    const totalEmp = cruz?.empenhado_final ?? null;
+
+    let gapDotVsPago: number | null = null;
+    if (dotAtual !== null && totalPago !== null) {
+      gapDotVsPago = dotAtual - totalPago;
+    }
+
+    let coberturaPct: number | null = null;
+    if (dotAtual !== null && dotAtual > 0 && totalPago !== null) {
+      coberturaPct = (totalPago / dotAtual) * 100;
+    } else if (totalEmp !== null && totalEmp > 0 && totalPago !== null) {
+      coberturaPct = (totalPago / totalEmp) * 100;
+    }
+
+    const hasDot = dotAtual !== null;
+    const hasExec = totalPago !== null || totalEmp !== null;
+    const hasEstoque = estoque_total_processos > 0;
+
+    let status: "OK" | "PARCIAL" | "NAO_LOCALIZADO" = "OK";
+    if (!hasDot && !hasExec && !hasEstoque) status = "NAO_LOCALIZADO";
+    else if (!hasDot || !hasExec || !hasEstoque) status = "PARCIAL";
+
+    return {
+      codigo_acao: acao.codigo_acao,
+      descricao_acao: acao.descricao,
+      dotacao_atual: dotAtual,
+      total_pago: totalPago,
+      total_empenhado: totalEmp,
+      estoque_processos: estoque_total_processos,
+      estoque_precatorios: estoque_total_precatorios,
+      estoque_rpvs: estoque_total_rpvs,
+      gap_dotacao_vs_pago: gapDotVsPago,
+      cobertura_pct: coberturaPct,
+      fonte_dotacao: cruz?.fonte_dotacao ?? "Indisponivel",
+      fonte_execucao: cruz?.fonte_execucao ?? "Indisponivel",
+      fonte_estoque: fonteEstoque,
+      status,
+    };
+  });
+
+  let dotTotal: number | null = null;
+  let pagoTotal: number | null = null;
+  let empTotal: number | null = null;
+
+  for (const item of por_acao) {
+    if (item.dotacao_atual !== null) dotTotal = (dotTotal ?? 0) + item.dotacao_atual;
+    if (item.total_pago !== null) pagoTotal = (pagoTotal ?? 0) + item.total_pago;
+    if (item.total_empenhado !== null) empTotal = (empTotal ?? 0) + item.total_empenhado;
+  }
+
+  let gapTotal: number | null = null;
+  if (dotTotal !== null && pagoTotal !== null) {
+    gapTotal = dotTotal - pagoTotal;
+  }
+
+  let coberturaTotal: number | null = null;
+  if (dotTotal !== null && dotTotal > 0 && pagoTotal !== null) {
+    coberturaTotal = (pagoTotal / dotTotal) * 100;
+  } else if (empTotal !== null && empTotal > 0 && pagoTotal !== null) {
+    coberturaTotal = (pagoTotal / empTotal) * 100;
+  }
+
+  const allNAO = por_acao.every((a) => a.status === "NAO_LOCALIZADO");
+  const allOK = por_acao.every((a) => a.status === "OK");
+
+  return {
+    por_acao,
+    totais: {
+      dotacao_total: dotTotal,
+      pago_total: pagoTotal,
+      empenhado_total: empTotal,
+      estoque_total_processos,
+      estoque_total_precatorios,
+      estoque_total_rpvs,
+      gap_dotacao_vs_pago: gapTotal,
+      cobertura_pct: coberturaTotal,
+    },
+    status_geral: allNAO ? "NAO_LOCALIZADO" : allOK ? "OK" : "PARCIAL",
+  };
+}
+
+================================================================================
+FILE: server/services/evidence_pack.ts
+================================================================================
+import * as fs from "fs";
+import * as path from "path";
+import * as crypto from "crypto";
+
+export function computeSHA256(data: string | Buffer): string {
+  return crypto.createHash("sha256").update(data).digest("hex");
+}
+
+export class EvidencePack {
+  private basePath: string;
+  private processId: string;
+  private logs: string[] = [];
+
+  constructor(processId: string) {
+    this.processId = processId;
+    this.basePath = path.resolve("./Saida/evidence", processId);
+    this.ensureDir(this.basePath);
+    this.ensureDir(path.join(this.basePath, "raw"));
+  }
+
+  private ensureDir(dirPath: string) {
+    if (!fs.existsSync(dirPath)) {
+      fs.mkdirSync(dirPath, { recursive: true });
+    }
+  }
+
+  log(message: string) {
+    const ts = new Date().toISOString();
+    const line = `${ts} ${message}`;
+    this.logs.push(line);
+    console.log(`[A2] ${message}`);
+  }
+
+  saveRequest(data: any) {
+    const filePath = path.join(this.basePath, "request.json");
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
+    this.log(`saved request.json`);
+  }
+
+  saveResponse(data: any): string {
+    const filePath = path.join(this.basePath, "response.json");
+    const content = JSON.stringify(data, null, 2);
+    fs.writeFileSync(filePath, content, "utf-8");
+    const hash = computeSHA256(content);
+    this.log(`saved response.json sha256=${hash}`);
+    return hash;
+  }
+
+  saveRawPayload(filename: string, data: string | Buffer): {
+    path: string;
+    sha256: string;
+  } {
+    const filePath = path.join(this.basePath, "raw", filename);
+    fs.writeFileSync(filePath, data);
+    const sha256 = computeSHA256(data);
+    this.log(`saved raw/${filename} bytes=${typeof data === 'string' ? data.length : data.length} sha256=${sha256}`);
+    return { path: `raw/${filename}`, sha256 };
+  }
+
+  saveHashes(hashes: Record<string, string>) {
+    const filePath = path.join(this.basePath, "hashes.json");
+    fs.writeFileSync(filePath, JSON.stringify(hashes, null, 2), "utf-8");
+    this.log(`saved hashes.json`);
+  }
+
+  saveLog() {
+    const filePath = path.join(this.basePath, "run.log");
+    fs.writeFileSync(filePath, this.logs.join("\n") + "\n", "utf-8");
+  }
+
+  getBasePath(): string {
+    return this.basePath;
+  }
+
+  verifyFile(relativePath: string, expectedHash: string): boolean {
+    const fullPath = path.join(this.basePath, relativePath);
+    if (!fs.existsSync(fullPath)) return false;
+    const content = fs.readFileSync(fullPath);
+    const actualHash = computeSHA256(content);
+    return actualHash === expectedHash;
+  }
+}
+
+================================================================================
+FILE: server/services/sp_auto_import.ts
+================================================================================
+import { EvidencePack, computeSHA256 } from "./evidence_pack";
+
+const BASE_URL = "https://dworcamento.fazenda.sp.gov.br/DadosXML";
+
+export interface SpAutoImportRow {
+  ano: number;
+  cod_orgao: string;
+  desc_orgao: string;
+  tipo_adm: string;
+  cod_projeto: string;
+  desc_projeto: string;
+  grupo: string;
+  dotacao_inicial: number;
+  proposta_orcamento: number;
+  valor_liquidado?: number;
+  is_precatorio: boolean;
+  raw: Record<string, string>;
+}
+
+export interface SpAutoImportResult {
+  ok: boolean;
+  ano: number;
+  tipo: "execucao" | "dotacao";
+  total_linhas: number;
+  precatorios_encontrados: number;
+  todos: SpAutoImportRow[];
+  precatorios: SpAutoImportRow[];
+  fonte_url: string;
+  evidence: {
+    schema_version: string;
+    generated_at_iso_utc: string;
+    process_id_uuid: string;
+    bundle_sha256: string;
+    csv_sha256: string;
+  };
+  note?: string;
+}
+
+function safeNumberBR(v: any): number {
+  if (v === null || v === undefined) return 0;
+  const s = String(v).trim().replace(/"/g, "");
+  if (!s) return 0;
+  const norm = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(norm);
+  return Number.isFinite(n) ? n : 0;
+}
+
+const PRECATORIO_KEYWORDS = [
+  "precatório",
+  "precatorio",
+  "precatórios",
+  "precatorios",
+  "sentença judicial",
+  "sentenca judicial",
+  "sentenças judiciais",
+  "sentencas judiciais",
+  "rpv",
+  "requisição de pequeno valor",
+  "requisicao de pequeno valor",
+  "depósitos judiciais",
+  "depositos judiciais",
+];
+
+function isPrecatorio(descProjeto: string): boolean {
+  const lower = descProjeto.toLowerCase();
+  return PRECATORIO_KEYWORDS.some((kw) => lower.includes(kw));
+}
+
+function parseFazendaCsv(csvText: string): Record<string, string>[] {
+  const lines = csvText.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return [];
+
+  const headerLine = lines[0];
+  const headers: string[] = [];
+  const hMatch = headerLine.match(/"[^"]*"|[^,]+/g) ?? [];
+  for (const h of hMatch) {
+    headers.push(h.replace(/^"|"$/g, "").trim());
+  }
+
+  const out: Record<string, string>[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals: string[] = [];
+    const vMatch = lines[i].match(/"[^"]*"|[^,]+/g) ?? [];
+    for (const v of vMatch) {
+      vals.push(v.replace(/^"|"$/g, "").trim());
+    }
+    const row: Record<string, string> = {};
+    for (let j = 0; j < headers.length; j++) {
+      row[headers[j]] = (vals[j] ?? "").trim();
+    }
+    out.push(row);
+  }
+  return out;
+}
+
+function mapRow(r: Record<string, string>, ano: number, hasLiquidado: boolean): SpAutoImportRow {
+  const descProjeto =
+    r["Descrição Projeto / Atividade Elaboração"] ||
+    r["Descrição Projeto / Atividade"] ||
+    "";
+
+  return {
+    ano,
+    cod_orgao: r["Código Órgão"] || r["Código Órgão SEP"] || "",
+    desc_orgao: r["Descrição Órgão"] || r["Descrição Órgão SEP"] || "",
+    tipo_adm: r["Nome Tipo Administração"] || "",
+    cod_projeto: r["Código Projeto / Atividade"] || "",
+    desc_projeto: descProjeto,
+    grupo: r["Descrição Grupo"] || "",
+    dotacao_inicial: safeNumberBR(r["Valor Dotação Inicial-SEFAZ"]),
+    proposta_orcamento: safeNumberBR(r["Valor Proposta Orçamento-SEFAZ"]),
+    valor_liquidado: hasLiquidado
+      ? safeNumberBR(r["Valor Liquidado-SEFAZ"])
+      : undefined,
+    is_precatorio: isPrecatorio(descProjeto),
+    raw: r,
+  };
+}
+
+export async function importarExecucaoAutomatica(
+  ano: number
+): Promise<SpAutoImportResult> {
+  const url = `${BASE_URL}/${ano}_INVESTIMENTOS_EXECUCAO_ORCAMENTO.csv`;
+  const processId = crypto.randomUUID();
+  const pack = new EvidencePack(processId);
+  pack.saveRequest({ ente: "SP", kind: "auto_execucao", ano, url });
+  pack.log(`[SP-AUTO] Baixando execucao orcamentaria: ${url}`);
+
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        "User-Agent": "AuraLOA/1.0 (pesquisa precatorios SP)",
+        Accept: "text/csv, */*",
+      },
+    });
+
+    if (!resp.ok) {
+      pack.log(`[SP-AUTO] HTTP ${resp.status} ao baixar ${url}`);
+      pack.saveLog();
+      return {
+        ok: false,
+        ano,
+        tipo: "execucao",
+        total_linhas: 0,
+        precatorios_encontrados: 0,
+        todos: [],
+        precatorios: [],
+        fonte_url: url,
+        evidence: {
+          schema_version: "evidence_pack_v1",
+          generated_at_iso_utc: new Date().toISOString(),
+          process_id_uuid: processId,
+          bundle_sha256: "",
+          csv_sha256: "",
+        },
+        note: `HTTP ${resp.status}: arquivo nao disponivel para o ano ${ano}`,
+      };
+    }
+
+    const csvText = await resp.text();
+    const csvHash = computeSHA256(csvText);
+    pack.saveRawPayload(`sp_execucao_${ano}.csv`, Buffer.from(csvText, "utf-8"));
+    pack.log(`[SP-AUTO] CSV recebido: ${csvText.length} bytes, SHA256=${csvHash.slice(0, 16)}...`);
+
+    const rawRows = parseFazendaCsv(csvText);
+    const allRows = rawRows.map((r) => mapRow(r, ano, true));
+    const precatorios = allRows.filter((r) => r.is_precatorio);
+
+    const outputHash = computeSHA256(JSON.stringify({ ano, total: allRows.length, prec: precatorios.length }));
+    pack.saveHashes({ output_sha256: outputHash, csv_sha256: csvHash });
+    pack.log(`[SP-AUTO] Execucao ${ano}: ${allRows.length} linhas, ${precatorios.length} precatorios`);
+    pack.saveLog();
+
+    return {
+      ok: true,
+      ano,
+      tipo: "execucao",
+      total_linhas: allRows.length,
+      precatorios_encontrados: precatorios.length,
+      todos: allRows,
+      precatorios,
+      fonte_url: url,
+      evidence: {
+        schema_version: "evidence_pack_v1",
+        generated_at_iso_utc: new Date().toISOString(),
+        process_id_uuid: processId,
+        bundle_sha256: outputHash,
+        csv_sha256: csvHash,
+      },
+    };
+  } catch (e: any) {
+    pack.log(`[SP-AUTO] Erro: ${e?.message}`);
+    pack.saveLog();
+    return {
+      ok: false,
+      ano,
+      tipo: "execucao",
+      total_linhas: 0,
+      precatorios_encontrados: 0,
+      todos: [],
+      precatorios: [],
+      fonte_url: url,
+      evidence: {
+        schema_version: "evidence_pack_v1",
+        generated_at_iso_utc: new Date().toISOString(),
+        process_id_uuid: processId,
+        bundle_sha256: "",
+        csv_sha256: "",
+      },
+      note: `Erro ao baixar: ${e?.message}`,
+    };
+  }
+}
+
+export async function importarDotacaoAutomatica(
+  ano: number
+): Promise<SpAutoImportResult> {
+  const url = `${BASE_URL}/${ano}_INVESTIMENTO_DOTACAO_INICIAL.csv`;
+  const processId = crypto.randomUUID();
+  const pack = new EvidencePack(processId);
+  pack.saveRequest({ ente: "SP", kind: "auto_dotacao", ano, url });
+  pack.log(`[SP-AUTO] Baixando dotacao inicial: ${url}`);
+
+  try {
+    const resp = await fetch(url, {
+      headers: {
+        "User-Agent": "AuraLOA/1.0 (pesquisa precatorios SP)",
+        Accept: "text/csv, */*",
+      },
+    });
+
+    if (!resp.ok) {
+      pack.log(`[SP-AUTO] HTTP ${resp.status} ao baixar ${url}`);
+      pack.saveLog();
+      return {
+        ok: false,
+        ano,
+        tipo: "dotacao",
+        total_linhas: 0,
+        precatorios_encontrados: 0,
+        todos: [],
+        precatorios: [],
+        fonte_url: url,
+        evidence: {
+          schema_version: "evidence_pack_v1",
+          generated_at_iso_utc: new Date().toISOString(),
+          process_id_uuid: processId,
+          bundle_sha256: "",
+          csv_sha256: "",
+        },
+        note: `HTTP ${resp.status}: arquivo nao disponivel para o ano ${ano}`,
+      };
+    }
+
+    const csvText = await resp.text();
+    const csvHash = computeSHA256(csvText);
+    pack.saveRawPayload(`sp_dotacao_${ano}.csv`, Buffer.from(csvText, "utf-8"));
+    pack.log(`[SP-AUTO] CSV recebido: ${csvText.length} bytes, SHA256=${csvHash.slice(0, 16)}...`);
+
+    const rawRows = parseFazendaCsv(csvText);
+    const allRows = rawRows.map((r) => mapRow(r, ano, false));
+    const precatorios = allRows.filter((r) => r.is_precatorio);
+
+    const outputHash = computeSHA256(JSON.stringify({ ano, total: allRows.length, prec: precatorios.length }));
+    pack.saveHashes({ output_sha256: outputHash, csv_sha256: csvHash });
+    pack.log(`[SP-AUTO] Dotacao ${ano}: ${allRows.length} linhas, ${precatorios.length} precatorios`);
+    pack.saveLog();
+
+    return {
+      ok: true,
+      ano,
+      tipo: "dotacao",
+      total_linhas: allRows.length,
+      precatorios_encontrados: precatorios.length,
+      todos: allRows,
+      precatorios,
+      fonte_url: url,
+      evidence: {
+        schema_version: "evidence_pack_v1",
+        generated_at_iso_utc: new Date().toISOString(),
+        process_id_uuid: processId,
+        bundle_sha256: outputHash,
+        csv_sha256: csvHash,
+      },
+    };
+  } catch (e: any) {
+    pack.log(`[SP-AUTO] Erro: ${e?.message}`);
+    pack.saveLog();
+    return {
+      ok: false,
+      ano,
+      tipo: "dotacao",
+      total_linhas: 0,
+      precatorios_encontrados: 0,
+      todos: [],
+      precatorios: [],
+      fonte_url: url,
+      evidence: {
+        schema_version: "evidence_pack_v1",
+        generated_at_iso_utc: new Date().toISOString(),
+        process_id_uuid: processId,
+        bundle_sha256: "",
+        csv_sha256: "",
+      },
+      note: `Erro ao baixar: ${e?.message}`,
+    };
+  }
+}
+
+export function getAnosDisponiveis(): number[] {
+  const currentYear = new Date().getFullYear();
+  const anos: number[] = [];
+  for (let y = 2011; y <= currentYear + 1; y++) {
+    anos.push(y);
+  }
+  return anos;
+}
+
+================================================================================
+FILE: server/services/cron_download.ts
+================================================================================
+import { randomUUID } from "crypto";
+import { buildDespesasZipUrl, downloadZipToEvidencePack } from "./transparencia_download";
+import { EvidencePack } from "./evidence_pack";
+
+export interface BatchDownloadResult {
+  mes: number;
+  url: string;
+  ok: boolean;
+  status: number;
+  sha256: string;
+  bytes: number;
+  filePath: string;
+  captured_at_iso: string;
+}
+
+export async function downloadAllMonths(ano: number): Promise<{
+  processId: string;
+  results: BatchDownloadResult[];
+}> {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+  evidencePack.log(`batch download start year=${ano}`);
+
+  const results: BatchDownloadResult[] = [];
+
+  for (let mes = 1; mes <= 12; mes++) {
+    const url = buildDespesasZipUrl(ano, mes);
+    evidencePack.log(`downloading mes=${mes} url=${url}`);
+    try {
+      const dl = await downloadZipToEvidencePack({ processId, url });
+      evidencePack.log(`mes=${mes} status=${dl.status} bytes=${dl.bytes} sha256=${dl.sha256}`);
+      results.push({
+        mes,
+        url: dl.url,
+        ok: dl.ok,
+        status: dl.status,
+        sha256: dl.sha256,
+        bytes: dl.bytes,
+        filePath: dl.filePath,
+        captured_at_iso: dl.captured_at_iso,
+      });
+    } catch (err: any) {
+      evidencePack.log(`mes=${mes} error: ${err.message}`);
+      results.push({
+        mes,
+        url,
+        ok: false,
+        status: 0,
+        sha256: "",
+        bytes: 0,
+        filePath: "",
+        captured_at_iso: new Date().toISOString(),
+      });
+    }
+  }
+
+  const summary = results.filter(r => r.ok).length;
+  evidencePack.log(`batch download end: ${summary}/12 successful`);
+  evidencePack.saveLog();
+
+  return { processId, results };
+}
+
+let cronInterval: ReturnType<typeof setInterval> | null = null;
+let lastCronRun: string | null = null;
+let cronEnabled = false;
+
+export function startMonthlyCron(ano?: number) {
+  if (cronInterval) {
+    clearInterval(cronInterval);
+  }
+
+  cronEnabled = true;
+  console.log("[CRON] Monthly ZIP download scheduler started");
+
+  cronInterval = setInterval(() => {
+    const now = new Date();
+    const day = now.getDate();
+    const hour = now.getHours();
+
+    if (day === 1 && hour === 3) {
+      const targetYear = ano ?? now.getFullYear();
+      const currentRunKey = `${targetYear}-${now.getMonth() + 1}`;
+
+      if (lastCronRun === currentRunKey) return;
+      lastCronRun = currentRunKey;
+
+      console.log(`[CRON] Triggering batch download for year=${targetYear}`);
+      downloadAllMonths(targetYear)
+        .then(result => {
+          const ok = result.results.filter(r => r.ok).length;
+          console.log(`[CRON] Batch download complete: ${ok}/12 ZIPs downloaded, processId=${result.processId}`);
+        })
+        .catch(err => {
+          console.error(`[CRON] Batch download error: ${err.message}`);
+        });
+    }
+  }, 60 * 60 * 1000);
+}
+
+export function stopMonthlyCron() {
+  if (cronInterval) {
+    clearInterval(cronInterval);
+    cronInterval = null;
+  }
+  cronEnabled = false;
+  console.log("[CRON] Monthly ZIP download scheduler stopped");
+}
+
+export function getCronStatus() {
+  return {
+    enabled: cronEnabled,
+    lastRun: lastCronRun,
+  };
+}
+
+================================================================================
+FILE: server/catalog/acoes_precatorios_uniao.ts
+================================================================================
+import type { AcaoPrecatorio } from "../../shared/loa_types";
+
+export const ACOES_PRECATORIOS_UNIAO: AcaoPrecatorio[] = [
+  {
+    codigo_acao: "0005",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios)",
+    planos_orcamentarios: ["0001", "0002", "0003", "0004"],
+  },
+  {
+    codigo_acao: "0EC7",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios Relativos a Complementacao da Uniao ao FUNDEF)",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "0EC8",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios Parcelados ou Objetos de Acordos)",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "0625",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado de Pequeno Valor (RPV)",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "00WU",
+    descricao:
+      "Sentencas Judiciais Transitadas em Julgado (Precatorios) - Excedentes ao Sublimite",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "00G5",
+    descricao:
+      "Contribuicao da Uniao para Custeio do Regime de Previdencia Decorrente do Pagamento de Precatorios e RPV",
+    planos_orcamentarios: [],
+  },
+  {
+    codigo_acao: "0022",
+    descricao:
+      "Sentencas Judiciais Devidas por Empresas Estatais",
+    planos_orcamentarios: [],
+  },
+];
+
+export function getAcaoByCode(code: string): AcaoPrecatorio | undefined {
+  return ACOES_PRECATORIOS_UNIAO.find((a) => a.codigo_acao === code);
+}
+
+export function getAllCodigos(): string[] {
+  return ACOES_PRECATORIOS_UNIAO.map((a) => a.codigo_acao);
+}
+
+================================================================================
+FILE: server/routes/loa_estoque.ts
+================================================================================
+import { Router, type Request, type Response } from "express";
+import { randomUUID } from "crypto";
+import {
+  estoqueRequestSchema,
+  gapRequestSchema,
+  SCHEMA_VERSION,
+} from "../../shared/loa_types";
+import type {
+  EstoqueResult,
+  GapResult,
+  CruzamentoAcaoItem,
+  SourceInfo,
+  PrecatorioPendenteResult,
+} from "../../shared/loa_types";
+import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
+import { fetchEstoque } from "../services/estoque_tribunais";
+import { computeGapAnalysis } from "../services/gap_analysis";
+import { fetchExecucaoFromTransparencia } from "../services/transparencia_execucao";
+import { fetchDotacaoFromSIOP } from "../services/siop_dotacao";
+import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
+
+const router = Router();
+
+router.post("/api/loa/uniao/estoque", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Input invalido",
+        details: parsed.error.issues,
+      });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    evidencePack.log(`start estoque process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 10000,
+      evidencePack,
+    });
+
+    const tribunaisConsultados = estoqueResult.por_tribunal.map((t) => t.tribunal_alias);
+    const allErro = estoqueResult.por_tribunal.every((t) => t.status === "ERRO");
+    const allOk = estoqueResult.por_tribunal.every((t) => t.status === "OK");
+    const statusGeral = allErro ? "NAO_LOCALIZADO" as const : allOk ? "OK" as const : "PARCIAL" as const;
+
+    const responseObj: EstoqueResult = {
+      schema_version: SCHEMA_VERSION,
+      process_id_uuid: processId,
+      ano_exercicio,
+      generated_at_iso: new Date().toISOString(),
+      status_geral: statusGeral,
+      providers_used: estoqueResult.providers_used,
+      tribunais_consultados: tribunaisConsultados,
+      summary: {
+        total_processos: estoqueResult.total_processos,
+        total_precatorios: estoqueResult.total_precatorios,
+        total_rpvs: estoqueResult.total_rpvs,
+        por_tribunal: estoqueResult.por_tribunal,
+      },
+      processos: estoqueResult.processos,
+      sources: estoqueResult.sources,
+      evidencias_count: estoqueResult.evidences.length,
+      hashes: {
+        output_sha256: "PLACEHOLDER",
+      },
+      evidence_pack_path: evidencePack.getBasePath(),
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
+    };
+
+    const preHash = JSON.stringify(responseObj, null, 2);
+    responseObj.hashes.output_sha256 = computeSHA256(preHash);
+
+    evidencePack.saveResponse(responseObj);
+
+    const allHashes: Record<string, string> = {
+      output: responseObj.hashes.output_sha256,
+    };
+    for (const ev of estoqueResult.evidences) {
+      if (ev.raw_payload_sha256 && ev.raw_payload_path) {
+        allHashes[ev.raw_payload_path] = ev.raw_payload_sha256;
+      }
+    }
+    evidencePack.saveHashes(allHashes);
+
+    evidencePack.log(`end estoque status=${statusGeral} total=${estoqueResult.total_processos}`);
+    evidencePack.saveLog();
+
+    return res.json(responseObj);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({
+      error: "Erro interno no processamento de estoque",
+      message: error.message,
+      process_id_uuid: processId,
+    });
+  }
+});
+
+router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = gapRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Input invalido",
+        details: parsed.error.issues,
+      });
+    }
+
+    const { ano_exercicio, tribunais } = parsed.data;
+    evidencePack.log(`start gap-analysis process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const [execucaoResults, dotacaoResults, estoqueResult] = await Promise.all([
+      fetchExecucaoFromTransparencia(ano_exercicio, evidencePack),
+      fetchDotacaoFromSIOP(ano_exercicio, evidencePack),
+      fetchEstoque({
+        ano_exercicio,
+        tribunais,
+        max_por_tribunal: 10000,
+        evidencePack,
+      }),
+    ]);
+
+    const cruzamento: CruzamentoAcaoItem[] = ACOES_PRECATORIOS_UNIAO.map((acao) => {
+      const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
+      const dot = dotacaoResults.find((d) => d.codigo_acao === acao.codigo_acao);
+
+      const dotAtual = dot?.dotacao_atual ?? null;
+      const dotInicial = dot?.dotacao_inicial ?? null;
+      const empApi = exec?.empenhado ?? null;
+      const liqApi = exec?.liquidado ?? null;
+      const pagApi = exec?.pago ?? null;
+
+      const fonteDot = dotAtual !== null ? "SIOP SPARQL" : "Indisponivel";
+      const fonteExec = empApi !== null || pagApi !== null ? "API REST Portal Transparencia" : "Indisponivel";
+
+      let pctExec: number | null = null;
+      if (dotAtual && dotAtual > 0 && pagApi !== null) {
+        pctExec = (pagApi / dotAtual) * 100;
+      } else if (empApi && empApi > 0 && pagApi !== null) {
+        pctExec = (pagApi / empApi) * 100;
+      }
+
+      const hasDot = dotAtual !== null;
+      const hasExec = empApi !== null || pagApi !== null;
+      let status: "OK" | "PARCIAL" | "NAO_LOCALIZADO" = "OK";
+      if (!hasDot && !hasExec) status = "NAO_LOCALIZADO";
+      else if (!hasDot || !hasExec) status = "PARCIAL";
+
+      return {
+        codigo_acao: acao.codigo_acao,
+        descricao_acao: acao.descricao,
+        dotacao_inicial: dotInicial,
+        dotacao_atual: dotAtual,
+        empenhado_api: empApi,
+        liquidado_api: liqApi,
+        pago_api: pagApi,
+        empenhado_zip: null,
+        liquidado_zip: null,
+        pago_zip: null,
+        empenhado_final: empApi,
+        liquidado_final: liqApi,
+        pago_final: pagApi,
+        percentual_execucao: pctExec,
+        fonte_dotacao: fonteDot,
+        fonte_execucao: fonteExec,
+        status,
+        qtd_empenhos_zip: 0,
+      };
+    });
+
+    const gapResult = computeGapAnalysis({
+      cruzamento,
+      estoque_por_tribunal: estoqueResult.por_tribunal,
+      estoque_total_processos: estoqueResult.total_processos,
+      estoque_total_precatorios: estoqueResult.total_precatorios,
+      estoque_total_rpvs: estoqueResult.total_rpvs,
+    });
+
+    const sources: SourceInfo[] = [
+      {
+        name: "Portal da Transparencia",
+        url: "https://portaldatransparencia.gov.br/download-de-dados/despesas",
+        type: "API",
+      },
+      {
+        name: "SIOP Acesso Publico",
+        url: "https://www1.siop.planejamento.gov.br/acessopublico/",
+        type: "SPARQL",
+      },
+      ...estoqueResult.sources,
+    ];
+
+    const responseObj: GapResult = {
+      schema_version: SCHEMA_VERSION,
+      process_id_uuid: processId,
+      ano_exercicio,
+      generated_at_iso: new Date().toISOString(),
+      status_geral: gapResult.status_geral,
+      totais: gapResult.totais,
+      por_acao: gapResult.por_acao,
+      estoque_por_tribunal: estoqueResult.por_tribunal,
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
+      sources,
+      hashes: {
+        output_sha256: "PLACEHOLDER",
+      },
+      evidence_pack_path: evidencePack.getBasePath(),
+    };
+
+    const preHash = JSON.stringify(responseObj, null, 2);
+    responseObj.hashes.output_sha256 = computeSHA256(preHash);
+
+    evidencePack.saveResponse(responseObj);
+    evidencePack.log(`end gap-analysis status=${gapResult.status_geral}`);
+    evidencePack.saveLog();
+
+    return res.json(responseObj);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({
+      error: "Erro interno na gap analysis",
+      message: error.message,
+      process_id_uuid: processId,
+    });
+  }
+});
+
+router.post("/api/loa/uniao/precatorios-pendentes", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({
+        error: "Input invalido",
+        details: parsed.error.issues,
+      });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    evidencePack.log(`start precatorios-pendentes process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 2000,
+      evidencePack,
+    });
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+
+    const precPendentes = pendentes.filter((p) => p.classe_codigo === 1265);
+    const rpvPendentes = pendentes.filter((p) => p.classe_codigo === 1266);
+
+    const porTribunalPendentes = estoqueResult.por_tribunal.map((t) => {
+      const tribPendentes = pendentes.filter((p) => p.tribunal_alias === t.tribunal_alias);
+      return {
+        ...t,
+        total_processos: tribPendentes.length,
+        precatorios: tribPendentes.filter((p) => p.classe_codigo === 1265).length,
+        rpvs: tribPendentes.filter((p) => p.classe_codigo === 1266).length,
+        observacoes: `${tribPendentes.length} pendentes de ${t.total_processos} total`,
+      };
+    });
+
+    const responseObj: PrecatorioPendenteResult = {
+      schema_version: SCHEMA_VERSION,
+      process_id_uuid: processId,
+      ano_exercicio,
+      generated_at_iso: new Date().toISOString(),
+      status_geral: pendentes.length > 0 ? "OK" : "NAO_LOCALIZADO",
+      total_pendentes: pendentes.length,
+      total_precatorios_pendentes: precPendentes.length,
+      total_rpvs_pendentes: rpvPendentes.length,
+      por_tribunal: porTribunalPendentes,
+      processos: pendentes,
+      sources: estoqueResult.sources,
+      evidencias_count: estoqueResult.evidences.length,
+      hashes: { output_sha256: "PLACEHOLDER" },
+      evidence_pack_path: evidencePack.getBasePath(),
+      ultima_atualizacao_iso: new Date().toISOString(),
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
+    };
+
+    const preHash = JSON.stringify(responseObj, null, 2);
+    responseObj.hashes.output_sha256 = computeSHA256(preHash);
+
+    evidencePack.saveResponse(responseObj);
+
+    const allHashes: Record<string, string> = {
+      output: responseObj.hashes.output_sha256,
+    };
+    for (const ev of estoqueResult.evidences) {
+      if (ev.raw_payload_sha256 && ev.raw_payload_path) {
+        allHashes[ev.raw_payload_path] = ev.raw_payload_sha256;
+      }
+    }
+    evidencePack.saveHashes(allHashes);
+
+    evidencePack.log(`end precatorios-pendentes total_pendentes=${pendentes.length} prec=${precPendentes.length} rpv=${rpvPendentes.length}`);
+    evidencePack.saveLog();
+
+    return res.json(responseObj);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({
+      error: "Erro interno ao buscar precatorios pendentes",
+      message: error.message,
+      process_id_uuid: processId,
+    });
+  }
+});
+
+router.post("/api/loa/uniao/precatorios-pendentes/csv", async (req: Request, res: Response) => {
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    const processId = randomUUID();
+    const evidencePack = new EvidencePack(processId);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 2000,
+      evidencePack,
+    });
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+
+    const BOM = "\uFEFF";
+    const sep = ";";
+    const headers = [
+      "Numero CNJ",
+      "Numero Formatado",
+      "Tribunal",
+      "Classe Codigo",
+      "Classe Nome",
+      "Situacao",
+      "Valor Causa",
+      "Fonte Valor",
+      "Data Ajuizamento",
+      "Data Ultima Atualizacao",
+      "Orgao Julgador",
+      "Assuntos",
+      "Total Movimentos",
+      "Ultima Movimentacao",
+      "Data Ultima Movimentacao",
+      "Pagamento Pendente",
+      "Tem Baixa",
+      "Tem Pagamento",
+      "URL Consulta PJe",
+      "URL Consulta eProc",
+    ];
+
+    const formatCnj = (n: string) => {
+      if (!n || n.length < 20) return n;
+      return `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
+    };
+
+    const escCsv = (v: string) => {
+      if (v.includes(sep) || v.includes('"') || v.includes("\n")) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    };
+
+    const rows = pendentes.map((p) => [
+      escCsv(p.numero_cnj),
+      escCsv(formatCnj(p.numero_cnj)),
+      escCsv(p.tribunal_alias.toUpperCase()),
+      String(p.classe_codigo),
+      escCsv(p.classe_nome),
+      escCsv(p.situacao),
+      p.valor_causa !== null ? String(p.valor_causa) : "",
+      p.valor_fonte || "",
+      p.data_ajuizamento || "",
+      p.data_ultima_atualizacao || "",
+      escCsv(p.orgao_julgador?.nome || ""),
+      escCsv(p.assuntos.map((a) => a.nome).join(", ")),
+      String(p.total_movimentos),
+      escCsv(p.ultima_movimentacao?.nome || ""),
+      p.ultima_movimentacao?.data || "",
+      p.pagamento_pendente ? "Sim" : "Nao",
+      p.tem_baixa ? "Sim" : "Nao",
+      p.tem_pagamento ? "Sim" : "Nao",
+      p.url_consulta || "",
+      p.url_consulta_eproc || "",
+    ].join(sep));
+
+    const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");
+    const filename = `precatorios_pendentes_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(csv);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erro ao gerar CSV", message: error.message });
+  }
+});
+
+router.post("/api/loa/uniao/precatorios-pendentes/json-export", async (req: Request, res: Response) => {
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    const processId = randomUUID();
+    const evidencePack = new EvidencePack(processId);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 2000,
+      evidencePack,
+    });
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+    const filename = `precatorios_pendentes_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.json`;
+
+    const exportData = {
+      exportado_em: new Date().toISOString(),
+      ano_exercicio,
+      total_pendentes: pendentes.length,
+      total_precatorios: pendentes.filter((p) => p.classe_codigo === 1265).length,
+      total_rpvs: pendentes.filter((p) => p.classe_codigo === 1266).length,
+      process_id_uuid: processId,
+      output_sha256: computeSHA256(JSON.stringify(pendentes)),
+      processos: pendentes,
+    };
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(JSON.stringify(exportData, null, 2));
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erro ao gerar JSON", message: error.message });
+  }
+});
+
+router.post("/api/loa/uniao/gap-analysis/csv", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = gapRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais } = parsed.data;
+    evidencePack.log(`start gap-analysis CSV export process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const [execucaoResults, dotacaoResults, estoqueResult] = await Promise.all([
+      fetchExecucaoFromTransparencia(ano_exercicio, evidencePack),
+      fetchDotacaoFromSIOP(ano_exercicio, evidencePack),
+      fetchEstoque({
+        ano_exercicio,
+        tribunais,
+        max_por_tribunal: 10000,
+        evidencePack,
+      }),
+    ]);
+
+    const BOM = "\uFEFF";
+    const sep = ";";
+    const fmtNum = (v: number | null) => v !== null ? v.toFixed(2) : "";
+    const fmtPct = (v: number | null) => v !== null ? v.toFixed(2) + "%" : "";
+    const escCsv = (v: string) => {
+      if (v.includes(sep) || v.includes('"') || v.includes("\n")) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    };
+
+    const lines: string[] = [];
+
+    lines.push(["=== CAMADA 1+2: DOTACAO x EXECUCAO POR ACAO ==="].join(sep));
+    lines.push(["Codigo Acao", "Descricao", "Dotacao Inicial", "Dotacao Atual", "Empenhado", "Liquidado", "Pago", "Gap (Dotacao-Pago)", "Cobertura %", "Fonte Dotacao", "Fonte Execucao", "Status"].join(sep));
+
+    let totalDotAtual = 0, totalEmp = 0, totalLiq = 0, totalPago = 0;
+
+    for (const acao of ACOES_PRECATORIOS_UNIAO) {
+      const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
+      const dot = dotacaoResults.find((d) => d.codigo_acao === acao.codigo_acao);
+
+      const dotAtual = dot?.dotacao_atual ?? null;
+      const dotInicial = dot?.dotacao_inicial ?? null;
+      const empApi = exec?.empenhado ?? null;
+      const liqApi = exec?.liquidado ?? null;
+      const pagApi = exec?.pago ?? null;
+      const fonteDot = dotAtual !== null ? "SIOP SPARQL" : "Indisponivel";
+      const fonteExec = empApi !== null || pagApi !== null ? "API REST Portal Transparencia" : "Indisponivel";
+
+      let gap: number | null = null;
+      let cobertura: number | null = null;
+      if (dotAtual !== null && pagApi !== null) {
+        gap = dotAtual - pagApi;
+        cobertura = dotAtual > 0 ? (pagApi / dotAtual) * 100 : null;
+      }
+
+      const hasDot = dotAtual !== null;
+      const hasExec = empApi !== null || pagApi !== null;
+      let status = "OK";
+      if (!hasDot && !hasExec) status = "NAO_LOCALIZADO";
+      else if (!hasDot || !hasExec) status = "PARCIAL";
+
+      if (dotAtual) totalDotAtual += dotAtual;
+      if (empApi) totalEmp += empApi;
+      if (liqApi) totalLiq += liqApi;
+      if (pagApi) totalPago += pagApi;
+
+      lines.push([
+        acao.codigo_acao,
+        escCsv(acao.descricao),
+        fmtNum(dotInicial),
+        fmtNum(dotAtual),
+        fmtNum(empApi),
+        fmtNum(liqApi),
+        fmtNum(pagApi),
+        fmtNum(gap),
+        fmtPct(cobertura),
+        fonteDot,
+        fonteExec,
+        status,
+      ].join(sep));
+    }
+
+    const totalGap = totalDotAtual > 0 ? totalDotAtual - totalPago : null;
+    const totalCobertura = totalDotAtual > 0 ? (totalPago / totalDotAtual) * 100 : (totalEmp > 0 ? (totalPago / totalEmp) * 100 : null);
+
+    lines.push(["TOTAL", "", "", fmtNum(totalDotAtual || null), fmtNum(totalEmp || null), fmtNum(totalLiq || null), fmtNum(totalPago || null), fmtNum(totalGap), fmtPct(totalCobertura), "", "", ""].join(sep));
+
+    lines.push("");
+    lines.push(["=== CAMADA 3: ESTOQUE POR TRIBUNAL (CNJ DataJud) ==="].join(sep));
+    lines.push(["Tribunal", "Alias", "Total Processos", "Total Disponivel DataJud", "Precatorios", "RPVs", "Provider", "Status", "Observacoes"].join(sep));
+
+    for (const t of estoqueResult.por_tribunal) {
+      lines.push([
+        escCsv(t.tribunal),
+        t.tribunal_alias.toUpperCase(),
+        String(t.total_processos),
+        t.total_disponivel !== null ? String(t.total_disponivel) : "",
+        String(t.precatorios),
+        String(t.rpvs),
+        t.provider,
+        t.status,
+        escCsv(t.observacoes),
+      ].join(sep));
+    }
+
+    lines.push(["TOTAL", "", String(estoqueResult.total_processos), "", String(estoqueResult.total_precatorios), String(estoqueResult.total_rpvs), "", "", ""].join(sep));
+
+    if (estoqueResult.pdf_orcamento_summaries && estoqueResult.pdf_orcamento_summaries.length > 0) {
+      lines.push("");
+      lines.push(["=== VALORES OFICIAIS (PDF Tribunal) ==="].join(sep));
+      lines.push(["Tribunal", "Ano Orcamento", "Total Precatorios PDF", "Valor Total Orcamento", "Valor Alimentar", "Valor Comum", "Total Idoso", "Total PcD", "Fonte URL", "SHA-256"].join(sep));
+      for (const pdf of estoqueResult.pdf_orcamento_summaries) {
+        lines.push([
+          escCsv(pdf.tribunal),
+          String(pdf.ano_orcamento),
+          String(pdf.total_precatorios_pdf),
+          fmtNum(pdf.valor_total_orcamento),
+          fmtNum(pdf.valor_alimentar),
+          fmtNum(pdf.valor_comum),
+          String(pdf.total_idoso),
+          String(pdf.total_deficiencia),
+          pdf.fonte_url,
+          pdf.sha256,
+        ].join(sep));
+      }
+    }
+
+    lines.push("");
+    lines.push(["=== PROCESSOS PENDENTES (Sem Baixa) ==="].join(sep));
+    lines.push(["Numero CNJ", "Tribunal", "Classe", "Situacao", "Valor Causa", "Fonte Valor", "Data Ajuizamento", "Orgao Julgador", "Ultima Movimentacao", "URL Consulta"].join(sep));
+
+    const pendentes = estoqueResult.processos.filter((p) => p.pagamento_pendente);
+    for (const p of pendentes) {
+      lines.push([
+        p.numero_cnj,
+        p.tribunal_alias.toUpperCase(),
+        escCsv(p.classe_nome),
+        p.situacao,
+        p.valor_causa !== null ? String(p.valor_causa) : "",
+        p.valor_fonte || "",
+        p.data_ajuizamento || "",
+        escCsv(p.orgao_julgador?.nome || ""),
+        escCsv(p.ultima_movimentacao?.nome || ""),
+        p.url_consulta || "",
+      ].join(sep));
+    }
+
+    lines.push("");
+    lines.push(["=== METADADOS ==="].join(sep));
+    lines.push(["Process ID", processId].join(sep));
+    lines.push(["Gerado em", new Date().toISOString()].join(sep));
+    lines.push(["Ano Exercicio", String(ano_exercicio)].join(sep));
+    lines.push(["Total Pendentes", String(pendentes.length)].join(sep));
+    lines.push(["Output SHA-256", computeSHA256(lines.join("\n"))].join(sep));
+
+    const csv = BOM + lines.join("\n");
+    const filename = `gap_analysis_completo_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(csv);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({ error: "Erro ao gerar CSV de gap analysis", message: error.message });
+  }
+});
+
+router.post("/api/loa/uniao/estoque/csv", async (req: Request, res: Response) => {
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    const processId = randomUUID();
+    const evidencePack = new EvidencePack(processId);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 10000,
+      evidencePack,
+    });
+
+    const processos = estoqueResult.processos;
+    const tribunalLabel = tribunais && tribunais.length === 1 ? tribunais[0] : "todos";
+
+    const BOM = "\uFEFF";
+    const sep = ";";
+    const headers = [
+      "Numero CNJ",
+      "Numero Formatado",
+      "Tribunal",
+      "Classe Codigo",
+      "Classe Nome",
+      "Situacao",
+      "Valor Causa",
+      "Fonte Valor",
+      "Data Ajuizamento",
+      "Data Ultima Atualizacao",
+      "Orgao Julgador",
+      "Assuntos",
+      "Total Movimentos",
+      "Ultima Movimentacao",
+      "Data Ultima Movimentacao",
+      "Pagamento Pendente",
+      "Tem Baixa",
+      "Tem Pagamento",
+      "URL Consulta",
+    ];
+
+    const formatCnj = (n: string) => {
+      if (!n || n.length < 20) return n;
+      return `${n.slice(0, 7)}-${n.slice(7, 9)}.${n.slice(9, 13)}.${n.slice(13, 14)}.${n.slice(14, 16)}.${n.slice(16, 20)}`;
+    };
+
+    const escCsv = (v: string) => {
+      if (v.includes(sep) || v.includes('"') || v.includes("\n")) {
+        return '"' + v.replace(/"/g, '""') + '"';
+      }
+      return v;
+    };
+
+    const rows = processos.map((p) => [
+      escCsv(p.numero_cnj),
+      escCsv(formatCnj(p.numero_cnj)),
+      escCsv(p.tribunal_alias.toUpperCase()),
+      String(p.classe_codigo),
+      escCsv(p.classe_nome),
+      escCsv(p.situacao),
+      p.valor_causa !== null ? String(p.valor_causa) : "",
+      p.valor_fonte || "",
+      p.data_ajuizamento || "",
+      p.data_ultima_atualizacao || "",
+      escCsv(p.orgao_julgador?.nome || ""),
+      escCsv(p.assuntos.map((a) => a.nome).join(", ")),
+      String(p.total_movimentos),
+      escCsv(p.ultima_movimentacao?.nome || ""),
+      p.ultima_movimentacao?.data || "",
+      p.pagamento_pendente ? "Sim" : "Nao",
+      p.tem_baixa ? "Sim" : "Nao",
+      p.tem_pagamento ? "Sim" : "Nao",
+      p.url_consulta || "",
+    ].join(sep));
+
+    const csv = BOM + headers.join(sep) + "\n" + rows.join("\n");
+    const filename = `estoque_${tribunalLabel}_${ano_exercicio}_${new Date().toISOString().slice(0, 10)}.csv`;
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(csv);
+  } catch (error: any) {
+    return res.status(500).json({ error: "Erro ao gerar CSV de estoque", message: error.message });
+  }
+});
+
+export default router;
+
+================================================================================
+FILE: server/routes/loa_sp.ts
+================================================================================
+import { Router, type Request, type Response } from "express";
+import crypto from "crypto";
+import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
+import {
+  consultarTjspPendentes,
+  consultarTjspPagamentos,
+  getTjspUrls,
+} from "../services/sp_tjsp";
+import {
+  importarExecucaoAutomatica,
+  importarDotacaoAutomatica,
+  getAnosDisponiveis,
+} from "../services/sp_auto_import";
+import {
+  fetchEstoqueFromDataJud,
+  TRIBUNAIS_SP,
+  CLASSE_PRECATORIO,
+  CLASSE_RPV,
+} from "../services/estoque_datajud";
+import {
+  spLoaImportSchema,
+  spDespesasImportSchema,
+  spA2RequestSchema,
+  type SpLoaRow,
+  type SpDespesaRow,
+} from "../../shared/loa_types";
+
+const router = Router();
+
+const SP_LOA: SpLoaRow[] = [];
+const SP_DESPESAS: SpDespesaRow[] = [];
+
+function safeNumberBR(v: any): number | undefined {
+  if (v === null || v === undefined) return undefined;
+  const s = String(v).trim();
+  if (!s) return undefined;
+  const norm = s.replace(/\./g, "").replace(",", ".");
+  const n = Number(norm);
+  return Number.isFinite(n) ? n : undefined;
+}
+
+function parseCsv(content: string, delimiter = ";"): Record<string, string>[] {
+  const lines = content.split(/\r?\n/).filter((l) => l.trim().length > 0);
+  if (lines.length < 2) return [];
+  const header = lines[0].split(delimiter).map((h) => h.trim());
+  const out: Record<string, string>[] = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(delimiter);
+    const row: Record<string, string> = {};
+    for (let j = 0; j < header.length; j++)
+      row[header[j]] = (cols[j] ?? "").trim();
+    out.push(row);
+  }
+  return out;
+}
+
+router.post("/api/sp/loa/import", (req: Request, res: Response) => {
+  const parsed = spLoaImportSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "ano e csvText sao obrigatorios", details: parsed.error.issues });
+  }
+
+  const { ano, csvText, delimiter } = parsed.data;
+  const processId = crypto.randomUUID();
+  const pack = new EvidencePack(processId);
+  pack.saveRequest({ ente: "SP", kind: "loa_csv", ano });
+  pack.saveRawPayload(`sp_loa_${ano}.csv`, Buffer.from(csvText, "utf-8"));
+
+  const rows = parseCsv(csvText, delimiter ?? ";");
+
+  let imported = 0;
+  for (const r of rows) {
+    const item: SpLoaRow = {
+      ente: "SP",
+      ano: Number(ano),
+      orgao: (r["ORGAO"] || r["ÓRGÃO"] || r["orgao"] || "").trim() || undefined,
+      uo: (r["UO"] || r["UNIDADE_ORCAMENTARIA"] || r["uo"] || "").trim() || undefined,
+      programa: (r["PROGRAMA"] || r["programa"] || "").trim() || undefined,
+      acao_local: (r["ACAO"] || r["AÇÃO"] || r["acao"] || r["ATIVIDADE"] || "").trim() || undefined,
+      dotacao_inicial: safeNumberBR(r["DOTACAO_INICIAL"] || r["dotacao_inicial"]),
+      dotacao_atual: safeNumberBR(r["DOTACAO_ATUAL"] || r["dotacao_atual"]),
+      raw: r,
+    };
+    if (item.acao_local || item.programa || item.uo || item.orgao) {
+      SP_LOA.push(item);
+      imported++;
+    }
+  }
+
+  const outputHash = computeSHA256(JSON.stringify({ imported, ano }));
+  pack.saveHashes({ output_sha256: outputHash });
+  pack.log(`[SP] LOA import: ${imported} linhas importadas de ${rows.length} para ano ${ano}`);
+  pack.saveLog();
+
+  return res.json({
+    ok: true,
+    imported,
+    total_rows_parsed: rows.length,
+    total_loa_stored: SP_LOA.filter((r) => r.ano === ano).length,
+    evidence: {
+      schema_version: "evidence_pack_v1",
+      generated_at_iso_utc: new Date().toISOString(),
+      process_id_uuid: processId,
+      bundle_sha256: outputHash,
+    },
+  });
+});
+
+router.post("/api/sp/despesas/import", (req: Request, res: Response) => {
+  const parsed = spDespesasImportSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "ano e csvText sao obrigatorios", details: parsed.error.issues });
+  }
+
+  const { ano, csvText, delimiter } = parsed.data;
+  const processId = crypto.randomUUID();
+  const pack = new EvidencePack(processId);
+  pack.saveRequest({ ente: "SP", kind: "despesas_csv", ano });
+  pack.saveRawPayload(`sp_despesas_${ano}.csv`, Buffer.from(csvText, "utf-8"));
+
+  const rows = parseCsv(csvText, delimiter ?? ";");
+
+  let imported = 0;
+  for (const r of rows) {
+    const item: SpDespesaRow = {
+      ente: "SP",
+      ano: Number(ano),
+      orgao: (r["ORGAO"] || r["ÓRGÃO"] || r["orgao"] || "").trim() || undefined,
+      uo: (r["UO"] || r["UNIDADE_ORCAMENTARIA"] || r["uo"] || "").trim() || undefined,
+      fase: (r["FASE"] || r["fase"] || r["ETAPA"] || "").trim() || undefined,
+      valor: safeNumberBR(r["VALOR"] || r["valor"] || r["VL_DESPESA"]),
+      favorecido: (r["FAVORECIDO"] || r["favorecido"] || "").trim() || undefined,
+      data: (r["DATA"] || r["data"] || r["DT_PAGAMENTO"] || "").trim() || undefined,
+      raw: r,
+    };
+    if (item.valor || item.orgao || item.uo) {
+      SP_DESPESAS.push(item);
+      imported++;
+    }
+  }
+
+  const outputHash = computeSHA256(JSON.stringify({ imported, ano }));
+  pack.saveHashes({ output_sha256: outputHash });
+  pack.log(`[SP] Despesas import: ${imported} linhas importadas de ${rows.length} para ano ${ano}`);
+  pack.saveLog();
+
+  return res.json({
+    ok: true,
+    imported,
+    total_rows_parsed: rows.length,
+    total_despesas_stored: SP_DESPESAS.filter((r) => r.ano === ano).length,
+    evidence: {
+      schema_version: "evidence_pack_v1",
+      generated_at_iso_utc: new Date().toISOString(),
+      process_id_uuid: processId,
+      bundle_sha256: outputHash,
+    },
+  });
+});
+
+router.get("/api/sp/tjsp/pendentes", async (req: Request, res: Response) => {
+  const entidade = String(req.query.entidade ?? "").trim();
+  if (!entidade) {
+    return res.status(400).json({ error: "entidade e obrigatoria (ex: FAZENDA DO ESTADO DE SAO PAULO)" });
+  }
+
+  const processId = crypto.randomUUID();
+  const pack = new EvidencePack(processId);
+  pack.saveRequest({ ente: "SP", kind: "tjsp_pendentes", entidade });
+
+  const { items, note } = await consultarTjspPendentes(entidade, pack);
+
+  const outputHash = computeSHA256(JSON.stringify(items));
+  pack.saveHashes({ output_sha256: outputHash });
+  pack.saveLog();
+
+  return res.json({
+    ok: true,
+    note,
+    entidade,
+    count: items.length,
+    data: items,
+    urls_consulta: getTjspUrls(),
+    evidence: {
+      schema_version: "evidence_pack_v1",
+      generated_at_iso_utc: new Date().toISOString(),
+      process_id_uuid: processId,
+      bundle_sha256: outputHash,
+    },
+  });
+});
+
+router.get("/api/sp/tjsp/pagamentos", async (req: Request, res: Response) => {
+  const entidade = String(req.query.entidade ?? "").trim();
+  if (!entidade) {
+    return res.status(400).json({ error: "entidade e obrigatoria (ex: FAZENDA DO ESTADO DE SAO PAULO)" });
+  }
+
+  const processId = crypto.randomUUID();
+  const pack = new EvidencePack(processId);
+  pack.saveRequest({ ente: "SP", kind: "tjsp_pagamentos", entidade });
+
+  const { items, note } = await consultarTjspPagamentos(entidade, pack);
+
+  const outputHash = computeSHA256(JSON.stringify(items));
+  pack.saveHashes({ output_sha256: outputHash });
+  pack.saveLog();
+
+  return res.json({
+    ok: true,
+    note,
+    entidade,
+    count: items.length,
+    data: items,
+    urls_consulta: getTjspUrls(),
+    evidence: {
+      schema_version: "evidence_pack_v1",
+      generated_at_iso_utc: new Date().toISOString(),
+      process_id_uuid: processId,
+      bundle_sha256: outputHash,
+    },
+  });
+});
+
+router.post("/api/sp/a2", (req: Request, res: Response) => {
+  const parsed = spA2RequestSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return res.status(400).json({ error: "ano e obrigatorio", details: parsed.error.issues });
+  }
+
+  const { ano, orgao, uo } = parsed.data;
+
+  const loa = SP_LOA.filter(
+    (r) =>
+      r.ano === ano &&
+      (!orgao || r.orgao === orgao) &&
+      (!uo || r.uo === uo)
+  );
+  const despesas = SP_DESPESAS.filter(
+    (r) =>
+      r.ano === ano &&
+      (!orgao || r.orgao === orgao) &&
+      (!uo || r.uo === uo)
+  );
+
+  const dotacao_atual_total = loa.reduce(
+    (acc, r) => acc + (r.dotacao_atual ?? 0),
+    0
+  );
+  const execucao_total = despesas.reduce(
+    (acc, r) => acc + (r.valor ?? 0),
+    0
+  );
+
+  return res.json({
+    ok: true,
+    ente: "SP",
+    query: { ano, orgao, uo },
+    summary: {
+      dotacao_atual_total,
+      execucao_total,
+      saldo_estimado: dotacao_atual_total - execucao_total,
+      note: "MVP: conciliacao macro por filtros. Etapa 2 adiciona chaves (programa/acao_local/fonte/elemento) + score de match.",
+    },
+    loa_count: loa.length,
+    despesas_count: despesas.length,
+    loa,
+    despesas,
+  });
+});
+
+router.post("/api/sp/auto/execucao", async (req: Request, res: Response) => {
+  const ano = Number(req.body?.ano);
+  if (!ano || ano < 2011 || ano > new Date().getFullYear() + 1) {
+    return res.status(400).json({ error: "ano invalido (2011-" + (new Date().getFullYear() + 1) + ")" });
+  }
+
+  const result = await importarExecucaoAutomatica(ano);
+
+  if (result.ok) {
+    for (const row of result.precatorios) {
+      SP_LOA.push({
+        ente: "SP",
+        ano,
+        orgao: row.desc_orgao || undefined,
+        uo: row.cod_orgao || undefined,
+        programa: row.grupo || undefined,
+        acao_local: row.desc_projeto || undefined,
+        dotacao_inicial: row.dotacao_inicial,
+        dotacao_atual: row.proposta_orcamento || row.dotacao_inicial,
+        raw: row.raw,
+      });
+    }
+
+    for (const row of result.precatorios) {
+      if (row.valor_liquidado && row.valor_liquidado > 0) {
+        SP_DESPESAS.push({
+          ente: "SP",
+          ano,
+          orgao: row.desc_orgao || undefined,
+          uo: row.cod_orgao || undefined,
+          fase: "LIQUIDADO",
+          valor: row.valor_liquidado,
+          raw: row.raw,
+        });
+      }
+    }
+  }
+
+  return res.json({
+    ok: result.ok,
+    tipo: result.tipo,
+    ano: result.ano,
+    total_linhas: result.total_linhas,
+    precatorios_encontrados: result.precatorios_encontrados,
+    precatorios: result.precatorios,
+    fonte_url: result.fonte_url,
+    evidence: result.evidence,
+    note: result.note,
+  });
+});
+
+router.post("/api/sp/auto/dotacao", async (req: Request, res: Response) => {
+  const ano = Number(req.body?.ano);
+  if (!ano || ano < 2011 || ano > new Date().getFullYear() + 1) {
+    return res.status(400).json({ error: "ano invalido (2011-" + (new Date().getFullYear() + 1) + ")" });
+  }
+
+  const result = await importarDotacaoAutomatica(ano);
+
+  if (result.ok) {
+    for (const row of result.precatorios) {
+      SP_LOA.push({
+        ente: "SP",
+        ano,
+        orgao: row.desc_orgao || undefined,
+        uo: row.cod_orgao || undefined,
+        programa: row.grupo || undefined,
+        acao_local: row.desc_projeto || undefined,
+        dotacao_inicial: row.dotacao_inicial,
+        dotacao_atual: row.proposta_orcamento || row.dotacao_inicial,
+        raw: row.raw,
+      });
+    }
+  }
+
+  return res.json({
+    ok: result.ok,
+    tipo: result.tipo,
+    ano: result.ano,
+    total_linhas: result.total_linhas,
+    precatorios_encontrados: result.precatorios_encontrados,
+    precatorios: result.precatorios,
+    fonte_url: result.fonte_url,
+    evidence: result.evidence,
+    note: result.note,
+  });
+});
+
+router.get("/api/sp/auto/anos", (_req: Request, res: Response) => {
+  return res.json({ anos: getAnosDisponiveis() });
+});
+
+router.post("/api/sp/pendentes-datajud", async (req: Request, res: Response) => {
+  const processId = crypto.randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const ano_exercicio = Number(req.body?.ano_exercicio) || new Date().getFullYear();
+    const max_por_tribunal = Number(req.body?.max_por_tribunal) || 2000;
+    evidencePack.log(`SP pendentes-datajud start process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const allProcessos: any[] = [];
+    const porTribunal: any[] = [];
+    const allEvidences: any[] = [];
+
+    const results = await Promise.allSettled(
+      TRIBUNAIS_SP.map((tribunal) =>
+        fetchEstoqueFromDataJud({
+          tribunal_alias: tribunal.alias,
+          classe_codigos: [CLASSE_PRECATORIO, CLASSE_RPV],
+          ano_exercicio,
+          max_results: max_por_tribunal,
+          evidencePack,
+        })
+      )
+    );
+
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        allProcessos.push(...result.value.processos);
+        porTribunal.push(result.value.summary);
+        allEvidences.push(...result.value.evidences);
+      }
+    }
+
+    const pendentes = allProcessos.filter((p: any) => p.pagamento_pendente);
+    const precPendentes = pendentes.filter((p: any) => p.classe_codigo === CLASSE_PRECATORIO);
+    const rpvPendentes = pendentes.filter((p: any) => p.classe_codigo === CLASSE_RPV);
+
+    const output = {
+      ente: "SP",
+      ano_exercicio,
+      process_id_uuid: processId,
+      status_geral: allProcessos.length > 0 ? "OK" : "NAO_LOCALIZADO",
+      total_processos: allProcessos.length,
+      total_pendentes: pendentes.length,
+      total_precatorios_pendentes: precPendentes.length,
+      total_rpvs_pendentes: rpvPendentes.length,
+      processos: pendentes,
+      por_tribunal: porTribunal,
+      sources: [
+        { name: "CNJ DataJud API Publica (TJSP)", url: "https://api-publica.datajud.cnj.jus.br", type: "API" },
+        { name: "TJSP eSAJ Consulta", url: "https://esaj.tjsp.jus.br/cpopg/open.do", type: "WEB" },
+      ],
+      evidencias_count: allEvidences.length,
+      hashes: { output_sha256: "" },
+      evidence_pack_path: evidencePack.getBasePath(),
+      ultima_atualizacao_iso: new Date().toISOString(),
+    };
+
+    const outputHash = computeSHA256(JSON.stringify(output));
+    output.hashes.output_sha256 = outputHash;
+
+    evidencePack.saveResponse(output);
+    evidencePack.saveHashes({ output_sha256: outputHash });
+    evidencePack.saveLog();
+
+    return res.json(output);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({ error: "Erro ao consultar pendentes SP", message: error.message });
+  }
+});
+
+router.get("/api/sp/status", (_req: Request, res: Response) => {
+  const anos_loa = Array.from(new Set(SP_LOA.map((r) => r.ano))).sort();
+  const anos_despesas = Array.from(new Set(SP_DESPESAS.map((r) => r.ano))).sort();
+
+  return res.json({
+    ente: "SP",
+    status: "ATIVO",
+    dados_importados: {
+      loa: {
+        total_registros: SP_LOA.length,
+        anos: anos_loa,
+      },
+      despesas: {
+        total_registros: SP_DESPESAS.length,
+        anos: anos_despesas,
+      },
+    },
+    fontes: {
+      loa: "Sefaz/SP - LOA (CSV manual)",
+      despesas: "Portal da Transparencia SP (CSV manual)",
+      estoque: "TJSP - DEPRE (scraping best-effort)",
+    },
+    urls_oficiais: {
+      loa_sefaz: "https://portal.fazenda.sp.gov.br/servicos/orcamento/Paginas/loa.aspx",
+      transparencia_sp: "https://www.transparencia.sp.gov.br/",
+      tjsp_pendentes: getTjspUrls().pendentes,
+      tjsp_pagamentos: getTjspUrls().pagamentos,
+      tjsp_pesquisa: getTjspUrls().pesquisa,
+    },
+  });
+});
+
+export default router;
+
+================================================================================
+FILE: shared/loa_types.ts
+================================================================================
+import { z } from "zod";
+
+export const SCHEMA_VERSION = "br.gov.orcamento.precatorios.uniao.a2.v1";
+
+export const a2RequestSchema = z.object({
+  ano_exercicio: z.number().int().min(2000).max(2100),
+  mes: z.number().int().min(1).max(12).optional(),
+});
+
+export type A2Request = z.infer<typeof a2RequestSchema>;
+
+export interface EvidenciaItem {
+  source_name: string;
+  source_url: string;
+  captured_at_iso: string;
+  raw_payload_sha256: string | null;
+  raw_payload_path: string | null;
+}
+
+export interface AcaoPrecatorio {
+  codigo_acao: string;
+  descricao: string;
+  planos_orcamentarios?: string[];
+}
+
+export interface DotacaoItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  dotacao_inicial: number | null;
+  dotacao_atual: number | null;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  observacoes: string;
+  evidencias: EvidenciaItem[];
+}
+
+export interface ExecucaoItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  empenhado: number | null;
+  liquidado: number | null;
+  pago: number | null;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  observacoes: string;
+  evidencias: EvidenciaItem[];
+}
+
+export interface KPIItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  dotacao_atual: number | null;
+  empenhado: number | null;
+  liquidado: number | null;
+  pago: number | null;
+  percentual_execucao: number | null;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+}
+
+export interface SourceInfo {
+  name: string;
+  url: string;
+  type: "API" | "CSV" | "SPARQL" | "WEB";
+}
+
+export interface ZipDownloadInfo {
+  url: string;
+  status: number;
+  ok: boolean;
+  sha256: string;
+  bytes: number;
+  filePath: string;
+  contentType: string | null;
+  captured_at_iso: string;
+}
+
+export interface ZipExecucaoRow {
+  ano: number | null;
+  codigo_acao: string;
+  codigo_po: string | null;
+  pago: number;
+  moeda: "BRL";
+}
+
+export interface ZipEmpenhoDetalhe {
+  codigo_empenho: string;
+  data_emissao: string;
+  codigo_orgao_superior: string;
+  orgao_superior: string;
+  codigo_orgao: string;
+  orgao: string;
+  codigo_ug: string;
+  unidade_gestora: string;
+  codigo_favorecido: string;
+  favorecido: string;
+  codigo_acao: string;
+  acao: string;
+  codigo_po: string | null;
+  plano_orcamentario: string | null;
+  codigo_programa: string;
+  programa: string;
+  codigo_subfuncao: string;
+  subfuncao: string;
+  codigo_subtitulo: string;
+  subtitulo: string;
+  processo: string;
+  valor_empenho: number;
+  valor_pago: number;
+  valor_liquidado: number;
+}
+
+export interface ZipExecucaoByAcao {
+  codigo_acao: string;
+  descricao_acao: string;
+  total_empenhado: number;
+  total_liquidado: number;
+  total_pago: number;
+  qtd_empenhos: number;
+  planos_orcamentarios: { codigo_po: string; pago: number; empenhado: number; liquidado: number }[];
+}
+
+export interface ZipExecucaoStats {
+  empenhos_com_pagamento: number;
+  chaves_acao_po: number;
+  total_empenhos_zip: number;
+  total_liquidacoes_zip: number;
+}
+
+export interface ZipExecucaoResult {
+  pago_por_acao_po: ZipExecucaoRow[];
+  empenhos_detalhe: ZipEmpenhoDetalhe[];
+  execucao_por_acao: ZipExecucaoByAcao[];
+  stats: ZipExecucaoStats;
+}
+
+export interface CruzamentoAcaoItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  dotacao_inicial: number | null;
+  dotacao_atual: number | null;
+  empenhado_api: number | null;
+  liquidado_api: number | null;
+  pago_api: number | null;
+  empenhado_zip: number | null;
+  liquidado_zip: number | null;
+  pago_zip: number | null;
+  empenhado_final: number | null;
+  liquidado_final: number | null;
+  pago_final: number | null;
+  percentual_execucao: number | null;
+  fonte_dotacao: string;
+  fonte_execucao: string;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  qtd_empenhos_zip: number;
+}
+
+export interface A2Response {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  mes?: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  sources: SourceInfo[];
+  data: {
+    dotacao: DotacaoItem[];
+    execucao: ExecucaoItem[];
+    kpis: KPIItem[];
+    execucao_zip?: ZipExecucaoResult;
+    cruzamento?: CruzamentoAcaoItem[];
+  };
+  zip_download?: ZipDownloadInfo;
+  evidencias_count: number;
+  hashes: {
+    output_sha256: string;
+  };
+  evidence_pack_path: string;
+}
+
+export type EstoqueProvider = "datajud" | "arquivo_oficial" | "scraping";
+
+export interface MovimentoProcesso {
+  codigo: number | null;
+  nome: string;
+  data: string | null;
+}
+
+export interface EstoqueProcesso {
+  numero_cnj: string;
+  tribunal: string;
+  tribunal_alias: string;
+  classe_codigo: number;
+  classe_nome: string;
+  assuntos: { codigo: number; nome: string }[];
+  situacao: string;
+  valor_causa: number | null;
+  data_ajuizamento: string | null;
+  data_ultima_atualizacao: string | null;
+  orgao_julgador: { codigo: number | null; nome: string } | null;
+  grau: string | null;
+  total_movimentos: number;
+  ultima_movimentacao: MovimentoProcesso | null;
+  movimentos: MovimentoProcesso[];
+  pagamento_pendente: boolean;
+  tem_baixa: boolean;
+  tem_pagamento: boolean;
+  url_consulta: string | null;
+  url_consulta_eproc: string | null;
+  valor_fonte: string | null;
+}
+
+export interface PDFOrcamentoSummary {
+  tribunal: string;
+  ano_orcamento: number;
+  total_precatorios_pdf: number;
+  valor_total_orcamento: number;
+  valor_alimentar: number;
+  valor_comum: number;
+  total_idoso: number;
+  total_deficiencia: number;
+  fonte_url: string;
+  sha256: string;
+}
+
+export interface PrecatorioPendenteResult {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  total_pendentes: number;
+  total_precatorios_pendentes: number;
+  total_rpvs_pendentes: number;
+  por_tribunal: EstoqueSummaryByTribunal[];
+  processos: EstoqueProcesso[];
+  sources: SourceInfo[];
+  evidencias_count: number;
+  hashes: { output_sha256: string };
+  evidence_pack_path: string;
+  ultima_atualizacao_iso: string;
+  pdf_orcamento_summaries?: PDFOrcamentoSummary[];
+}
+
+export interface EstoqueSummaryByTribunal {
+  tribunal: string;
+  tribunal_alias: string;
+  total_processos: number;
+  total_disponivel: number | null;
+  precatorios: number;
+  rpvs: number;
+  provider: EstoqueProvider;
+  status: "OK" | "PARCIAL" | "ERRO";
+  observacoes: string;
+}
+
+export interface EstoqueResult {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  providers_used: EstoqueProvider[];
+  tribunais_consultados: string[];
+  summary: {
+    total_processos: number;
+    total_precatorios: number;
+    total_rpvs: number;
+    por_tribunal: EstoqueSummaryByTribunal[];
+  };
+  processos: EstoqueProcesso[];
+  sources: SourceInfo[];
+  evidencias_count: number;
+  hashes: {
+    output_sha256: string;
+  };
+  evidence_pack_path: string;
+  pdf_orcamento_summaries?: PDFOrcamentoSummary[];
+}
+
+export const estoqueRequestSchema = z.object({
+  ano_exercicio: z.number().int().min(2000).max(2100),
+  tribunais: z.array(z.string()).optional(),
+  classes: z.array(z.number()).optional(),
+  max_por_tribunal: z.number().int().min(1).max(10000).optional(),
+});
+
+export type EstoqueRequest = z.infer<typeof estoqueRequestSchema>;
+
+export interface GapAcaoItem {
+  codigo_acao: string;
+  descricao_acao: string;
+  dotacao_atual: number | null;
+  total_pago: number | null;
+  total_empenhado: number | null;
+  estoque_processos: number;
+  estoque_precatorios: number;
+  estoque_rpvs: number;
+  gap_dotacao_vs_pago: number | null;
+  cobertura_pct: number | null;
+  fonte_dotacao: string;
+  fonte_execucao: string;
+  fonte_estoque: string;
+  status: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+}
+
+export interface GapResult {
+  schema_version: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  generated_at_iso: string;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  totais: {
+    dotacao_total: number | null;
+    pago_total: number | null;
+    empenhado_total: number | null;
+    estoque_total_processos: number;
+    estoque_total_precatorios: number;
+    estoque_total_rpvs: number;
+    gap_dotacao_vs_pago: number | null;
+    cobertura_pct: number | null;
+  };
+  por_acao: GapAcaoItem[];
+  estoque_por_tribunal: EstoqueSummaryByTribunal[];
+  pdf_orcamento_summaries?: PDFOrcamentoSummary[];
+  sources: SourceInfo[];
+  hashes: {
+    output_sha256: string;
+  };
+  evidence_pack_path: string;
+}
+
+export const gapRequestSchema = z.object({
+  ano_exercicio: z.number().int().min(2000).max(2100),
+  mes: z.number().int().min(1).max(12).optional(),
+  tribunais: z.array(z.string()).optional(),
+});
+
+export type GapRequest = z.infer<typeof gapRequestSchema>;
+
+export interface A2HistoryEntry {
+  id: string;
+  process_id_uuid: string;
+  ano_exercicio: number;
+  mes?: number;
+  status_geral: "OK" | "PARCIAL" | "NAO_LOCALIZADO";
+  generated_at_iso: string;
+  evidencias_count: number;
+  execucao_total_pago: number | null;
+  dotacao_total: number | null;
+  zip_downloaded?: boolean;
+}
+
+export type Ente = "UNIAO" | "SP";
+
+export interface SpLoaRow {
+  ente: "SP";
+  ano: number;
+  orgao?: string;
+  uo?: string;
+  programa?: string;
+  acao_local?: string;
+  dotacao_inicial?: number;
+  dotacao_atual?: number;
+  raw: Record<string, string>;
+}
+
+export interface SpDespesaRow {
+  ente: "SP";
+  ano: number;
+  orgao?: string;
+  uo?: string;
+  fase?: string;
+  valor?: number;
+  favorecido?: string;
+  data?: string;
+  raw: Record<string, string>;
+}
+
+export interface TjspItem {
+  entidade: string;
+  numero?: string;
+  credor?: string;
+  natureza?: string;
+  valor?: number;
+  status?: "PENDENTE" | "PAGAMENTO" | string;
+  fonte_url: string;
+}
+
+export interface SpA2Summary {
+  dotacao_atual_total: number;
+  execucao_total: number;
+  saldo_estimado: number;
+  note: string;
+}
+
+export interface SpA2Result {
+  ok: boolean;
+  ente: "SP";
+  query: { ano: number; orgao?: string; uo?: string };
+  summary: SpA2Summary;
+  loa_count: number;
+  despesas_count: number;
+  loa: SpLoaRow[];
+  despesas: SpDespesaRow[];
+}
+
+export interface SpImportResult {
+  ok: boolean;
+  imported: number;
+  evidence: {
+    schema_version: string;
+    generated_at_iso_utc: string;
+    process_id_uuid: string;
+    bundle_sha256: string;
+  };
+}
+
+export interface SpTjspResult {
+  ok: boolean;
+  note: string;
+  entidade: string;
+  count: number;
+  data: TjspItem[];
+  evidence: {
+    schema_version: string;
+    generated_at_iso_utc: string;
+    process_id_uuid: string;
+    bundle_sha256: string;
+  };
+}
+
+export const spLoaImportSchema = z.object({
+  ano: z.number().int().min(2000).max(2100),
+  csvText: z.string().min(1),
+  delimiter: z.string().optional(),
+});
+
+export const spDespesasImportSchema = z.object({
+  ano: z.number().int().min(2000).max(2100),
+  csvText: z.string().min(1),
+  delimiter: z.string().optional(),
+});
+
+export const spA2RequestSchema = z.object({
+  ano: z.number().int().min(2000).max(2100),
+  orgao: z.string().optional(),
+  uo: z.string().optional(),
+});
