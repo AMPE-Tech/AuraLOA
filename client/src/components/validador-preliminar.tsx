@@ -13,10 +13,60 @@ import {
   X,
   AlertTriangle,
   ExternalLink,
+  Loader2,
+  Sparkles,
 } from "lucide-react";
 
 type InputMode = "numero" | "upload";
 type ScanStatus = "idle" | "scanning" | "found" | "not_found" | "error";
+type ParseStatus = "idle" | "parsing" | "ready" | "partial" | "failed";
+
+// ─── Extração de texto e regex ────────────────────────────────────────────────
+
+async function extractTextFromPdf(file: File): Promise<string> {
+  const pdfjsLib = await import("pdfjs-dist");
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    "pdfjs-dist/build/pdf.worker.mjs",
+    import.meta.url
+  ).href;
+
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pages: string[] = [];
+  for (let i = 1; i <= Math.min(pdf.numPages, 5); i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    pages.push(content.items.map((item: any) => item.str).join(" "));
+  }
+  return pages.join("\n");
+}
+
+function extractFieldsFromText(text: string): { cnj: string | null; oficio: string | null } {
+  // CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
+  const cnjMatch = text.match(/\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/);
+
+  // Ofício — múltiplos formatos:
+  // AUT.2024.008667 | 2024.008667 | 666/2021 | Ofício nº 2024.08671/OFREQ
+  const oficioPatterns = [
+    /(?:Ofício|Oficio|OFREQ|nº|n\.\s*º)\s+(?:DEPRE\/\S+\s+nº\s+)?(AUT\.\d{4}\.\d+)/i,
+    /\bAUT\.\d{4}\.\d+\b/,
+    /Ofício\s+(?:\S+\s+)?nº?\s+([\d.]+\/\w+)/i,
+    /(?:Ofício|Oficio)\s+(?:nº|n\.º)?\s*(\d{4}\.\d{5,}(?:\/\w+)?)/i,
+    /\b(\d{3,6}\/\d{4})\b/,
+    /(?:nº?|número)\s+([\w./-]{5,25})/i,
+  ];
+
+  let oficio: string | null = null;
+  for (const pattern of oficioPatterns) {
+    const m = text.match(pattern);
+    if (m) {
+      oficio = (m[1] || m[0]).trim();
+      break;
+    }
+  }
+
+  return { cnj: cnjMatch ? cnjMatch[0] : null, oficio };
+}
 
 interface ValidacaoResult {
   encontrado: boolean;
@@ -59,9 +109,11 @@ export function ValidadorPreliminarLOA() {
   const [processoCNJ, setProcessoCNJ] = useState("");
   const [resultado, setResultado] = useState<ValidacaoResult | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [parseStatus, setParseStatus] = useState<ParseStatus>("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canSubmitNumero = oficio.trim().length > 0 && processoCNJ.trim().length > 0;
+  const canSubmitUpload = uploadedFile !== null && (parseStatus === "ready" || parseStatus === "partial") && oficio.trim().length > 0 && processoCNJ.trim().length > 0;
 
   const handleStartScan = async () => {
     setScanStatus("scanning");
@@ -111,11 +163,27 @@ export function ValidadorPreliminarLOA() {
     setProcessoCNJ("");
     setResultado(null);
     setErrorMsg("");
+    setParseStatus("idle");
   };
 
-  const handleFileChange = (file: File | null) => {
-    if (file && file.type === "application/pdf") {
-      setUploadedFile(file);
+  const handleFileChange = async (file: File | null) => {
+    if (!file || file.type !== "application/pdf") return;
+    setUploadedFile(file);
+    setParseStatus("parsing");
+    setOficio("");
+    setProcessoCNJ("");
+
+    try {
+      const text = await extractTextFromPdf(file);
+      const { cnj, oficio: oficioDetectado } = extractFieldsFromText(text);
+
+      if (cnj) setProcessoCNJ(cnj);
+      if (oficioDetectado) setOficio(oficioDetectado);
+
+      const found = !!cnj || !!oficioDetectado;
+      setParseStatus(cnj && oficioDetectado ? "ready" : found ? "partial" : "failed");
+    } catch {
+      setParseStatus("failed");
     }
   };
 
@@ -260,7 +328,9 @@ export function ValidadorPreliminarLOA() {
                 {/* MODO 2: Upload do Ofício Requisitório */}
                 {mode === "upload" && (
                   <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-2 duration-200">
-                    {!uploadedFile ? (
+
+                    {/* Dropzone — só quando nenhum arquivo selecionado */}
+                    {!uploadedFile && (
                       <div
                         onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
                         onDragLeave={() => setIsDragging(false)}
@@ -298,17 +368,27 @@ export function ValidadorPreliminarLOA() {
                           </p>
                         </div>
                       </div>
-                    ) : (
-                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.05] p-5 mb-4 flex items-center gap-4">
-                        <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0">
-                          <FileText className="w-5 h-5 text-emerald-400" />
+                    )}
+
+                    {/* Arquivo selecionado — cabeçalho do arquivo */}
+                    {uploadedFile && (
+                      <div className="rounded-xl border border-blue-500/20 bg-blue-500/[0.04] p-4 mb-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center shrink-0">
+                          {parseStatus === "parsing"
+                            ? <Loader2 className="w-4 h-4 text-blue-400 animate-spin" />
+                            : <FileText className="w-4 h-4 text-blue-400" />}
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-white text-sm font-medium truncate">{uploadedFile.name}</p>
-                          <p className="text-emerald-400/70 text-xs font-mono mt-0.5">{formatFileSize(uploadedFile.size)} · PDF</p>
+                          <p className="text-slate-500 text-xs font-mono mt-0.5">
+                            {parseStatus === "parsing" && "Lendo PDF..."}
+                            {parseStatus === "ready" && <span className="text-emerald-400">✓ Campos detectados automaticamente</span>}
+                            {parseStatus === "partial" && <span className="text-amber-400">⚠ Detecção parcial — revise os campos</span>}
+                            {parseStatus === "failed" && <span className="text-red-400">Não foi possível detectar automaticamente — preencha manualmente</span>}
+                          </p>
                         </div>
                         <button
-                          onClick={() => setUploadedFile(null)}
+                          onClick={() => { setUploadedFile(null); setParseStatus("idle"); setOficio(""); setProcessoCNJ(""); }}
                           className="text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
                           data-testid="button-remover-arquivo"
                         >
@@ -317,14 +397,56 @@ export function ValidadorPreliminarLOA() {
                       </div>
                     )}
 
+                    {/* Campos extraídos (editáveis) — aparecem após parsing */}
+                    {uploadedFile && parseStatus !== "parsing" && parseStatus !== "idle" && (
+                      <div className="space-y-3 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        {parseStatus === "ready" && (
+                          <div className="flex items-center gap-1.5 text-xs text-emerald-400/80 mb-1">
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Campos extraídos do documento — confirme antes de verificar
+                          </div>
+                        )}
+                        <div className="relative">
+                          <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                          <input
+                            type="text"
+                            value={oficio}
+                            onChange={(e) => setOficio(e.target.value)}
+                            placeholder="Nº do Ofício Requisitório  —  Ex: AUT.2024.008667"
+                            className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
+                            data-testid="input-oficio-upload"
+                          />
+                        </div>
+                        <div className="relative">
+                          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                          <input
+                            type="text"
+                            value={processoCNJ}
+                            onChange={(e) => setProcessoCNJ(e.target.value)}
+                            placeholder="Nº CNJ do Processo  —  Ex: 0041645-56.2007.8.19.0001"
+                            className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
+                            data-testid="input-cnj-upload"
+                          />
+                        </div>
+                        {(parseStatus === "partial" || parseStatus === "failed") && (
+                          <p className="text-xs text-slate-600 text-center">
+                            PDF digital funciona melhor · documentos escaneados requerem análise completa
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     <button
                       onClick={handleStartScan}
-                      disabled={!uploadedFile}
+                      disabled={parseStatus === "parsing" || !canSubmitUpload}
                       className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
                       data-testid="button-iniciar-varredura-upload"
                     >
                       <ShieldCheck className="w-5 h-5" />
-                      {uploadedFile ? "Verificar Ofício Agora" : "Selecione um arquivo PDF"}
+                      {!uploadedFile && "Selecione um arquivo PDF"}
+                      {uploadedFile && parseStatus === "parsing" && "Lendo documento..."}
+                      {uploadedFile && parseStatus !== "parsing" && !canSubmitUpload && "Preencha os campos para continuar"}
+                      {uploadedFile && parseStatus !== "parsing" && canSubmitUpload && "Verificar Ofício Agora"}
                     </button>
                   </div>
                 )}
