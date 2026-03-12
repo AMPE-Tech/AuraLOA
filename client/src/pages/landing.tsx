@@ -320,10 +320,13 @@ export default function LandingPage() {
           {/* Botões */}
           <div className="flex items-center justify-center gap-4 mb-16">
             <Link href="/login">
-              <Button size="lg" className="h-12 px-8 text-base shadow-[0_0_20px_rgba(37,99,235,0.3)]" data-testid="button-cta-hero">
+              <button
+                className="inline-flex items-center gap-2 px-7 py-3 rounded-full border border-slate-600 bg-slate-600 text-sm font-medium text-white hover:bg-slate-500 hover:border-slate-500 transition-colors"
+                data-testid="button-cta-hero"
+              >
                 Acessar Plataforma
-                <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </Link>
             <a href="#overview">
               <Button size="lg" variant="outline" className="h-12 px-8 text-base" data-testid="button-view-dashboard">
@@ -836,10 +839,13 @@ export default function LandingPage() {
                 Acesse a plataforma e pesquise precatorios com cadeia de custodia completa.
               </p>
               <Link href="/login">
-                <Button className="h-10 px-6" data-testid="button-cta-footer">
+                <button
+                  className="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-slate-600 bg-slate-600 text-sm font-medium text-white hover:bg-slate-500 hover:border-slate-500 transition-colors"
+                  data-testid="button-cta-footer"
+                >
                   Acessar Plataforma
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
               </Link>
             </CardContent>
           </Card>
