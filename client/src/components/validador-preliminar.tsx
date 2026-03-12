@@ -158,28 +158,28 @@ export function ValidadorPreliminarLOA() {
                   </div>
                 </div>
 
-                {/* MODO 1: Número do Processo + Ofício Requisitório */}
+                {/* MODO 1: Número do Ofício + Número do Processo */}
                 {mode === "numero" && (
                   <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-2 duration-200">
                     <div className="space-y-3 mb-4">
+                      {/* Campo Ofício Requisitório — vem primeiro, como no documento */}
+                      <div className="relative">
+                        <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                          type="text"
+                          placeholder="Nº do Ofício Requisitório  —  Ex: 666 / 2021"
+                          className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
+                          data-testid="input-oficio"
+                        />
+                      </div>
                       {/* Campo processo CNJ */}
                       <div className="relative">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                           type="text"
-                          placeholder="Número CNJ do Processo  —  Ex: 1002345-67.2023.4.01.0000"
+                          placeholder="Nº CNJ do Processo  —  Ex: 1931-10.1990.4.01.3400"
                           className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
                           data-testid="input-cnj"
-                        />
-                      </div>
-                      {/* Campo ofício requisitório */}
-                      <div className="relative">
-                        <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                        <input
-                          type="text"
-                          placeholder="Número do Ofício Requisitório  —  Ex: OF-TRF1-2024-00123"
-                          className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
-                          data-testid="input-oficio"
                         />
                       </div>
                       <p className="text-xs text-slate-600 text-center">
