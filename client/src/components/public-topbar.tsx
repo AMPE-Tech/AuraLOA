@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Shield, Globe, Menu, X } from "lucide-react";
+import { Scale, Globe, Menu, X } from "lucide-react";
 
 interface PublicTopbarProps {
   scrollTo?: (id: string) => void;
@@ -12,16 +12,6 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
   const [lang, setLang] = useState<"pt" | "en">("pt");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const handleScroll = (id: string) => {
-    if (scrollTo) {
-      scrollTo(id);
-    } else {
-      const el = document.getElementById(id);
-      if (el) el.scrollIntoView({ behavior: "smooth" });
-    }
-    setIsMobileMenuOpen(false);
-  };
-
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-3">
@@ -30,8 +20,8 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
           onClick={() => navigate("/")}
           data-testid="logo-auratech"
         >
-          <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary">
-            <Shield className="w-5 h-5 text-primary-foreground" />
+          <div className="flex items-center justify-center w-9 h-9 rounded-md bg-slate-600">
+            <Scale className="w-5 h-5 text-white" />
           </div>
           <div>
             <h1 className="text-sm font-semibold tracking-tight">AuraLOA</h1>
@@ -41,20 +31,12 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
           </div>
         </div>
 
-        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-muted-foreground">
-          <button onClick={() => handleScroll("sobre-nos")} className="hover:text-foreground transition-colors">Sobre Nós</button>
-          <button onClick={() => handleScroll("modulos")} className="hover:text-foreground transition-colors">Módulos</button>
-          <button onClick={() => handleScroll("performance")} className="hover:text-foreground transition-colors">Performance</button>
-          <button onClick={() => handleScroll("trust-index")} className="hover:text-foreground transition-colors">Trust Index</button>
-          <button onClick={() => handleScroll("contato")} className="hover:text-foreground transition-colors">Contato</button>
-        </nav>
-
         <div className="flex items-center gap-4">
           <a
             href="http://auratg.co"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-400/50 bg-blue-500/[0.08] text-[10px] font-medium text-blue-300/80 hover:text-blue-200 hover:bg-blue-500/[0.14] transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-slate-600/50 bg-slate-600/[0.08] text-[10px] font-medium text-slate-300/80 hover:text-slate-200 hover:bg-slate-600/[0.14] transition-colors"
             data-testid="button-auratech-ecosystem"
           >
             AuraTECH Ecosystem
@@ -71,11 +53,11 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
           </Button>
           <Button
             size="sm"
-            className="h-8 text-xs font-medium hidden sm:inline-flex"
+            className="h-8 text-xs font-medium hidden sm:inline-flex bg-slate-600 hover:bg-slate-500 text-white"
             onClick={() => navigate("/login")}
             data-testid="button-nav-login"
           >
-            Acessar Plataforma
+            Login
           </Button>
           <Button
             variant="ghost"
@@ -90,17 +72,12 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
 
       {isMobileMenuOpen && (
         <div className="md:hidden border-t bg-background/95 p-4 space-y-4 text-sm font-medium">
-          <button onClick={() => handleScroll("sobre-nos")} className="block w-full text-left text-muted-foreground hover:text-foreground">Sobre Nós</button>
-          <button onClick={() => handleScroll("modulos")} className="block w-full text-left text-muted-foreground hover:text-foreground">Módulos</button>
-          <button onClick={() => handleScroll("performance")} className="block w-full text-left text-muted-foreground hover:text-foreground">Performance</button>
-          <button onClick={() => handleScroll("trust-index")} className="block w-full text-left text-muted-foreground hover:text-foreground">Trust Index</button>
-          <button onClick={() => handleScroll("contato")} className="block w-full text-left text-muted-foreground hover:text-foreground">Contato</button>
           <Button
             size="sm"
-            className="w-full mt-4 h-8 text-xs font-medium"
+            className="w-full mt-2 h-8 text-xs font-medium bg-slate-600 hover:bg-slate-500 text-white"
             onClick={() => navigate("/login")}
           >
-            Acessar Plataforma
+            Login
           </Button>
         </div>
       )}
