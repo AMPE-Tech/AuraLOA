@@ -219,9 +219,10 @@ const features = [
   {
     icon: Search,
     title: "Pesquisa LOA",
-    description: "Pesquisa e validacao de precatorios inscritos na Lei Orcamentaria Anual com dados reais.",
+    description: "O motor central do AuraLOA. Cruzamento automatico de 4 camadas orcamentarias com dados reais do Portal da Transparencia, SIOP e CNJ DataJud.",
     color: "text-blue-400",
     bg: "bg-blue-500/10",
+    featured: true,
   },
   {
     icon: Shield,
@@ -411,38 +412,103 @@ export default function LandingPage() {
             </h2>
             <p className="text-slate-400">Ferramenta completa para pesquisa, validação e auditoria de precatórios.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {features.map((feature) => (
-              <div
-                key={feature.title}
-                className={`relative rounded-xl p-6 transition-all group ${
-                  (feature as any).highlight
-                    ? "bg-emerald-950/30 border-2 border-emerald-500/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.08)]"
-                    : "bg-[#0f172a]/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-[#0f172a]/60"
-                }`}
-                data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}
-              >
-                {(feature as any).highlight && (
-                  <div className="absolute top-3 right-3">
-                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                      2024–2028
-                    </span>
+          {/* Card destaque: Pesquisa LOA — coração do sistema */}
+          {(() => {
+            const featured = features.find((f) => (f as any).featured);
+            const rest = features.filter((f) => !(f as any).featured);
+            return (
+              <>
+                {featured && (
+                  <div className="relative rounded-2xl overflow-hidden mb-6 border border-blue-500/30 bg-gradient-to-br from-[#080e1c] to-[#0c1628] shadow-[0_0_60px_rgba(37,99,235,0.12)]" data-testid="card-feature-pesquisa-loa">
+                    <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-60" />
+                    <div className="p-8 md:p-10 flex flex-col md:flex-row gap-10">
+
+                      {/* Esquerda: identidade do card */}
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-5">
+                          <div className="w-12 h-12 rounded-xl bg-blue-500/15 border border-blue-500/25 flex items-center justify-center">
+                            <Search className="w-6 h-6 text-blue-400" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2 mb-0.5">
+                              <h3 className="text-xl font-bold text-white">Pesquisa LOA</h3>
+                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-500/15 border border-blue-500/30 text-[10px] font-bold text-blue-300 uppercase tracking-widest">
+                                Motor Principal
+                              </span>
+                            </div>
+                            <p className="text-xs text-slate-500">O coração do AuraLOA</p>
+                          </div>
+                        </div>
+
+                        <p className="text-sm text-slate-400 leading-relaxed mb-6 max-w-md">
+                          {featured.description}
+                        </p>
+
+                        <div className="flex items-center gap-2 text-xs text-blue-400 font-medium">
+                          <Zap className="w-3.5 h-3.5" />
+                          Cruzamento automático: Dotação × Execução × Estoque × Valores
+                        </div>
+                      </div>
+
+                      {/* Direita: o que a pesquisa revela */}
+                      <div className="flex-1 bg-[#060b16] border border-slate-800/60 rounded-xl p-6">
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-4">Uma pesquisa na LOA revela:</p>
+                        <ul className="space-y-3">
+                          {[
+                            { text: "Se o precatório existe, pertence ao credor e se foi transferido", icon: CheckCircle2, color: "text-blue-400" },
+                            { text: "Se está inscrito no orçamento público", icon: CheckCircle2, color: "text-blue-400" },
+                            { text: "Se há previsão de pagamento no exercício", icon: CheckCircle2, color: "text-blue-400" },
+                            { text: "Se há valor reservado para quitação", icon: CheckCircle2, color: "text-blue-400" },
+                            { text: "Qual órgão público é responsável pelo pagamento", icon: CheckCircle2, color: "text-blue-400" },
+                            { text: "Execução financeira — quanto já foi pago e quanto resta", icon: CheckCircle2, color: "text-blue-400" },
+                          ].map((item) => (
+                            <li key={item.text} className="flex items-start gap-2.5">
+                              <item.icon className={`w-4 h-4 mt-0.5 shrink-0 ${item.color}`} />
+                              <span className="text-sm text-slate-300 leading-snug">{item.text}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+
+                    </div>
                   </div>
                 )}
-                <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4 border ${feature.bg.replace('bg-', 'border-').replace('/10', '/20')} group-hover:scale-110 transition-transform`}>
-                  <feature.icon className={`w-5 h-5 ${feature.color}`} />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {rest.map((feature) => (
+                    <div
+                      key={feature.title}
+                      className={`relative rounded-xl p-6 transition-all group ${
+                        (feature as any).highlight
+                          ? "bg-emerald-950/30 border-2 border-emerald-500/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.08)]"
+                          : "bg-[#0f172a]/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-[#0f172a]/60"
+                      }`}
+                      data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {(feature as any).highlight && (
+                        <div className="absolute top-3 right-3">
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                            2024–2028
+                          </span>
+                        </div>
+                      )}
+                      <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4 border ${feature.bg.replace('bg-', 'border-').replace('/10', '/20')} group-hover:scale-110 transition-transform`}>
+                        <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                      </div>
+                      <h3 className={`text-lg font-semibold mb-2 ${(feature as any).highlight ? "text-emerald-300" : "text-slate-200"}`}>{feature.title}</h3>
+                      <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+                      {(feature as any).highlight && (
+                        <div className="mt-4 flex items-center gap-2 text-xs text-emerald-500 font-medium">
+                          <TrendingUp className="w-3.5 h-3.5" />
+                          Precatórios pendentes de pagamento rastreados
+                        </div>
+                      )}
+                    </div>
+                  ))}
                 </div>
-                <h3 className={`text-lg font-semibold mb-2 ${(feature as any).highlight ? "text-emerald-300" : "text-slate-200"}`}>{feature.title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
-                {(feature as any).highlight && (
-                  <div className="mt-4 flex items-center gap-2 text-xs text-emerald-500 font-medium">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    Precatórios pendentes de pagamento rastreados
-                  </div>
-                )}
-              </div>
-            ))}
-          </div>
+              </>
+            );
+          })()}
         </div>
       </section>
 
