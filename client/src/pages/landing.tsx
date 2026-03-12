@@ -230,6 +230,8 @@ const features = [
     description: "SHA-256 e evidencias rastreaveis para cada dado coletado. Auditoria completa.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
+    border: "border-emerald-500/40 hover:border-emerald-400/60",
+    glow: "rgba(16,185,129,0.06)",
   },
   {
     icon: Layers,
@@ -237,6 +239,8 @@ const features = [
     description: "Dotacao x Execucao x Estoque x Valores. Visao integrada do ciclo orcamentario.",
     color: "text-purple-400",
     bg: "bg-purple-500/10",
+    border: "border-purple-500/40 hover:border-purple-400/60",
+    glow: "rgba(168,85,247,0.06)",
   },
   {
     icon: Phone,
@@ -244,6 +248,8 @@ const features = [
     description: "Email, telefone, dados comerciais/pessoais, OAB, CPF e CNPJ do credor.",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
+    border: "border-amber-500/40 hover:border-amber-400/60",
+    glow: "rgba(245,158,11,0.06)",
   },
   {
     icon: Globe,
@@ -251,6 +257,8 @@ const features = [
     description: "Federal (TRF1-6), Estadual e Municipal. Todas as esferas do poder judiciario.",
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
+    border: "border-cyan-500/40 hover:border-cyan-400/60",
+    glow: "rgba(6,182,212,0.06)",
   },
   {
     icon: Landmark,
@@ -258,7 +266,18 @@ const features = [
     description: "Acesso completo ao historico de LOA 2024 a 2028. Precatorios pendentes de pagamento identificados, rastreados e cruzados em todas as esferas.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
+    border: "border-emerald-500/40 hover:border-emerald-400/60",
+    glow: "rgba(16,185,129,0.06)",
     highlight: true,
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "Exportacao e Relatorios",
+    description: "CSV completo com 4 camadas cruzadas, valores, pendentes e metadados SHA-256. Pronto para uso juridico, compliance e due diligence.",
+    color: "text-rose-400",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/40 hover:border-rose-400/60",
+    glow: "rgba(244,63,94,0.06)",
   },
 ];
 
@@ -475,36 +494,36 @@ export default function LandingPage() {
                 )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {rest.map((feature) => (
-                    <div
-                      key={feature.title}
-                      className={`relative rounded-xl p-6 transition-all group ${
-                        (feature as any).highlight
-                          ? "bg-emerald-950/30 border-2 border-emerald-500/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.08)]"
-                          : "bg-[#0f172a]/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-[#0f172a]/60"
-                      }`}
-                      data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      {(feature as any).highlight && (
-                        <div className="absolute top-3 right-3">
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                            2024–2028
-                          </span>
+                  {rest.map((feature) => {
+                    const f = feature as any;
+                    return (
+                      <div
+                        key={feature.title}
+                        className={`relative rounded-xl p-6 transition-all group border bg-[#0b1018] ${f.border ?? "border-slate-800/80 hover:border-slate-600/60"}`}
+                        style={{ boxShadow: f.glow ? `0 0 28px ${f.glow}` : undefined }}
+                        data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}
+                      >
+                        {f.highlight && (
+                          <div className="absolute top-3 right-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                              2024–2028
+                            </span>
+                          </div>
+                        )}
+                        <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4 border ${feature.bg.replace('bg-', 'border-').replace('/10', '/20')} group-hover:scale-110 transition-transform`}>
+                          <feature.icon className={`w-5 h-5 ${feature.color}`} />
                         </div>
-                      )}
-                      <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4 border ${feature.bg.replace('bg-', 'border-').replace('/10', '/20')} group-hover:scale-110 transition-transform`}>
-                        <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                        <h3 className={`text-lg font-semibold mb-2 ${f.highlight ? "text-emerald-300" : "text-slate-200"}`}>{feature.title}</h3>
+                        <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+                        {f.highlight && (
+                          <div className="mt-4 flex items-center gap-2 text-xs text-emerald-500 font-medium">
+                            <TrendingUp className="w-3.5 h-3.5" />
+                            Precatórios pendentes de pagamento rastreados
+                          </div>
+                        )}
                       </div>
-                      <h3 className={`text-lg font-semibold mb-2 ${(feature as any).highlight ? "text-emerald-300" : "text-slate-200"}`}>{feature.title}</h3>
-                      <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
-                      {(feature as any).highlight && (
-                        <div className="mt-4 flex items-center gap-2 text-xs text-emerald-500 font-medium">
-                          <TrendingUp className="w-3.5 h-3.5" />
-                          Precatórios pendentes de pagamento rastreados
-                        </div>
-                      )}
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             );
