@@ -82,13 +82,13 @@ export function ValidadorPreliminarLOA() {
                 <h3 className="text-3xl md:text-4xl font-bold text-white mb-4 text-center leading-tight">
                   Valide Seu{" "}
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
-                    Precatório
+                    Precatório ou Processo
                   </span>
                 </h3>
 
                 {/* Subtexto */}
                 <p className="text-base text-slate-400 mb-8 leading-relaxed text-center max-w-2xl mx-auto">
-                  Confirme em segundos se um precatório realmente existe nas bases do Judiciário e da Lei Orçamentária.{" "}
+                  Confirme em segundos se o processo ou precatório realmente existe nas bases do Judiciário e da Lei Orçamentária.{" "}
                   <span className="text-slate-300">Proteja-se contra fraudes e documentos falsos.</span>
                 </p>
 
