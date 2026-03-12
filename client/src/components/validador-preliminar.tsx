@@ -41,19 +41,62 @@ async function extractTextFromPdf(file: File): Promise<string> {
   return pages.join("\n");
 }
 
-function extractFieldsFromText(text: string): { cnj: string | null; oficio: string | null } {
-  // CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
-  const cnjMatch = text.match(/\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/);
+// Normaliza qualquer variação numérica para o formato CNJ padrão: NNNNNNN-DD.AAAA.J.TT.OOOO
+function normalizeCNJ(raw: string): string {
+  const digits = raw.replace(/\D/g, "");
+  // CNJ tem 20 dígitos: 7+2+4+1+2+4
+  if (digits.length < 18 || digits.length > 21) return raw;
+  // Tenta reconstruir no formato padrão a partir dos dígitos puros
+  // Ex: 00414655620078190001 → 0041455-56.2007.8.19.0001
+  const n = digits.padStart(20, "0");
+  return `${n.slice(0,7)}-${n.slice(7,9)}.${n.slice(9,13)}.${n.slice(13,14)}.${n.slice(14,16)}.${n.slice(16,20)}`;
+}
 
-  // Ofício — múltiplos formatos:
-  // AUT.2024.008667 | 2024.008667 | 666/2021 | Ofício nº 2024.08671/OFREQ
+function extractFieldsFromText(text: string): { cnj: string | null; oficio: string | null } {
+  // Padrões CNJ em ordem de prioridade (mais específico → mais genérico)
+  const cnjPatterns = [
+    // Formato padrão: NNNNNNN-DD.AAAA.J.TT.OOOO
+    /\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/,
+    // Todos pontos (sem traço): NNNNNNN.DD.AAAA.J.TT.OOOO
+    /\d{7}\.\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/,
+    // Com barra no início: NNNNNNN/DD.AAAA.J.TT.OOOO
+    /\d{7}\/\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/,
+    // Após palavras-chave: "processo n.", "Proc.", "processo nº", etc.
+    /(?:processo\s+(?:n\.?º?|originário\s+n\.?|n\.?)\s*)(\d{4,7}[-./]\d{2}[.]\d{4}[.]\d[.]\d{2}[.]\d{4})/i,
+    /(?:Proc\.\s*n\.?\s*)(\d{4,7}[-./]\d{2}[.]\d{4}[.]\d[.]\d{2}[.]\d{4})/i,
+    // Variação com menos dígitos no início (4-6 dígitos)
+    /\d{4,6}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4}/,
+    // Sem separadores — bloco de 18-20 dígitos após palavra-chave
+    /(?:processo\s+(?:n\.?º?\s*))(\d{18,20})/i,
+  ];
+
+  let cnjRaw: string | null = null;
+  for (const pat of cnjPatterns) {
+    const m = text.match(pat);
+    if (m) {
+      cnjRaw = (m[1] || m[0]).trim();
+      break;
+    }
+  }
+  const cnj = cnjRaw ? normalizeCNJ(cnjRaw) : null;
+
+  // Ofício — múltiplos formatos reais de documentos judiciais
   const oficioPatterns = [
-    /(?:Ofício|Oficio|OFREQ|nº|n\.\s*º)\s+(?:DEPRE\/\S+\s+nº\s+)?(AUT\.\d{4}\.\d+)/i,
-    /\bAUT\.\d{4}\.\d+\b/,
-    /Ofício\s+(?:\S+\s+)?nº?\s+([\d.]+\/\w+)/i,
-    /(?:Ofício|Oficio)\s+(?:nº|n\.º)?\s*(\d{4}\.\d{5,}(?:\/\w+)?)/i,
+    // DEPRE/DEPJU/HOLOS nº AUT.2024.008667
+    /(?:DEPRE|DEPJU|HOLOS)[/\w]*\s+n[º°\.]\s+(AUT\.\d{4}\.\d+)/i,
+    // Ofício DEPRE/... nº AUT.2024.008667
+    /Ofício\s+\S+\s+n[º°\.]\s+(AUT\.\d{4}\.\d+)/i,
+    // AUT.YYYY.NNNNNN isolado
+    /\bAUT\.\d{4}\.\d{3,}\b/,
+    // OFREQ 2024.08671/OFREQ
+    /(\d{4}\.\d{5,}\/OFREQ)/i,
+    // Ofício nº 2024.08671
+    /Ofício\s+(?:DEPRE\/\S+\s+)?n[º°\.]\s*(\d{4}\.\d{4,}(?:\/\w+)?)/i,
+    // Ofício nº 666/2021 ou 666/2021
+    /Ofício\s+n[º°\.]\s*(\d{3,6}\/\d{4})/i,
     /\b(\d{3,6}\/\d{4})\b/,
-    /(?:nº?|número)\s+([\w./-]{5,25})/i,
+    // Fallback genérico após "nº"
+    /n[º°\.]\s+([\w]{3,6}[\./]\d{4,}(?:[\./]\w+)?)/i,
   ];
 
   let oficio: string | null = null;
@@ -65,7 +108,7 @@ function extractFieldsFromText(text: string): { cnj: string | null; oficio: stri
     }
   }
 
-  return { cnj: cnjMatch ? cnjMatch[0] : null, oficio };
+  return { cnj, oficio };
 }
 
 interface ValidacaoResult {
