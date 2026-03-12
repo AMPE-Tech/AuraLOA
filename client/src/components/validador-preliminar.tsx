@@ -22,7 +22,11 @@ export function ValidadorPreliminarLOA() {
   const [scanStep, setScanStep] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [oficio, setOficio] = useState("");
+  const [processoCNJ, setProcessoCNJ] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const canSubmitNumero = oficio.trim().length > 0 && processoCNJ.trim().length > 0;
 
   const scanMessages = [
     "Conectando ao DataJud CNJ...",
@@ -57,6 +61,8 @@ export function ValidadorPreliminarLOA() {
     setScanStatus("idle");
     setScanStep(0);
     setUploadedFile(null);
+    setOficio("");
+    setProcessoCNJ("");
   };
 
   const handleFileChange = (file: File | null) => {
@@ -167,6 +173,8 @@ export function ValidadorPreliminarLOA() {
                         <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                           type="text"
+                          value={oficio}
+                          onChange={(e) => setOficio(e.target.value)}
                           placeholder="Nº do Ofício Requisitório  —  Ex: 666 / 2021"
                           className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
                           data-testid="input-oficio"
@@ -177,23 +185,26 @@ export function ValidadorPreliminarLOA() {
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
                         <input
                           type="text"
+                          value={processoCNJ}
+                          onChange={(e) => setProcessoCNJ(e.target.value)}
                           placeholder="Nº CNJ do Processo  —  Ex: 1931-10.1990.4.01.3400"
                           className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
                           data-testid="input-cnj"
                         />
                       </div>
                       <p className="text-xs text-slate-600 text-center">
-                        Informe um ou ambos os campos para cruzar as bases oficiais
+                        Ambos os campos são obrigatórios para cruzar as bases oficiais
                       </p>
                     </div>
 
                     <button
                       onClick={handleStartScan}
-                      className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
+                      disabled={!canSubmitNumero}
+                      className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
                       data-testid="button-iniciar-varredura"
                     >
                       <ShieldCheck className="w-5 h-5" />
-                      Verificar Precatório Agora
+                      {canSubmitNumero ? "Verificar Precatório Agora" : "Preencha os dois campos para continuar"}
                     </button>
                   </div>
                 )}
