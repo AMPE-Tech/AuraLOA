@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { PublicTopbar } from "@/components/public-topbar";
 import { PublicFooter } from "@/components/public-footer";
+import { ValidadorPreliminarLOA } from "@/components/validador-preliminar";
 import heroBgPath from "@assets/hero-dashboard-bg.png";
 import {
   ChartContainer,
@@ -361,6 +362,10 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <div className="max-w-6xl mx-auto">
+        <ValidadorPreliminarLOA />
+      </div>
 
       <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
