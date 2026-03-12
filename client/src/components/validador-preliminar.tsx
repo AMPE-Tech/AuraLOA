@@ -9,7 +9,7 @@ export function ValidadorPreliminarLOA() {
 
   const scanMessages = [
     "Conectando ao DataJud...",
-    "Verificando integridade do NPU...",
+    "Verificando integridade do CNJ...",
     "Cruzando dados com a LOA 2026...",
     "Validando cadeia de custódia...",
   ];
@@ -42,7 +42,7 @@ export function ValidadorPreliminarLOA() {
   };
 
   return (
-    <section className="w-full max-w-4xl mx-auto py-8 relative z-20 -mt-10 px-4 sm:px-6">
+    <section className="w-full max-w-[1400px] mx-auto py-8 relative z-20 -mt-10 px-4 sm:px-6">
       <div className="absolute inset-0 bg-blue-500/5 blur-3xl rounded-3xl pointer-events-none" />
 
       <div className="bg-[#0f172a]/80 backdrop-blur-xl border border-blue-500/30 rounded-2xl p-6 md:p-8 shadow-[0_8px_32px_rgba(0,0,0,0.4)] relative overflow-hidden transition-all duration-500 min-h-[380px] flex flex-col justify-center">
@@ -81,8 +81,8 @@ export function ValidadorPreliminarLOA() {
             {scanStatus === "idle" && (
               <div className="animate-in fade-in duration-300">
                 <div className="flex gap-4 mb-5 border-b border-slate-800 pb-3">
-                  <button className="text-blue-400 text-sm font-medium flex items-center gap-2 border-b-2 border-blue-400 pb-3 -mb-[14px]" data-testid="tab-npu">
-                    <Search className="w-4 h-4" /> NPU / Processo
+                  <button className="text-blue-400 text-sm font-medium flex items-center gap-2 border-b-2 border-blue-400 pb-3 -mb-[14px]" data-testid="tab-cnj">
+                    <Search className="w-4 h-4" /> CNJ / Processo
                   </button>
                   <button className="text-slate-500 hover:text-slate-300 text-sm font-medium flex items-center gap-2 transition-colors" data-testid="tab-upload">
                     <FileUp className="w-4 h-4" /> Upload de PDF
@@ -93,9 +93,9 @@ export function ValidadorPreliminarLOA() {
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Ex: 1002345-67.2023.4.01.0000"
+                      placeholder="Ex: CNJ 1002345-67.2023.4.01.0000"
                       className="w-full bg-[#0f172a] border border-slate-700 text-white text-sm rounded-lg pl-4 pr-10 py-3 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all placeholder:text-slate-600 font-mono"
-                      data-testid="input-npu"
+                      data-testid="input-cnj"
                     />
                     <Search className="absolute right-3 top-3.5 w-4 h-4 text-slate-500" />
                   </div>

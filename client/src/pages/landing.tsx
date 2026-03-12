@@ -292,7 +292,7 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/3 w-[700px] h-[400px] rounded-full bg-blue-600/[0.06] blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[300px] rounded-full bg-indigo-500/[0.04] blur-[100px]" />
 
-        <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 py-16 md:py-24">
+        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-16 md:py-24">
           <div className="text-center max-w-3xl mx-auto">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-400/15 bg-blue-500/[0.08] mb-6" data-testid="badge-beta">
               <Activity className="w-3 h-3 text-emerald-400" />
@@ -363,12 +363,12 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-[1400px] mx-auto">
         <ValidadorPreliminarLOA />
       </div>
 
       <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2" data-testid="text-features-title">
               <Layers className="text-blue-500 w-6 h-6" />
@@ -391,7 +391,7 @@ export default function LandingPage() {
       </section>
 
       <section className="py-20 border-t border-white/[0.05] bg-[hsl(220_7%_16%)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
 
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-timeline-title">
@@ -472,7 +472,7 @@ export default function LandingPage() {
       </section>
 
       <section id="overview" className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8">
             <div>
               <div className="flex items-center gap-2 mb-1.5">
@@ -757,7 +757,7 @@ export default function LandingPage() {
       </section>
 
       <section id="pipeline" className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(220_7%_16%)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6">
           <div className="bg-[#0f172a]/60 border border-slate-800/80 rounded-2xl p-8">
             <div className="mb-10 flex flex-col md:flex-row justify-between md:items-end gap-4">
               <div>
@@ -793,7 +793,7 @@ export default function LandingPage() {
       </section>
 
       <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
+        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-lg font-semibold mb-1.5 text-white/90" data-testid="text-sources-title">
             Fontes Oficiais
           </h2>
