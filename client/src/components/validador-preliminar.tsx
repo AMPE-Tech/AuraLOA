@@ -1,11 +1,28 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation } from "wouter";
-import { ShieldCheck, Search, Lock, CheckCircle2, Users, TrendingUp } from "lucide-react";
+import {
+  ShieldCheck,
+  Search,
+  Lock,
+  CheckCircle2,
+  Users,
+  TrendingUp,
+  Upload,
+  FileText,
+  Hash,
+  X,
+} from "lucide-react";
+
+type InputMode = "numero" | "upload";
 
 export function ValidadorPreliminarLOA() {
   const [, navigate] = useLocation();
+  const [mode, setMode] = useState<InputMode>("numero");
   const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "result">("idle");
   const [scanStep, setScanStep] = useState(0);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const scanMessages = [
     "Conectando ao DataJud CNJ...",
@@ -39,12 +56,32 @@ export function ValidadorPreliminarLOA() {
   const handleReset = () => {
     setScanStatus("idle");
     setScanStep(0);
+    setUploadedFile(null);
+  };
+
+  const handleFileChange = (file: File | null) => {
+    if (file && file.type === "application/pdf") {
+      setUploadedFile(file);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragging(false);
+    const file = e.dataTransfer.files[0];
+    handleFileChange(file);
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   };
 
   return (
     <section className="w-full max-w-[1400px] mx-auto py-10 relative z-20 -mt-10 px-4 sm:px-6">
 
-      {/* Faixa de prova social — fonte 20% maior (text-sm) */}
+      {/* Faixa de prova social */}
       <div className="flex items-center justify-center gap-3 mb-5 flex-wrap">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 text-sm">
           <Users className="w-3.5 h-3.5 text-blue-400" />
@@ -61,7 +98,6 @@ export function ValidadorPreliminarLOA() {
         <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-blue-500/40 via-cyan-400/20 to-blue-500/40 blur-[2px]" />
         <div className="relative bg-[#080e1c] border border-blue-500/25 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(37,99,235,0.12)] overflow-hidden">
 
-          {/* Linha topo gradiente */}
           <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70" />
 
           <div className="p-8 md:p-12">
@@ -70,7 +106,7 @@ export function ValidadorPreliminarLOA() {
             {scanStatus === "idle" && (
               <div className="animate-in fade-in duration-300">
 
-                {/* Badge VERIFICAÇÃO GRATUITA — 20% maior (text-xs) */}
+                {/* Badge */}
                 <div className="flex justify-center mb-5">
                   <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono font-bold uppercase tracking-wider">
                     <ShieldCheck className="w-4 h-4" />
@@ -88,35 +124,154 @@ export function ValidadorPreliminarLOA() {
 
                 {/* Subtexto */}
                 <p className="text-base text-slate-400 mb-8 leading-relaxed text-center max-w-2xl mx-auto">
-                  Confirme em segundos se o processo ou precatório realmente existe nas bases do Judiciário e da Lei Orçamentária.{" "}
+                  Confirme se o processo ou precatório existe nas bases do Judiciário e da Lei Orçamentária.{" "}
                   <span className="text-slate-300">Proteja-se contra fraudes e documentos falsos.</span>
                 </p>
 
-                {/* Campo de pesquisa gigante */}
-                <div className="relative max-w-3xl mx-auto mb-4">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-slate-500" />
-                  <input
-                    type="text"
-                    placeholder="Digite o número CNJ  —  Ex: 1002345-67.2023.4.01.0000"
-                    className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-lg rounded-xl pl-14 pr-6 py-5 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
-                    data-testid="input-cnj"
-                  />
-                </div>
-
-                {/* Botão */}
+                {/* Toggle de modo */}
                 <div className="flex justify-center mb-8">
-                  <button
-                    onClick={handleStartScan}
-                    className="max-w-3xl w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
-                    data-testid="button-iniciar-varredura"
-                  >
-                    <ShieldCheck className="w-5 h-5" />
-                    Verificar Precatório Agora
-                  </button>
+                  <div className="inline-flex rounded-xl bg-[#0b1120] border border-slate-700/60 p-1 gap-1">
+                    <button
+                      onClick={() => setMode("numero")}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        mode === "numero"
+                          ? "bg-blue-600 text-white shadow-[0_0_16px_rgba(37,99,235,0.4)]"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                      data-testid="tab-modo-numero"
+                    >
+                      <Hash className="w-4 h-4" />
+                      Número do Processo
+                    </button>
+                    <button
+                      onClick={() => setMode("upload")}
+                      className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                        mode === "upload"
+                          ? "bg-blue-600 text-white shadow-[0_0_16px_rgba(37,99,235,0.4)]"
+                          : "text-slate-400 hover:text-slate-200"
+                      }`}
+                      data-testid="tab-modo-upload"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload do Ofício
+                    </button>
+                  </div>
                 </div>
 
-                {/* Checklist em linha */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-6 border-t border-slate-800/60">
+                {/* MODO 1: Número do Processo + Ofício Requisitório */}
+                {mode === "numero" && (
+                  <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-2 duration-200">
+                    <div className="space-y-3 mb-4">
+                      {/* Campo processo CNJ */}
+                      <div className="relative">
+                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                          type="text"
+                          placeholder="Número CNJ do Processo  —  Ex: 1002345-67.2023.4.01.0000"
+                          className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
+                          data-testid="input-cnj"
+                        />
+                      </div>
+                      {/* Campo ofício requisitório */}
+                      <div className="relative">
+                        <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
+                        <input
+                          type="text"
+                          placeholder="Número do Ofício Requisitório  —  Ex: OF-TRF1-2024-00123"
+                          className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
+                          data-testid="input-oficio"
+                        />
+                      </div>
+                      <p className="text-xs text-slate-600 text-center">
+                        Informe um ou ambos os campos para cruzar as bases oficiais
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={handleStartScan}
+                      className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
+                      data-testid="button-iniciar-varredura"
+                    >
+                      <ShieldCheck className="w-5 h-5" />
+                      Verificar Precatório Agora
+                    </button>
+                  </div>
+                )}
+
+                {/* MODO 2: Upload do Ofício Requisitório */}
+                {mode === "upload" && (
+                  <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-2 duration-200">
+                    {!uploadedFile ? (
+                      <div
+                        onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                        onDragLeave={() => setIsDragging(false)}
+                        onDrop={handleDrop}
+                        onClick={() => fileInputRef.current?.click()}
+                        className={`cursor-pointer rounded-xl border-2 border-dashed p-10 text-center transition-all mb-4 ${
+                          isDragging
+                            ? "border-blue-400 bg-blue-500/10 shadow-[0_0_30px_rgba(96,165,250,0.15)]"
+                            : "border-slate-700 bg-[#0b1120] hover:border-blue-500/50 hover:bg-blue-500/[0.04]"
+                        }`}
+                        data-testid="dropzone-oficio"
+                      >
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept=".pdf"
+                          className="hidden"
+                          onChange={(e) => handleFileChange(e.target.files?.[0] ?? null)}
+                          data-testid="input-file-oficio"
+                        />
+                        <div className="flex flex-col items-center gap-3">
+                          <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-colors ${isDragging ? "bg-blue-500/20 border border-blue-500/30" : "bg-slate-800 border border-slate-700"}`}>
+                            <Upload className={`w-6 h-6 transition-colors ${isDragging ? "text-blue-400" : "text-slate-500"}`} />
+                          </div>
+                          <div>
+                            <p className="text-white font-medium mb-1">
+                              {isDragging ? "Solte o arquivo aqui" : "Arraste o Ofício Requisitório"}
+                            </p>
+                            <p className="text-slate-500 text-sm">
+                              ou <span className="text-blue-400 hover:underline">clique para selecionar</span> um arquivo PDF
+                            </p>
+                          </div>
+                          <p className="text-xs text-slate-600 font-mono mt-1">
+                            Formato aceito: PDF · Máx. 10 MB
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/[0.05] p-5 mb-4 flex items-center gap-4">
+                        <div className="w-11 h-11 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center shrink-0">
+                          <FileText className="w-5 h-5 text-emerald-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-white text-sm font-medium truncate">{uploadedFile.name}</p>
+                          <p className="text-emerald-400/70 text-xs font-mono mt-0.5">{formatFileSize(uploadedFile.size)} · PDF</p>
+                        </div>
+                        <button
+                          onClick={() => setUploadedFile(null)}
+                          className="text-slate-500 hover:text-slate-300 transition-colors p-1.5 rounded-lg hover:bg-slate-800"
+                          data-testid="button-remover-arquivo"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleStartScan}
+                      disabled={!uploadedFile}
+                      className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
+                      data-testid="button-iniciar-varredura-upload"
+                    >
+                      <ShieldCheck className="w-5 h-5" />
+                      {uploadedFile ? "Verificar Ofício Agora" : "Selecione um arquivo PDF"}
+                    </button>
+                  </div>
+                )}
+
+                {/* Checklist */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-8 mt-8 border-t border-slate-800/60">
                   {[
                     "Detecta documentos falsos e adulterados",
                     "Consulta tribunais automaticamente (TRFs e TJs)",
