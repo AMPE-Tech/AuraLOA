@@ -129,9 +129,9 @@ const digitalSteps = [
   },
   {
     icon: Shield,
-    title: "Validacao com Anti-Alucinacao",
+    title: "Validacao de Fontes Oficiais",
     duration: "~1 hora",
-    description: "Guards automaticos verificam cada dado. Zero mock. Fonte oficial validada. DPO locks ativos.",
+    description: "Cada dado e verificado contra a fonte primaria (LOA, DataJud, Transparencia). Origem rastreavel e certificada.",
   },
   {
     icon: Hash,
@@ -252,11 +252,12 @@ const features = [
     bg: "bg-cyan-500/10",
   },
   {
-    icon: FileCheck,
-    title: "Anti-Alucinacao",
-    description: "Dados reais de fontes oficiais. Zero mock. Zero fabricacao. Evidencia verificavel.",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
+    icon: Landmark,
+    title: "LOA 2004 a 2028 — 25 Anos",
+    description: "Acesso completo ao historico de 25 anos de LOA. Precatorios pendentes de pagamento identificados, rastreados e cruzados em todas as esferas.",
+    color: "text-emerald-400",
+    bg: "bg-emerald-500/10",
+    highlight: true,
   },
 ];
 
@@ -391,12 +392,33 @@ export default function LandingPage() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => (
-              <div key={feature.title} className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 hover:border-blue-500/40 transition-all hover:bg-[#0f172a]/60 group" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}>
+              <div
+                key={feature.title}
+                className={`relative rounded-xl p-6 transition-all group ${
+                  (feature as any).highlight
+                    ? "bg-emerald-950/30 border-2 border-emerald-500/40 hover:border-emerald-400/60 shadow-[0_0_30px_rgba(16,185,129,0.08)]"
+                    : "bg-[#0f172a]/40 border border-slate-800/80 hover:border-blue-500/40 hover:bg-[#0f172a]/60"
+                }`}
+                data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                {(feature as any).highlight && (
+                  <div className="absolute top-3 right-3">
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
+                      25 anos
+                    </span>
+                  </div>
+                )}
                 <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4 border ${feature.bg.replace('bg-', 'border-').replace('/10', '/20')} group-hover:scale-110 transition-transform`}>
                   <feature.icon className={`w-5 h-5 ${feature.color}`} />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-200 mb-2">{feature.title}</h3>
+                <h3 className={`text-lg font-semibold mb-2 ${(feature as any).highlight ? "text-emerald-300" : "text-slate-200"}`}>{feature.title}</h3>
                 <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+                {(feature as any).highlight && (
+                  <div className="mt-4 flex items-center gap-2 text-xs text-emerald-500 font-medium">
+                    <TrendingUp className="w-3.5 h-3.5" />
+                    Precatórios pendentes de pagamento rastreados
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -469,8 +491,8 @@ export default function LandingPage() {
                   <p className="text-sm text-slate-400 mt-1">Dotação, Execução, Estoque e Valores PDF cruzados com matching automático.</p>
                 </li>
                 <li className="border-l-2 border-cyan-400 pl-4" data-testid="timeline-digital-step-2">
-                  <p className="font-semibold text-white">Anti-Alucinação & Evidência <span className="text-cyan-500 font-mono text-sm ml-2">1.5h</span></p>
-                  <p className="text-sm text-slate-400 mt-1">Guards validam dados. Hash SHA-256 automático de cada payload. Cadeia de custódia íntegra.</p>
+                  <p className="font-semibold text-white">Validação & Evidência SHA-256 <span className="text-cyan-500 font-mono text-sm ml-2">1.5h</span></p>
+                  <p className="text-sm text-slate-400 mt-1">Cada dado validado contra a fonte oficial. Hash SHA-256 automático de cada payload. Cadeia de custódia íntegra.</p>
                 </li>
               </ul>
               <Link href="/login">
