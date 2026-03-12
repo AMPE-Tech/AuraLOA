@@ -102,7 +102,7 @@ export function ValidadorPreliminarLOA() {
 
                   <button
                     onClick={handleStartScan}
-                    className="w-full bg-blue-600 hover:bg-blue-500 text-white font-medium py-3 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20"
+                    className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-semibold py-3 rounded-lg transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-blue-400/25"
                     data-testid="button-iniciar-varredura"
                   >
                     <ShieldCheck className="w-4 h-4" />
