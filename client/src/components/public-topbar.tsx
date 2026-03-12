@@ -26,7 +26,7 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
           </div>
           <div>
             <h1 className="text-base font-semibold tracking-tight">AuraLOA</h1>
-            <p className="text-[14px] text-muted-foreground font-semibold">
+            <p className="text-[14px] text-muted-foreground font-normal">
               Análise Inteligente de Precatórios
             </p>
           </div>
