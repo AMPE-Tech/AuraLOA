@@ -35,6 +35,8 @@ import {
   Sparkles,
   Lock,
   Activity,
+  Building2,
+  Landmark,
 } from "lucide-react";
 
 const loaProjectionData = [
@@ -324,18 +326,27 @@ export default function LandingPage() {
               </a>
             </div>
 
-            <div className="grid grid-cols-3 gap-px rounded-xl overflow-hidden border border-white/[0.06] max-w-lg mx-auto bg-white/[0.03]">
-              <div className="p-4 bg-white/[0.02]">
-                <p className="text-2xl md:text-3xl font-bold text-white">R$ 300B<span className="text-sm text-blue-400">+</span></p>
-                <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Mercado Total</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mx-auto">
+              <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-blue-500/30 transition-colors" data-testid="kpi-hero-mercado">
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Mercado Total</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-3xl font-bold text-white">R$ 300B</span>
+                  <span className="text-xl font-bold text-blue-500">+</span>
+                </div>
               </div>
-              <div className="p-4 bg-white/[0.02] border-x border-white/[0.06]">
-                <p className="text-2xl md:text-3xl font-bold text-emerald-400">40<span className="text-sm">x</span></p>
-                <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Mais rapido</p>
+              <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-cyan-500/30 transition-colors" data-testid="kpi-hero-performance">
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Performance</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-cyan-400">40x</span>
+                  <span className="text-sm font-medium text-slate-400">Mais rápido</span>
+                </div>
               </div>
-              <div className="p-4 bg-white/[0.02]">
-                <p className="text-2xl md:text-3xl font-bold text-white">97<span className="text-sm text-blue-400">%</span></p>
-                <p className="text-[9px] text-white/40 uppercase tracking-widest mt-1">Economia</p>
+              <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-blue-500/30 transition-colors" data-testid="kpi-hero-impacto">
+                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Impacto</span>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-white">97%</span>
+                  <span className="text-sm font-medium text-slate-400">Economia</span>
+                </div>
               </div>
             </div>
           </div>
@@ -353,29 +364,22 @@ export default function LandingPage() {
 
       <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <h2 className="text-lg font-semibold mb-1.5 text-white/90" data-testid="text-features-title">
-              Funcionalidades
+          <div className="mb-8">
+            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2" data-testid="text-features-title">
+              <Layers className="text-blue-500 w-6 h-6" />
+              Módulos de Inteligência
             </h2>
-            <p className="text-sm text-white/50 max-w-md mx-auto">
-              Ferramenta completa para pesquisa, validacao e auditoria de precatorios.
-            </p>
+            <p className="text-slate-400">Ferramenta completa para pesquisa, validação e auditoria de precatórios.</p>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {features.map((feature) => (
-              <Card key={feature.title} className="bg-white/[0.02] border-white/[0.06] hover-elevate" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className={`p-2 rounded-lg ${feature.bg} shrink-0 mt-0.5`}>
-                      <feature.icon className={`w-4 h-4 ${feature.color}`} />
-                    </div>
-                    <div>
-                      <h3 className="text-sm font-medium mb-1 text-white/85">{feature.title}</h3>
-                      <p className="text-xs text-white/50 leading-relaxed">{feature.description}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              <div key={feature.title} className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 hover:border-blue-500/40 transition-all hover:bg-[#0f172a]/60 group" data-testid={`card-feature-${feature.title.toLowerCase().replace(/\s+/g, '-')}`}>
+                <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4 border ${feature.bg.replace('bg-', 'border-').replace('/10', '/20')} group-hover:scale-110 transition-transform`}>
+                  <feature.icon className={`w-5 h-5 ${feature.color}`} />
+                </div>
+                <h3 className="text-lg font-semibold text-slate-200 mb-2">{feature.title}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+              </div>
             ))}
           </div>
         </div>
@@ -479,6 +483,45 @@ export default function LandingPage() {
             <div className="mt-3 md:mt-0 flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-emerald-500/15 bg-emerald-500/[0.05]">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span className="text-[10px] text-emerald-400/70">Dados publicos</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <div className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 flex flex-col" data-testid="kpi-mercado-federal">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-slate-400 text-sm font-medium flex items-center gap-2">
+                  <Globe className="w-4 h-4" /> Federal
+                </span>
+                <span className="text-[10px] font-mono bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">TRF1-6</span>
+              </div>
+              <span className="text-3xl font-bold text-white mb-4">R$ 100B</span>
+              <div className="w-full bg-slate-800 rounded-full h-1.5">
+                <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: "33%" }} />
+              </div>
+            </div>
+            <div className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 flex flex-col" data-testid="kpi-mercado-estadual">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-slate-400 text-sm font-medium flex items-center gap-2">
+                  <Building2 className="w-4 h-4" /> Estadual
+                </span>
+                <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">TJSP e mais</span>
+              </div>
+              <span className="text-3xl font-bold text-white mb-4">R$ 130B</span>
+              <div className="w-full bg-slate-800 rounded-full h-1.5">
+                <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: "43%" }} />
+              </div>
+            </div>
+            <div className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 flex flex-col" data-testid="kpi-mercado-municipal">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-slate-400 text-sm font-medium flex items-center gap-2">
+                  <Landmark className="w-4 h-4" /> Municipal
+                </span>
+                <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/30">Prefeituras</span>
+              </div>
+              <span className="text-3xl font-bold text-white mb-4">R$ 70B</span>
+              <div className="w-full bg-slate-800 rounded-full h-1.5">
+                <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: "23%" }} />
+              </div>
             </div>
           </div>
 
@@ -710,39 +753,36 @@ export default function LandingPage() {
 
       <section id="pipeline" className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(220_7%_16%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="text-center mb-10">
-            <div className="flex items-center justify-center gap-2 mb-1.5">
-              <Lock className="w-4 h-4 text-blue-400" />
-              <h2 className="text-lg font-semibold text-white/90" data-testid="text-custody-title">
-                Cadeia de Custodia
-              </h2>
-            </div>
-            <p className="text-xs text-white/45 max-w-md mx-auto">
-              Cada etapa gera evidencias com hash SHA-256, garantindo rastreabilidade total.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-            {pipelineSteps.map((step, idx) => (
-              <div key={step.title} className="flex items-center gap-2">
-                <Card className={`flex-1 bg-white/[0.02] ${step.border} hover:bg-white/[0.04] transition-colors`} data-testid={`card-pipeline-${step.title.toLowerCase()}`}>
-                  <CardContent className="p-4 text-center">
-                    <div className={`p-2 rounded-lg ${step.bg} w-fit mx-auto mb-3`}>
-                      <step.icon className={`w-4 h-4 ${step.color}`} />
-                    </div>
-                    <h3 className="text-xs font-medium mb-1 text-white/80">{step.title}</h3>
-                    <p className="text-[10px] text-white/40 leading-relaxed mb-3">{step.description}</p>
-                    <div className="flex items-center justify-center gap-1 text-[9px] font-mono text-white/30 px-2 py-1 rounded bg-white/[0.03] border border-white/[0.04]">
-                      <Hash className="w-2.5 h-2.5" />
-                      {step.hash}
-                    </div>
-                  </CardContent>
-                </Card>
-                {idx < pipelineSteps.length - 1 && (
-                  <ArrowRight className="w-3.5 h-3.5 text-white/30 shrink-0 hidden md:block" />
-                )}
+          <div className="bg-[#0f172a]/60 border border-slate-800/80 rounded-2xl p-8">
+            <div className="mb-10 flex flex-col md:flex-row justify-between md:items-end gap-4">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2" data-testid="text-custody-title">
+                  <Lock className="text-emerald-500 w-6 h-6" />
+                  Cadeia de Custódia Digital
+                </h2>
+                <p className="text-slate-400 text-sm">Cada etapa gera evidências com hash SHA-256 encadeado, garantindo rastreabilidade total.</p>
               </div>
-            ))}
+              <div className="px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs font-mono font-bold shrink-0">
+                Lei 13.964/2019 COMPLIANT
+              </div>
+            </div>
+
+            <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-2">
+              <div className="hidden md:block absolute top-6 left-[5%] right-[5%] h-[2px] bg-slate-800 z-0" />
+              {pipelineSteps.map((step, idx) => (
+                <div key={step.title} className="relative z-10 flex flex-col items-center flex-1 w-full text-center" data-testid={`card-pipeline-${step.title.toLowerCase()}`}>
+                  <div className={`w-12 h-12 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center mb-4 shadow-[0_0_15px_rgba(0,0,0,0.5)]`}>
+                    <step.icon className={`w-5 h-5 ${step.color}`} />
+                  </div>
+                  <h4 className="text-white font-semibold mb-1 text-sm">{step.title}</h4>
+                  <p className="text-xs text-slate-500 mb-3 px-2 min-h-[2.5rem] leading-relaxed">{step.description}</p>
+                  <div className="bg-slate-950 border border-slate-800 rounded px-2 py-1 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                    <span className="font-mono text-[10px] text-emerald-400/80">SHA-{step.hash}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
