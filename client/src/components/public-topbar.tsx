@@ -54,7 +54,7 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
             href="http://auratg.co"
             target="_blank"
             rel="noopener noreferrer"
-            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-400/15 bg-blue-500/[0.08] text-[10px] font-medium text-blue-300/80 hover:text-blue-200 hover:bg-blue-500/[0.14] transition-colors"
+            className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-blue-400/50 bg-blue-500/[0.08] text-[10px] font-medium text-blue-300/80 hover:text-blue-200 hover:bg-blue-500/[0.14] transition-colors"
             data-testid="button-auratech-ecosystem"
           >
             AuraTECH Ecosystem
