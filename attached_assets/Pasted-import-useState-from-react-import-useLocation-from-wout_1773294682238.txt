@@ -1,0 +1,100 @@
+import { useState } from "react";
+import { useLocation } from "wouter";
+import { Button } from "@/components/ui/button";
+import { Shield, Globe, Menu, X } from "lucide-react";
+
+interface PublicTopbarProps {
+  scrollTo?: (id: string) => void;
+}
+
+export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
+  const [, navigate] = useLocation();
+  const [lang, setLang] = useState<"pt" | "en">("pt");
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const handleScroll = (id: string) => {
+    if (scrollTo) {
+      scrollTo(id);
+    } else {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: "smooth" });
+    }
+    setIsMobileMenuOpen(false);
+  };
+
+  return (
+    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between px-6 py-3">
+        <div
+          className="flex items-center gap-3 cursor-pointer"
+          onClick={() => navigate("/landingpage-test")}
+          data-testid="logo-auratech"
+        >
+          <div className="flex items-center justify-center w-9 h-9 rounded-md bg-primary">
+            <Shield className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <div>
+            <h1 className="text-sm font-semibold tracking-tight">AuraTECH</h1>
+            <p className="text-[12px] text-muted-foreground font-semibold">
+              Digital Trust Infrastructure
+            </p>
+          </div>
+        </div>
+
+        <nav className="hidden md:flex items-center gap-6 text-xs font-medium text-muted-foreground">
+          <button onClick={() => handleScroll("sobre-nos")} className="hover:text-foreground transition-colors">Sobre Nós</button>
+          <button onClick={() => handleScroll("modulos")} className="hover:text-foreground transition-colors">Módulos</button>
+          <button onClick={() => handleScroll("performance")} className="hover:text-foreground transition-colors">Performance</button>
+          <button onClick={() => handleScroll("trust-index")} className="hover:text-foreground transition-colors">Trust Index</button>
+          <button onClick={() => handleScroll("contato")} className="hover:text-foreground transition-colors">Contato</button>
+        </nav>
+
+        <div className="flex items-center gap-4">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground h-8 px-2"
+            onClick={() => setLang(lang === "pt" ? "en" : "pt")}
+            data-testid="button-lang-toggle"
+          >
+            <Globe className="w-3.5 h-3.5 mr-1.5" />
+            {lang === "pt" ? "EN" : "PT"}
+          </Button>
+          <Button
+            size="sm"
+            className="h-8 text-xs font-medium hidden sm:inline-flex"
+            onClick={() => navigate("/login")}
+            data-testid="button-nav-login"
+          >
+            Acessar Plataforma
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden h-8 w-8"
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t bg-background/95 p-4 space-y-4 text-sm font-medium">
+          <button onClick={() => handleScroll("sobre-nos")} className="block w-full text-left text-muted-foreground hover:text-foreground">Sobre Nós</button>
+          <button onClick={() => handleScroll("modulos")} className="block w-full text-left text-muted-foreground hover:text-foreground">Módulos</button>
+          <button onClick={() => handleScroll("performance")} className="block w-full text-left text-muted-foreground hover:text-foreground">Performance</button>
+          <button onClick={() => handleScroll("trust-index")} className="block w-full text-left text-muted-foreground hover:text-foreground">Trust Index</button>
+          <button onClick={() => handleScroll("contato")} className="block w-full text-left text-muted-foreground hover:text-foreground">Contato</button>
+          <Button
+            size="sm"
+            className="w-full mt-4 h-8 text-xs font-medium"
+            onClick={() => navigate("/login")}
+          >
+            Acessar Plataforma
+          </Button>
+        </div>
+      )}
+    </header>
+  );
+}

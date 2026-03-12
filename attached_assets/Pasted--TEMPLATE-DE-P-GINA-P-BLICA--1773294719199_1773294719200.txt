@@ -1,0 +1,82 @@
+/**
+ * ============================================================
+ * TEMPLATE DE PÁGINA PÚBLICA — AuraTECH
+ * ============================================================
+ * Use este arquivo como base para criar novas páginas públicas.
+ *
+ * REGRAS OBRIGATÓRIAS:
+ * 1. Sempre usar <PublicTopbar /> no topo
+ * 2. Sempre usar <PublicFooter /> no rodapé
+ * 3. Conteúdo principal dentro de:
+ *    <div className="p-6 space-y-8 max-w-[1400px] mx-auto">
+ * 4. Cada seção com um data-testid único (ex: data-testid="section-nome")
+ * 5. Use <Card> / <CardContent> para agrupar conteúdo
+ * 6. IDs nas seções para scroll da topbar (ex: id="sobre-nos")
+ *
+ * IMPORTS PADRÃO:
+ * - Componentes UI: @/components/ui/card, button, badge, separator
+ * - Ícones: lucide-react
+ * - Topbar: @/components/public-topbar
+ * - Footer: @/components/public-footer
+ * ============================================================
+ */
+
+import { useEffect } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { PublicTopbar } from "@/components/public-topbar";
+import { PublicFooter } from "@/components/public-footer";
+
+export default function PageTemplate() {
+  useEffect(() => {
+    document.title = "Nome da Página — AuraTECH";
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+
+      {/* ✅ TOPBAR OBRIGATÓRIO — não remover */}
+      <PublicTopbar />
+
+      {/* CONTEÚDO PRINCIPAL */}
+      <div className="p-6 space-y-8 max-w-[1400px] mx-auto">
+
+        {/* SEÇÃO HERO — altere o conteúdo conforme necessário */}
+        <Card data-testid="section-hero">
+          <CardContent className="p-6 space-y-4">
+            <Badge variant="outline" className="text-xs">Módulo / Produto</Badge>
+            <h2 className="text-lg font-semibold">Título Principal da Página</h2>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-3xl">
+              Descrição do conteúdo desta página.
+            </p>
+            <div className="flex flex-wrap gap-3 pt-1">
+              <Button variant="default" size="sm" className="text-xs">
+                Call to Action Principal
+              </Button>
+              <Button variant="outline" size="sm" className="text-xs">
+                Ação Secundária
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* SEÇÃO DE CONTEÚDO — adicione suas seções aqui */}
+        <section id="sobre" data-testid="section-sobre">
+          <Card>
+            <CardContent className="p-6 space-y-3">
+              <h3 className="text-sm font-semibold">Título da Seção</h3>
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Conteúdo da seção.
+              </p>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* ✅ FOOTER OBRIGATÓRIO — não remover */}
+        <PublicFooter />
+
+      </div>
+    </div>
+  );
+}

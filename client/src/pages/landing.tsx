@@ -2,6 +2,8 @@ import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { PublicTopbar } from "@/components/public-topbar";
+import { PublicFooter } from "@/components/public-footer";
 import heroBgPath from "@assets/hero-dashboard-bg.png";
 import {
   ChartContainer,
@@ -271,28 +273,7 @@ const dataSources = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-white/[0.06] bg-[hsl(225_15%_7%/0.85)] backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20">
-              <Zap className="w-4 h-4 text-blue-400" />
-            </div>
-            <div>
-              <span className="font-semibold text-sm tracking-tight text-white">Aura<span className="text-blue-400">LOA</span></span>
-              <span className="text-[10px] text-white/40 ml-2 hidden sm:inline">Pesquisa Orcamentaria de Precatorios</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <a href="#overview" className="text-[11px] text-white/50 hidden sm:block" data-testid="link-header-dashboard">Dashboard</a>
-            <a href="#pipeline" className="text-[11px] text-white/50 hidden sm:block" data-testid="link-header-pipeline">Pipeline</a>
-            <Link href="/login">
-              <Button size="sm" data-testid="button-header-login">
-                Acessar Plataforma
-              </Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicTopbar />
 
       <section className="relative overflow-hidden" data-testid="section-hero">
         <div className="absolute inset-0">
@@ -891,19 +872,9 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/[0.04] py-6">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Zap className="w-3 h-3 text-blue-400/50" />
-            <p className="text-[11px] text-white/40" data-testid="text-footer">
-              AuraLOA — Pesquisa Orcamentaria de Precatorios
-            </p>
-          </div>
-          <p className="text-[11px] text-white/30 font-mono">
-            SHA-256
-          </p>
-        </div>
-      </footer>
+      <div className="max-w-[1400px] mx-auto px-6">
+        <PublicFooter />
+      </div>
     </div>
   );
 }

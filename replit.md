@@ -6,6 +6,14 @@ AuraLOA is a specialized module for researching and presenting precatorios (cour
 ## Project Architecture
 
 ### Frontend (React + Vite)
+
+#### Layout Shell (AuraTECH Global Standard)
+- `client/src/components/public-topbar.tsx` - Global sticky topbar: Shield logo "AuraTECH", nav links, PT/EN toggle, "Acessar Plataforma" button, mobile menu
+- `client/src/components/public-footer.tsx` - Global footer: 3 cols (logo+social / links rápidos / legal), Lei 13.964/2019, copyright AuraTECH
+- `client/src/pages/page-template.tsx` - Base template for new public pages (required by AuraTECH layout standard)
+- `client/src/pages/LAYOUT_STANDARD.md` - Mandatory layout rules: all public pages must use PublicTopbar + PublicFooter
+
+#### Pages
 - `client/src/pages/loa-dashboard.tsx` - Main dashboard with year selector, results display, KPIs, evidence trail, Estoque CNJ panel, and Gap Analysis panel
 - `client/src/pages/precatorios-pendentes.tsx` - Dedicated page for pending precatórios with tribunal consultation links and ofício requisitório access
 - `client/src/pages/contrato-tecnico.tsx` - Contrato Técnico Master page with DPO controls, anti-regression checks, audit log, and pipeline documentation
