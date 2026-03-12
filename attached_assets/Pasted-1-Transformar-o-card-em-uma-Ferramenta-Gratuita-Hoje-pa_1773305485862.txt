@@ -1,0 +1,154 @@
+1️⃣ Transformar o card em uma “Ferramenta Gratuita”
+
+Hoje parece apenas um campo de consulta.
+Ele precisa parecer um serviço valioso que você está liberando gratuitamente.
+
+Novo título
+
+Em vez de:
+
+Valide a existência do Precatório
+
+Use algo mais forte:
+
+Verificação Gratuita de Precatórios em Bases Oficiais
+
+Subtexto:
+
+Confirme em segundos se um precatório realmente existe nas bases do Judiciário e da Lei Orçamentária.
+Proteja-se contra fraudes e documentos falsos.
+
+2️⃣ Criar uma “faixa de valor” acima do card
+
+Adicione uma linha acima do card:
+
+🔎 Ferramenta gratuita • usada por advogados, investidores e gestores públicos
+
+ou
+
+Ferramenta pública de verificação de precatórios
+
+Isso cria prova social imediata.
+
+3️⃣ Transformar o card em destaque visual
+
+Hoje ele parece um formulário.
+
+Ele precisa parecer uma ferramenta premium liberada gratuitamente.
+
+Mudanças visuais
+
+aumentar largura
+
+borda glow azul
+
+leve gradiente
+
+sombra maior
+
+label “FREE TOOL”
+
+Exemplo visual:
+
+╔══════════════════════════════════════╗
+║  VERIFICAÇÃO GRATUITA DE PRECATÓRIO  ║
+║                                      ║
+║  Consulte um número CNJ e confirme   ║
+║  se o precatório existe nas bases    ║
+║  oficiais do Judiciário.             ║
+║                                      ║
+║  [ campo CNJ ]                       ║
+║                                      ║
+║  [ VERIFICAR AGORA ]                 ║
+║                                      ║
+║  ✓ Consulta em tribunais             ║
+║  ✓ Dados oficiais                    ║
+║  ✓ Resultado instantâneo             ║
+╚══════════════════════════════════════╝
+4️⃣ Adicionar “benefícios rápidos”
+
+Logo abaixo do botão:
+
+✔ Detecta documentos falsos  
+✔ Consulta tribunais automaticamente  
+✔ Verificação em menos de 10 segundos
+
+Isso aumenta muito a taxa de uso.
+
+5️⃣ Adicionar métrica (prova de uso)
+
+Debaixo do card:
+
++2.300 verificações realizadas nos últimos 30 dias
+
+ou
+
+Ferramenta usada por advogados e investidores em todo o Brasil
+6️⃣ Botão mais forte
+
+Em vez de:
+
+Iniciar Varredura
+
+Use:
+
+Verificar Precatório Agora
+
+ou
+
+Consultar Precatório
+
+7️⃣ Pequena mudança psicológica poderosa
+
+Adicione isso:
+
+Nenhum cadastro necessário
+
+ou
+
+Consulta gratuita
+
+Isso aumenta uso drasticamente.
+
+Resultado final da seção
+
+Estrutura ideal:
+
+VERIFICAÇÃO GRATUITA DE PRECATÓRIOS
+
+Confirme se um precatório realmente existe nas bases oficiais
+do Judiciário e da Lei Orçamentária.
+
+[ Campo CNJ ]
+
+[ VERIFICAR PRECATÓRIO ]
+
+✔ Consulta tribunais
+✔ Detecta documentos falsos
+✔ Resultado instantâneo
+
++2.300 consultas realizadas
+Ideia ainda mais poderosa (growth hack)
+
+Depois que o usuário consultar:
+
+mostrar:
+
+✔ Precatório encontrado
+
+Quer ver valores atualizados,
+credor e análise completa?
+
+[ Criar conta gratuita ]
+
+Isso converte muito.
+
+Conclusão
+
+Essa seção pode virar o maior motor de aquisição da AuraLOA.
+
+Você está oferecendo algo raro:
+
+verificação pública de precatórios com dados oficiais
+
+Isso é extremamente valioso.
