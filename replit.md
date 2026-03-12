@@ -1,126 +1,70 @@
-# AuraLOA - Modulo de Pesquisa de Precatorios na LOA
+# AuraLOA - Módulo de Pesquisa de Precatórios na LOA
 
-## Overview
-AuraLOA is a specialized module for researching and presenting precatorios (court-ordered payments) inscribed in the LOA (Annual Budget Law). Implements the Federal (Union) level with 4 data layers: (1) Dotação/SIOP, (2) Execução/Portal da Transparência, (3) Estoque/CNJ DataJud, and (4) Gap Analysis crossing all three.
+### Overview
+AuraLOA is a specialized module for researching and presenting precatorios (court-ordered payments) inscribed in the LOA (Annual Budget Law). It operates at the Federal (Union) level and integrates four data layers: Dotação/SIOP, Execução/Portal da Transparência, Estoque/CNJ DataJud, and a Gap Analysis that cross-references all three. The project aims to provide intelligent analysis of precatórios, offering tools for legal professionals, investors, and public managers to validate precatórios, track their lifecycle, and ensure transparency and auditability.
 
-## Project Architecture
+### User Preferences
+I prefer iterative development and clear communication. Ask before making major architectural changes or significant modifications to existing features. I expect detailed explanations for complex technical decisions. Ensure all data is auditable with SHA-256 hashes and evidence packs. I prefer the system to degrade gracefully when data sources are unavailable, explicitly marking data as PARCIAL or NAO_LOCALIZADO rather than failing.
 
-### Frontend (React + Vite)
+### System Architecture
 
-#### Layout Shell (AuraTECH Global Standard)
-- `client/src/components/public-topbar.tsx` - Global sticky topbar: Shield logo "AuraTECH", nav links, PT/EN toggle, "Acessar Plataforma" button, mobile menu
-- `client/src/components/public-footer.tsx` - Global footer: 3 cols (logo+social / links rápidos / legal), Lei 13.964/2019, copyright AuraTECH
-- `client/src/pages/page-template.tsx` - Base template for new public pages (required by AuraTECH layout standard)
-- `client/src/pages/LAYOUT_STANDARD.md` - Mandatory layout rules: all public pages must use PublicTopbar + PublicFooter
+**Frontend (React + Vite)**
+-   **Layout**: Global sticky topbar and footer adhering to AuraTECH global standards. Public pages use a base template.
+-   **Core Pages**:
+    -   `LOA Dashboard`: Main dashboard with year selection, KPIs, evidence trails, CNJ Estoque, and Gap Analysis.
+    -   `Pending Precatórios`: Dedicated page with tribunal consultation links.
+    -   `Technical Contract`: Master page with DPO controls, anti-regression, and audit logs.
+    -   `SP Dashboard`: For São Paulo state, featuring CSV import, TJSP scraping, and A2 conciliation.
+    -   `Landing Page`: Public marketing page with market KPIs, LOA projections, and CTA.
+    -   `Login`: Standard email/password authentication.
+-   **UI/UX**: Layout containers expanded to `max-w-[1400px]`. Hero sections feature a gradient title and a visual pipeline for precatório lifecycle. KPI cards are full-width with descriptive subtexts. A "Free Verification" section for preliminary LOA validation. "Intelligence Modules" are presented as distinct cards with colored borders and enhanced descriptions. Terminology like "NPU" is replaced with "CNJ" for user-facing elements. Anti-Alucinação is an internal backend guard.
 
-#### Pages
-- `client/src/pages/loa-dashboard.tsx` - Main dashboard with year selector, results display, KPIs, evidence trail, Estoque CNJ panel, and Gap Analysis panel
-- `client/src/pages/precatorios-pendentes.tsx` - Dedicated page for pending precatórios with tribunal consultation links and ofício requisitório access
-- `client/src/pages/contrato-tecnico.tsx` - Contrato Técnico Master page with DPO controls, anti-regression checks, audit log, and pipeline documentation
-- `client/src/pages/sp-dashboard.tsx` - SP (Estado de São Paulo) dashboard with CSV import, TJSP scraping, and A2 conciliation
-- `client/src/pages/landing.tsx` - Public marketing landing page with market KPIs, LOA projection charts, chain of custody pipeline, and CTA
-- `client/src/pages/login.tsx` - Login page with email/password authentication
-- `client/src/App.tsx` - Routes configuration with AuthGuard (/ landing, /login, /dashboard, /dashboard/pendentes, /dashboard/contrato, /dashboard/sp)
+**Backend (Express)**
+-   **Authentication**: HMAC-SHA256 token validation.
+-   **Core Modules**:
+    -   `LOA Uniao A2`: Main Federal LOA analysis, history, and catalog.
+    -   `LOA Estoque`: Estoque and Gap Analysis.
+    -   `LOA SP`: São Paulo state module for LOA and despesas import, TJSP scraping, and A2 conciliation.
+    -   `DPO Controls`: Authorization guard, audit logging, integrity checks, and resource locking.
+    -   `Anti-Regression`: Validation against baselines, metric comparison, and violation detection.
+    -   `Anti-Hallucination`: Guards against mock data, ensures source validation and value evidence checks.
+-   **Data Processing**:
+    -   Parses execution data (PAGO+LIQUIDADO) from Portal da Transparência ZIPs.
+    -   Integrates with SPARQL for Dotação and CNJ DataJud for Estoque.
+    -   Orchestrates Estoque providers with fallback mechanisms.
+    -   Downloads and parses official tribunal PDFs for precatório values, using `pdfjs-dist` for extraction and SHA-256 for evidence.
+    -   Performs Gap Analysis across Dotação, Execução, and Estoque.
+-   **Scheduled Tasks**: Automatic monthly batch download scheduler.
+-   **Evidence System**: All data processed includes SHA-256 hashes, stored in `./Saida/evidence/` with detailed logs and raw files for full auditability. No mock data is used; all values are from real sources or explicitly marked as unavailable.
 
-### Backend (Express)
-- `server/routes/auth.ts` - Authentication endpoints (login, me, logout) with HMAC-SHA256 token validation
-- `server/routes/loa_uniao_a2.ts` - Main endpoint `POST /api/loa/uniao/a2` and history/catalog endpoints
-- `server/routes/loa_estoque.ts` - Estoque and Gap Analysis endpoints
-- `server/catalog/acoes_precatorios_uniao.ts` - Catalog of 7 precatório actions (0005, 0EC7, 0EC8, 0625, 00WU, 00G5, 0022)
-- `server/services/transparencia_execucao.ts` - Portal da Transparência REST API integration (`/api-de-dados/despesas/por-funcional-programatica`)
-- `server/services/transparencia_download.ts` - ZIP download from Portal da Transparência (`dadosabertos-download.cgu.gov.br`)
-- `server/services/a2_execucao_from_zip.ts` - **DPO block**: parses execution (PAGO+LIQUIDADO) from ZIP CSVs via join Pagamento_EmpenhosImpactados + Liquidacao_EmpenhosImpactados + Empenho
-- `server/services/siop_dotacao.ts` - Dotação via SPARQL (orcamento.dados.gov.br + SIOP fallback)
-- `server/services/estoque_datajud.ts` - CNJ DataJud Elasticsearch API provider for court process stock (Camada 3)
-- `server/services/estoque_tribunais.ts` - Estoque orchestrator with provider fallback (datajud → csv → scraping stub) and PDF valor enrichment
-- `server/services/valor_precatorio_pdf.ts` - **DPO strategy**: Downloads and parses official tribunal PDFs (relação de precatórios para orçamento) to extract valores. Uses pdfjs-dist for parsing, regex extraction, caching, and SHA-256 evidence tracking
-- `server/services/gap_analysis.ts` - Cross-references Dotação x Execução x Estoque (Camada 4)
-- `server/services/dpo_guard.ts` - DPO authorization guard system (lock/unlock resources, audit log, integrity checks)
-- `server/services/anti_regression.ts` - Anti-regression validation (baselines, metric comparison, violation detection)
-- `server/services/anti_hallucination.ts` - Anti-hallucination guards (zero mock data, source validation, value evidence checks)
-- `server/services/cron_download.ts` - Automatic monthly batch download scheduler (runs day 1 at 03:00)
-- `server/services/evidence_pack.ts` - Evidence pack system (SHA-256 hashes, file saving)
-- `server/services/validate_output.ts` - Output validation
-- `server/routes/loa_dpo.ts` - DPO control, regression, cruzamento-completo, and contrato técnico endpoints
-- `server/routes/loa_sp.ts` - SP (Estado de São Paulo) module: LOA import, despesas import, TJSP scraping, A2 conciliation
-- `server/services/sp_tjsp.ts` - TJSP HTML scraping with evidence pack (pendentes + pagamentos)
+**Shared Types**
+-   `shared/loa_types.ts`: TypeScript interfaces for A2, Estoque, and Gap Analysis modules.
 
-### Shared Types
-- `shared/loa_types.ts` - All TypeScript interfaces for A2, Estoque, and Gap Analysis modules
+**Key Decisions**
+-   Primary source for execution data is Portal da Transparência REST API.
+-   SIOP SPARQL is blocked externally, leading to graceful degradation.
+-   CNJ DataJud is the primary Estoque provider with fallback to CSV and scraping.
+-   Estoque data is not filtered by year, retrieving the full court backlog.
+-   Federal tribunals TRF1-TRF6 are primary targets.
+-   SP module uses manual CSV import and best-effort TJSP HTML scraping.
+-   Multi-entity architecture supports Federal (`UNIAO`) and São Paulo (`SP`).
 
-### Evidence System
-- Evidence packs saved to `./Saida/evidence/{process_id_uuid}/`
-- Each pack contains: request.json, response.json, raw/ folder, hashes.json, run.log
-- ZIP files saved to `raw/YYYYMM01_Despesas.zip` with SHA-256 hash
-- All data has SHA-256 hashes for auditability
+### External Dependencies
 
-## API Endpoints
-- `POST /api/loa/uniao/a2` - Execute A2 analysis (input: `{ ano_exercicio: number, mes?: number }`)
-- `GET /api/loa/uniao/a2/history` - Get recent consultation history
-- `GET /api/loa/uniao/a2/catalog` - Get catalog of precatório actions
-- `POST /api/loa/uniao/a2/batch-download` - Download all 12 months ZIPs for a year
-- `GET /api/loa/uniao/a2/cron/status` - Check cron scheduler status
-- `POST /api/loa/uniao/a2/cron/start` - Start monthly auto-download
-- `POST /api/loa/uniao/a2/cron/stop` - Stop monthly auto-download
-- `POST /api/loa/uniao/estoque` - Query CNJ DataJud estoque (input: `{ ano_exercicio: number, tribunais?: string[], max_por_tribunal?: number }`)
-- `POST /api/loa/uniao/estoque/csv` - Export estoque to CSV (input: `{ ano_exercicio: number, tribunais?: string[], max_por_tribunal?: number }`)
-- `POST /api/loa/uniao/gap-analysis` - Cross Dotação x Execução x Estoque (input: `{ ano_exercicio: number, mes?: number }`)
-- `POST /api/loa/uniao/gap-analysis/csv` - Export full 4-layer Gap Analysis as CSV (Dotação x Execução x Estoque x Valores x Pendentes)
-- `POST /api/loa/uniao/precatorios-pendentes` - Filter pending precatórios only (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
-- `POST /api/loa/uniao/cruzamento-completo` - Full 4-layer crossed evidence spreadsheet (Dotação x Execução x Estoque x Valores)
-- `GET /api/loa/uniao/contrato-tecnico` - Contrato Técnico Master with all clauses
-- `GET /api/loa/uniao/dpo/locks` - List DPO locks
-- `POST /api/loa/uniao/dpo/lock` - Lock resource (requires DPO)
-- `POST /api/loa/uniao/dpo/unlock` - Unlock resource (requires token)
-- `POST /api/loa/uniao/dpo/check-integrity` - Verify SHA-256 integrity
-- `GET /api/loa/uniao/dpo/audit-log` - DPO audit log
-- `POST /api/loa/uniao/dpo/lock-all` - Lock all protected resources
-- `POST /api/loa/uniao/regression/check` - Anti-regression check
-- `POST /api/loa/uniao/regression/baseline` - Save regression baseline
-- `POST /api/sp/loa/import` - Import LOA SP CSV (input: `{ ano, csvText, delimiter? }`)
-- `POST /api/sp/despesas/import` - Import Despesas SP CSV (input: `{ ano, csvText, delimiter? }`)
-- `GET /api/sp/tjsp/pendentes?entidade=X` - TJSP precatórios pendentes (HTML scraping)
-- `GET /api/sp/tjsp/pagamentos?entidade=X` - TJSP pagamentos disponibilizados (HTML scraping)
-- `POST /api/sp/a2` - A2 conciliation SP (input: `{ ano, orgao?, uo? }`)
-- `GET /api/sp/status` - SP module status (imported data counts)
-- `POST /api/sp/auto/execucao` - Auto-download execution CSV from Sefaz/SP (input: `{ ano: number }`)
-- `POST /api/sp/auto/dotacao` - Auto-download dotação CSV from Sefaz/SP (input: `{ ano: number }`)
-- `GET /api/sp/auto/anos` - List available years for auto-import (2011-current+1)
-- `POST /api/sp/pendentes-datajud` - Query TJSP pendentes via CNJ DataJud (input: `{ ano_exercicio: number, max_por_tribunal?: number }`)
-
-## Data Sources
-- **Execução (Empenho/Liquidação/Pagamento)**: Portal da Transparência REST API - requires API key (env: PORTAL_TRANSPARENCIA_API_KEY). Uses endpoint `/api-de-dados/despesas/por-funcional-programatica` with `chave-api-dados` header.
-- **Dotação (Orçamento LOA)**: SPARQL endpoints - orcamento.dados.gov.br (public, data up to ~2016) and SIOP SPARQL (blocked by Cloudflare from external environments). Dotação for years >2016 currently unavailable via automated query.
-- **ZIP Downloads**: `https://dadosabertos-download.cgu.gov.br/PortalDaTransparencia/saida/despesas/YYYYMM01_Despesas.zip` - Monthly despesas ZIP files with evidence tracking
-- **Estoque (CNJ DataJud)**: Public Elasticsearch API at `https://api-publica.datajud.cnj.jus.br/api_publica_{tribunal}/_search`. Uses class codes 1265 (Precatório) and 1266 (RPV). Federal tribunals: TRF1-TRF6. TRF3/TRF4/TRF6 have data; TRF1/TRF2/TRF5 return empty. Also supports TJSP for SP state pendentes.
-- **Consulta TJSP (eSAJ)**: `https://esaj.tjsp.jus.br/cpopg/open.do?processo.numero={CNJ}` for public case consultation.
-- **Valores (PDF Oficial Tribunal)**: TRF6 publishes official PDF with precatório values for budget inclusion. URL: `https://portal.trf6.jus.br/wp-content/uploads/2024/05/precatorios-federias-trf6-orcamento-2025.pdf`. Parsed with pdfjs-dist, cached in `./Saida/cache/pdf_valores/`. Contains ~9500 entries with VALOR(R$) and preferência (IDOSO/NÃO/PcD).
-- **SP Execução/Dotação (Sefaz/SP)**: Direct CSV download from `https://dworcamento.fazenda.sp.gov.br/DadosXML/{ANO}_INVESTIMENTOS_EXECUCAO_ORCAMENTO.csv` and `{ANO}_INVESTIMENTO_DOTACAO_INICIAL.csv`. No API key required. Data from 2011 onwards. Auto-identifies precatórios by keyword matching (precatório, sentença judicial, RPV, depósitos judiciais).
-- **Consulta TRF6**: Per official TRF6 guidance, PJe cases should be consulted via TRF1 processual (`processual.trf1.jus.br`) with `secao=TRF6`; eProc cases via `eproc2g.trf6.jus.br`.
-
-## Precatório Actions Catalog (2025)
-- 0005 - Sentenças Judiciais Transitadas em Julgado (Precatórios)
-- 0EC7 - Precatórios Relativos à Complementação da União ao FUNDEF
-- 0EC8 - Precatórios Parcelados ou Objetos de Acordos
-- 0625 - Sentenças Judiciais de Pequeno Valor (RPV) - **has significant execution data**
-- 00WU - Precatórios Excedentes ao Sublimite
-- 00G5 - Contribuição Previdenciária sobre Pagamento de Precatórios/RPV
-- 0022 - Sentenças Judiciais Devidas por Empresas Estatais - **has execution data**
-
-## Key Decisions
-- Portal da Transparência REST API is the primary source for execution data (replaces CSV download which is blocked by CDN)
-- SIOP SPARQL endpoint is blocked by Cloudflare WAF from external environments; orcamento.dados.gov.br only has data up to ~2016
-- System gracefully degrades to PARCIAL/NAO_LOCALIZADO status when sources are unavailable
-- No mock data - all values come from real government sources or are explicitly marked as unavailable
-- ZIP downloads are server-side with full evidence pack integration (SHA-256, file paths, HTTP status)
-- Automatic monthly cron runs on day 1 at 03:00 to download all 12 ZIPs
-- CNJ DataJud is primary estoque provider; CSV secondary, scraping tertiary (feature flag)
-- Estoque default max_por_tribunal = 10000 (Elasticsearch API limit); uses track_total_hits=true for accurate totals
-- DataJud real totals: TRF3 ~9,250, TRF4/TRF6 ~300,000+ (only 10,000 fetchable per query via search_after)
-- Estoque retrieves full court backlog (all years), not filtered by single year
-- Federal tribunals TRF1-TRF6 as primary targets
-- Provider pattern for estoque with graceful degradation and evidence tracking per provider
-- Gap Analysis crosses all 3 layers per precatório action with coverage metrics
-- SP module uses manual CSV import for LOA and Despesas (MVP strategy); TJSP scraping is best-effort HTML extraction
-- SP module reuses existing evidence pack system (SHA-256, UUID) for full auditability
-- Multi-ente architecture: `ente=UNIAO` for Federal, `ente=SP` for Estado de São Paulo
+-   **Portal da Transparência**:
+    -   REST API: `api-de-dados/despesas/por-funcional-programatica` for execution data (requires API key).
+    -   ZIP Downloads: `dadosabertos-download.cgu.gov.br` for monthly despesas ZIP files.
+-   **SPARQL Endpoints**:
+    -   `orcamento.dados.gov.br`: For Dotação data (up to ~2016).
+    -   SIOP SPARQL: Fallback for Dotação, but externally blocked.
+-   **CNJ DataJud**:
+    -   Elasticsearch API: `api-publica.datajud.cnj.jus.br` for court process stock (Precatório and RPV class codes). Supports Federal tribunals (TRF1-TRF6) and TJSP.
+-   **TJSP (eSAJ)**:
+    -   Public case consultation: `esaj.tjsp.jus.br/cpopg/open.do?processo.numero={CNJ}` for HTML scraping.
+-   **Official Tribunal PDFs**:
+    -   Example: `portal.trf6.jus.br/.../precatorios-federias-trf6-orcamento-2025.pdf` for extracting precatório values (parsed using `pdfjs-dist`).
+-   **Sefaz/SP**:
+    -   Direct CSV downloads: `dworcamento.fazenda.sp.gov.br` for SP state execution and dotação data (2011 onwards).
+-   **TRF6 Processual Systems**:
+    -   `processual.trf1.jus.br` (for PJe cases)
+    -   `eproc2g.trf6.jus.br` (for eProc cases)
