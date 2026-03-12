@@ -226,8 +226,8 @@ const features = [
   },
   {
     icon: Shield,
-    title: "Cadeia de Custodia",
-    description: "SHA-256 e evidencias rastreaveis para cada dado coletado. Auditoria completa.",
+    title: "Cadeia de Custódia",
+    description: "Hash SHA-256 gerado automaticamente em cada etapa — da coleta ao relatório. Cada dado tem origem, timestamp e evidência verificável. Rastreabilidade jurídica completa.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/40 hover:border-emerald-400/60",
@@ -236,7 +236,7 @@ const features = [
   {
     icon: Layers,
     title: "Cruzamento 4 Camadas",
-    description: "Dotacao x Execucao x Estoque x Valores. Visao integrada do ciclo orcamentario.",
+    description: "Cruza automaticamente Dotação × Execução × Estoque × Valores PDF. Detecta divergências, identifica recursos não utilizados e revela o status real de cada precatório.",
     color: "text-purple-400",
     bg: "bg-purple-500/10",
     border: "border-purple-500/40 hover:border-purple-400/60",
@@ -245,7 +245,7 @@ const features = [
   {
     icon: Phone,
     title: "Contato do Credor",
-    description: "Email, telefone, dados comerciais/pessoais, OAB, CPF e CNPJ do credor.",
+    description: "Localiza o titular do precatório com precisão: e-mail, telefone, OAB, CPF e CNPJ. Facilita negociações diretas, elimina intermediários e acelera a due diligence.",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     border: "border-amber-500/40 hover:border-amber-400/60",
@@ -254,7 +254,7 @@ const features = [
   {
     icon: Globe,
     title: "Cobertura Nacional",
-    description: "Federal (TRF1-6), Estadual e Municipal. Todas as esferas do poder judiciario.",
+    description: "Abrange todos os tribunais federais (TRF1 a TRF6), estaduais e municipais. Do precatório federal ao estadual de São Paulo — uma única consulta, todas as esferas.",
     color: "text-cyan-400",
     bg: "bg-cyan-500/10",
     border: "border-cyan-500/40 hover:border-cyan-400/60",
@@ -263,7 +263,7 @@ const features = [
   {
     icon: Landmark,
     title: "LOA 2024 a 2028",
-    description: "Acesso completo ao historico de LOA 2024 a 2028. Precatorios pendentes de pagamento identificados, rastreados e cruzados em todas as esferas.",
+    description: "Série histórica de 5 anos de LOA. Identifica precatórios inscritos no orçamento mas ainda não quitados — mapeando oportunidades reais de liquidez e risco de inadimplência.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/40 hover:border-emerald-400/60",
@@ -272,8 +272,8 @@ const features = [
   },
   {
     icon: FileSpreadsheet,
-    title: "Exportacao e Relatorios",
-    description: "CSV completo com 4 camadas cruzadas, valores, pendentes e metadados SHA-256. Pronto para uso juridico, compliance e due diligence.",
+    title: "Exportação e Relatórios",
+    description: "Gera relatórios prontos para uso jurídico e compliance: CSV com 4 camadas cruzadas, valores atualizados, pendentes identificados e hashes SHA-256. Um clique, evidência completa.",
     color: "text-rose-400",
     bg: "bg-rose-500/10",
     border: "border-rose-500/40 hover:border-rose-400/60",
