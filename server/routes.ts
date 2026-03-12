@@ -6,12 +6,14 @@ import loaEstoqueRouter from "./routes/loa_estoque";
 import loaDpoRouter from "./routes/loa_dpo";
 import loaSpRouter from "./routes/loa_sp";
 import authRouter from "./routes/auth";
+import validadorRouter from "./routes/validador";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   app.use(authRouter);
+  app.use(validadorRouter);
   app.use(loaUniaoA2Router);
   app.use(loaEstoqueRouter);
   app.use(loaDpoRouter);

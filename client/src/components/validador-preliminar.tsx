@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useRef } from "react";
 import { useLocation } from "wouter";
 import {
   ShieldCheck,
@@ -11,50 +11,96 @@ import {
   FileText,
   Hash,
   X,
+  AlertTriangle,
+  ExternalLink,
 } from "lucide-react";
 
 type InputMode = "numero" | "upload";
+type ScanStatus = "idle" | "scanning" | "found" | "not_found" | "error";
+
+interface ValidacaoResult {
+  encontrado: boolean;
+  numero_cnj: string;
+  numero_oficio: string;
+  tribunal: string;
+  tipo: "PRECATORIO" | "RPV" | "DESCONHECIDO";
+  situacao: string;
+  grau: string | null;
+  data_ajuizamento_ano: string | null;
+  pagamento_pendente: boolean;
+  url_consulta: string | null;
+  sha256_evidencia: string;
+  consultado_em: string;
+}
+
+const SCAN_MESSAGES = [
+  "Conectando ao DataJud CNJ...",
+  "Verificando integridade do processo...",
+  "Cruzando dados com a LOA 2026...",
+  "Validando cadeia de custódia...",
+];
+
+const SITUACAO_LABELS: Record<string, string> = {
+  em_tramitacao: "Em tramitação",
+  baixado: "Baixado",
+  pagamento_parcial: "Pagamento parcial registrado",
+  desconhecido: "Situação desconhecida",
+  nao_localizado: "Não localizado",
+};
 
 export function ValidadorPreliminarLOA() {
   const [, navigate] = useLocation();
   const [mode, setMode] = useState<InputMode>("numero");
-  const [scanStatus, setScanStatus] = useState<"idle" | "scanning" | "result">("idle");
+  const [scanStatus, setScanStatus] = useState<ScanStatus>("idle");
   const [scanStep, setScanStep] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [oficio, setOficio] = useState("");
   const [processoCNJ, setProcessoCNJ] = useState("");
+  const [resultado, setResultado] = useState<ValidacaoResult | null>(null);
+  const [errorMsg, setErrorMsg] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const canSubmitNumero = oficio.trim().length > 0 && processoCNJ.trim().length > 0;
 
-  const scanMessages = [
-    "Conectando ao DataJud CNJ...",
-    "Verificando integridade do processo...",
-    "Cruzando dados com a LOA 2026...",
-    "Validando cadeia de custódia...",
-  ];
-
-  useEffect(() => {
-    let interval: ReturnType<typeof setInterval>;
-    let timeout: ReturnType<typeof setTimeout>;
-    if (scanStatus === "scanning") {
-      interval = setInterval(() => {
-        setScanStep((prev) => (prev < scanMessages.length - 1 ? prev + 1 : prev));
-      }, 800);
-      timeout = setTimeout(() => {
-        setScanStatus("result");
-      }, 3500);
-    }
-    return () => {
-      clearInterval(interval);
-      clearTimeout(timeout);
-    };
-  }, [scanStatus]);
-
-  const handleStartScan = () => {
+  const handleStartScan = async () => {
     setScanStatus("scanning");
     setScanStep(0);
+    setResultado(null);
+    setErrorMsg("");
+
+    // Animação de progresso enquanto aguarda API
+    const interval = setInterval(() => {
+      setScanStep((prev) => (prev < SCAN_MESSAGES.length - 1 ? prev + 1 : prev));
+    }, 700);
+
+    try {
+      const res = await fetch("/api/validador/verificar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          numero_oficio: oficio.trim(),
+          numero_processo: processoCNJ.trim(),
+        }),
+      });
+
+      clearInterval(interval);
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        setErrorMsg(err.error || "Erro ao consultar DataJud.");
+        setScanStatus("error");
+        return;
+      }
+
+      const data: ValidacaoResult = await res.json();
+      setResultado(data);
+      setScanStatus(data.encontrado ? "found" : "not_found");
+    } catch (err: any) {
+      clearInterval(interval);
+      setErrorMsg("Falha de conexão. Verifique sua internet e tente novamente.");
+      setScanStatus("error");
+    }
   };
 
   const handleReset = () => {
@@ -63,6 +109,8 @@ export function ValidadorPreliminarLOA() {
     setUploadedFile(null);
     setOficio("");
     setProcessoCNJ("");
+    setResultado(null);
+    setErrorMsg("");
   };
 
   const handleFileChange = (file: File | null) => {
@@ -308,70 +356,147 @@ export function ValidadorPreliminarLOA() {
                 <h4 className="text-white text-lg font-semibold mb-2">Consultando Bases Oficiais...</h4>
                 <div className="h-6 flex items-center justify-center overflow-hidden">
                   <p className="text-sm font-mono text-cyan-400 animate-pulse">
-                    &gt; {scanMessages[scanStep]}
+                    &gt; {SCAN_MESSAGES[scanStep]}
                   </p>
                 </div>
                 <div className="w-full max-w-md bg-slate-800 h-2 rounded-full mt-8 overflow-hidden">
-                  <div
-                    className="h-full bg-gradient-to-r from-blue-400 to-cyan-300 rounded-full"
-                    style={{ animation: "fillBar 3.5s forwards ease-out" }}
-                  />
+                  <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-300 rounded-full animate-[scan_6s_ease-out_forwards]" />
                 </div>
-                <style>{`@keyframes fillBar { from { width: 0%; } to { width: 100%; } }`}</style>
+                <style>{`@keyframes scan { from { width: 0% } to { width: 95% } }`}</style>
               </div>
             )}
 
-            {/* Estado 3: Resultado */}
-            {scanStatus === "result" && (
+            {/* Estado 3a: Encontrado — dados reais + seção bloqueada */}
+            {scanStatus === "found" && resultado && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
-                <div className="flex items-center gap-3 mb-6 border-b border-emerald-900/50 pb-5">
-                  <div className="bg-emerald-500/20 p-2.5 rounded-full">
+                <div className="flex items-center gap-3 mb-5 border-b border-emerald-900/40 pb-5">
+                  <div className="bg-emerald-500/15 p-2.5 rounded-full border border-emerald-500/20">
                     <CheckCircle2 className="w-7 h-7 text-emerald-400" />
                   </div>
                   <div>
-                    <h4 className="text-emerald-400 font-bold text-lg">Precatório Autêntico</h4>
-                    <p className="text-xs text-slate-400 font-mono">Status: Válido · Fonte: TRF / DataJud CNJ</p>
+                    <h4 className="text-emerald-400 font-bold text-lg">
+                      {resultado.tipo === "PRECATORIO" ? "Precatório" : resultado.tipo === "RPV" ? "RPV" : "Processo"} Autêntico
+                    </h4>
+                    <p className="text-xs text-slate-400 font-mono">
+                      Fonte: DataJud CNJ · {resultado.tribunal.toUpperCase()}
+                    </p>
                   </div>
                 </div>
 
-                <div className="relative rounded-xl border border-slate-800 bg-slate-900/50 p-6 mb-5 overflow-hidden">
-                  <div className="absolute inset-0 backdrop-blur-md bg-[#0B0F19]/60 z-10 flex flex-col items-center justify-center gap-2 px-6 text-center">
-                    <Lock className="w-6 h-6 text-slate-400" />
-                    <span className="text-sm font-semibold text-slate-200">Quer ver valores, credor e análise completa?</span>
-                    <span className="text-xs text-slate-500">Crie sua conta gratuita para desbloquear</span>
+                {/* Dados liberados gratuitamente */}
+                <div className="rounded-xl border border-slate-700/60 bg-slate-900/40 divide-y divide-slate-800/60 mb-4">
+                  <div className="flex justify-between items-center px-5 py-3">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider">Nº do Processo</span>
+                    <span className="text-sm font-mono text-slate-200">{resultado.numero_cnj || processoCNJ}</span>
                   </div>
-                  <div className="space-y-3 opacity-20 select-none pointer-events-none">
-                    <div className="flex justify-between">
-                      <span className="text-sm text-slate-500">Valor Atualizado:</span>
-                      <span className="text-sm font-mono text-white">R$ 1.254.300,00</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-slate-500">Status LOA:</span>
-                      <span className="text-sm text-white">Inscrito (2025)</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-sm text-slate-500">Credor:</span>
-                      <span className="text-sm text-white">João S. M. (CPF: ***.456.***-**)</span>
-                    </div>
+                  <div className="flex justify-between items-center px-5 py-3">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider">Ofício Requisitório</span>
+                    <span className="text-sm font-mono text-slate-200">{resultado.numero_oficio || oficio}</span>
                   </div>
+                  <div className="flex justify-between items-center px-5 py-3">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider">Tribunal</span>
+                    <span className="text-sm text-slate-200">{resultado.tribunal.toUpperCase()}</span>
+                  </div>
+                  <div className="flex justify-between items-center px-5 py-3">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider">Tipo</span>
+                    <span className={`text-sm font-medium ${resultado.tipo === "PRECATORIO" ? "text-blue-400" : resultado.tipo === "RPV" ? "text-cyan-400" : "text-slate-400"}`}>
+                      {resultado.tipo === "PRECATORIO" ? "Precatório" : resultado.tipo === "RPV" ? "RPV" : "—"}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center px-5 py-3">
+                    <span className="text-xs text-slate-500 uppercase tracking-wider">Situação</span>
+                    <span className={`text-sm font-medium ${resultado.pagamento_pendente ? "text-amber-400" : "text-emerald-400"}`}>
+                      {SITUACAO_LABELS[resultado.situacao] || resultado.situacao}
+                    </span>
+                  </div>
+                  {resultado.data_ajuizamento_ano && (
+                    <div className="flex justify-between items-center px-5 py-3">
+                      <span className="text-xs text-slate-500 uppercase tracking-wider">Ano de Ajuizamento</span>
+                      <span className="text-sm text-slate-200 font-mono">{resultado.data_ajuizamento_ano}</span>
+                    </div>
+                  )}
+                  {resultado.url_consulta && (
+                    <div className="flex justify-between items-center px-5 py-3">
+                      <span className="text-xs text-slate-500 uppercase tracking-wider">Consulta Tribunal</span>
+                      <a href={resultado.url_consulta} target="_blank" rel="noopener noreferrer"
+                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
+                        Acessar <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
+                </div>
+
+                {/* Seção bloqueada */}
+                <div className="relative rounded-xl border border-slate-800 bg-slate-900/50 p-5 mb-4 overflow-hidden">
+                  <div className="absolute inset-0 backdrop-blur-[3px] bg-[#0B0F19]/70 z-10 flex flex-col items-center justify-center gap-1.5 px-6 text-center rounded-xl">
+                    <Lock className="w-5 h-5 text-slate-400 mb-0.5" />
+                    <span className="text-sm font-semibold text-slate-200">Acesso completo requer login</span>
+                    <span className="text-xs text-slate-500">Valor atualizado, credor, status na LOA e cadeia de custódia</span>
+                  </div>
+                  <div className="space-y-2.5 opacity-20 select-none pointer-events-none">
+                    <div className="flex justify-between"><span className="text-xs text-slate-500">Valor Atualizado:</span><span className="text-sm font-mono text-white">R$ ●●●.●●●,00</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-slate-500">Status LOA 2026:</span><span className="text-sm text-white">Inscrito</span></div>
+                    <div className="flex justify-between"><span className="text-xs text-slate-500">Credor:</span><span className="text-sm text-white">●●● (CPF: ***.***.**-**)</span></div>
+                  </div>
+                </div>
+
+                {/* SHA-256 evidência */}
+                <div className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 flex items-center gap-2 mb-4">
+                  <Hash className="w-3.5 h-3.5 text-emerald-500/60 shrink-0" />
+                  <span className="font-mono text-[10px] text-emerald-400/60 truncate">SHA-256: {resultado.sha256_evidencia}</span>
                 </div>
 
                 <div className="flex gap-3">
-                  <button
-                    onClick={handleReset}
-                    className="px-4 py-3 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors flex items-center justify-center"
-                    data-testid="button-reset-scan"
-                  >
+                  <button onClick={handleReset} className="px-4 py-3 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors" data-testid="button-reset-scan">
                     <Search className="w-5 h-5" />
                   </button>
-                  <button
-                    onClick={() => navigate("/login")}
+                  <button onClick={() => navigate("/login")}
                     className="flex-1 bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold py-3 rounded-xl transition-opacity text-sm shadow-[0_0_20px_rgba(96,165,250,0.3)]"
-                    data-testid="button-login-resultado"
-                  >
-                    Criar Conta Gratuita →
+                    data-testid="button-login-resultado">
+                    Ver Análise Completa →
                   </button>
                 </div>
+              </div>
+            )}
+
+            {/* Estado 3b: Não encontrado */}
+            {scanStatus === "not_found" && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto text-center">
+                <div className="flex flex-col items-center gap-3 mb-6">
+                  <div className="bg-amber-500/10 p-3 rounded-full border border-amber-500/20">
+                    <AlertTriangle className="w-8 h-8 text-amber-400" />
+                  </div>
+                  <h4 className="text-amber-400 font-bold text-xl">Não Localizado nas Bases Oficiais</h4>
+                  <p className="text-slate-400 text-sm max-w-md">
+                    O processo <span className="font-mono text-slate-300">{processoCNJ}</span> não foi encontrado no DataJud CNJ. Verifique os números informados ou acesse a plataforma para uma busca estendida.
+                  </p>
+                </div>
+                <div className="flex gap-3 justify-center">
+                  <button onClick={handleReset} className="px-5 py-3 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-sm flex items-center gap-2" data-testid="button-reset-scan">
+                    <Search className="w-4 h-4" /> Tentar novamente
+                  </button>
+                  <button onClick={() => navigate("/login")}
+                    className="px-5 py-3 bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold rounded-xl transition-opacity text-sm"
+                    data-testid="button-login-nao-encontrado">
+                    Busca avançada →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Estado 3c: Erro */}
+            {scanStatus === "error" && (
+              <div className="animate-in fade-in duration-300 max-w-2xl mx-auto text-center">
+                <div className="flex flex-col items-center gap-3 mb-6">
+                  <div className="bg-red-500/10 p-3 rounded-full border border-red-500/20">
+                    <AlertTriangle className="w-7 h-7 text-red-400" />
+                  </div>
+                  <h4 className="text-red-400 font-semibold">Falha na Consulta</h4>
+                  <p className="text-slate-500 text-sm">{errorMsg || "Não foi possível conectar ao DataJud. Tente novamente."}</p>
+                </div>
+                <button onClick={handleReset} className="px-6 py-3 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-sm flex items-center gap-2 mx-auto" data-testid="button-reset-error">
+                  <Search className="w-4 h-4" /> Tentar novamente
+                </button>
               </div>
             )}
 

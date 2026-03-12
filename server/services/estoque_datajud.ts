@@ -314,3 +314,139 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
 }
 
 export { CLASSE_PRECATORIO, CLASSE_RPV };
+
+// ─── Busca por número de processo específico ──────────────────────────────────
+
+export interface ValidacaoPreliminarResult {
+  encontrado: boolean;
+  numero_cnj: string;
+  numero_oficio: string;
+  tribunal: string;
+  tribunal_alias: string;
+  tipo: "PRECATORIO" | "RPV" | "DESCONHECIDO";
+  situacao: string;
+  grau: string | null;
+  data_ajuizamento_ano: string | null;
+  pagamento_pendente: boolean;
+  url_consulta: string | null;
+  sha256_evidencia: string;
+  consultado_em: string;
+  // Dados premium (retornados null no modo gratuito)
+  valor_causa_locked: true;
+  credor_locked: true;
+  loa_status_locked: true;
+}
+
+function extrairTribunalDoCNJ(numeroCNJ: string): string | null {
+  // Formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
+  // J=4 → Federal (TRF), TT=01-06 → TRF1-TRF6
+  // J=8, TT=26 → TJSP
+  const partes = numeroCNJ.replace(/[^\d.]/g, "").split(".");
+  if (partes.length < 5) return null;
+  const j = partes[2];   // ramo da justiça
+  const tt = partes[3];  // tribunal
+  if (j === "4") {
+    const num = parseInt(tt, 10);
+    if (num >= 1 && num <= 6) return `trf${num}`;
+  }
+  if (j === "8" && tt === "26") return "tjsp";
+  return null;
+}
+
+export async function fetchPrecatorioByNumero(
+  numeroCNJ: string,
+  numeroOficio: string
+): Promise<ValidacaoPreliminarResult> {
+  const consultado_em = new Date().toISOString();
+  const numeroCNJNorm = numeroCNJ.trim();
+
+  // Determinar tribunal pelo CNJ
+  const tribunalAlias = extrairTribunalDoCNJ(numeroCNJNorm);
+  const tribunaisParaConsultar: string[] = tribunalAlias
+    ? [tribunalAlias]
+    : ["trf1", "trf2", "trf3", "trf4", "trf5", "trf6", "tjsp"];
+
+  const query = {
+    query: {
+      bool: {
+        should: [
+          { match: { numeroProcesso: numeroCNJNorm } },
+          { term: { "numeroProcesso.keyword": numeroCNJNorm } },
+        ],
+        minimum_should_match: 1,
+      },
+    },
+    size: 3,
+  };
+
+  for (const alias of tribunaisParaConsultar) {
+    const endpoint = `${DATAJUD_BASE}/api_publica_${alias}/_search`;
+    try {
+      const resp = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `APIKey ${DATAJUD_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(query),
+        signal: AbortSignal.timeout(8000),
+      });
+
+      if (!resp.ok) continue;
+
+      const data = await resp.json();
+      const hits: DataJudHit[] = data.hits?.hits || [];
+      if (hits.length === 0) continue;
+
+      const hit = hits[0];
+      const processo = parseHitToProcesso(hit, alias, alias.toUpperCase());
+
+      const payload = JSON.stringify({ numeroCNJ: numeroCNJNorm, numeroOficio, resultado: processo, consultado_em });
+      const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+
+      return {
+        encontrado: true,
+        numero_cnj: processo.numero_cnj,
+        numero_oficio: numeroOficio,
+        tribunal: processo.tribunal,
+        tribunal_alias: alias,
+        tipo: processo.classe_codigo === CLASSE_PRECATORIO ? "PRECATORIO" : processo.classe_codigo === CLASSE_RPV ? "RPV" : "DESCONHECIDO",
+        situacao: processo.situacao,
+        grau: processo.grau,
+        data_ajuizamento_ano: processo.data_ajuizamento ? String(processo.data_ajuizamento).substring(0, 4) : null,
+        pagamento_pendente: processo.pagamento_pendente,
+        url_consulta: processo.url_consulta,
+        sha256_evidencia: sha256,
+        consultado_em,
+        valor_causa_locked: true,
+        credor_locked: true,
+        loa_status_locked: true,
+      };
+    } catch {
+      continue;
+    }
+  }
+
+  // Não encontrado em nenhum tribunal
+  const payload = JSON.stringify({ numeroCNJ: numeroCNJNorm, numeroOficio, encontrado: false, consultado_em });
+  const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+
+  return {
+    encontrado: false,
+    numero_cnj: numeroCNJNorm,
+    numero_oficio: numeroOficio,
+    tribunal: "—",
+    tribunal_alias: "—",
+    tipo: "DESCONHECIDO",
+    situacao: "nao_localizado",
+    grau: null,
+    data_ajuizamento_ano: null,
+    pagamento_pendente: false,
+    url_consulta: null,
+    sha256_evidencia: sha256,
+    consultado_em,
+    valor_causa_locked: true,
+    credor_locked: true,
+    loa_status_locked: true,
+  };
+}
