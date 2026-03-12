@@ -351,7 +351,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 border-t border-white/[0.04]">
+      <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
             <h2 className="text-lg font-semibold mb-1.5 text-white/90" data-testid="text-features-title">
@@ -381,7 +381,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 border-t border-white/[0.04]">
+      <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(220_7%_12%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8">
             <div>
@@ -542,7 +542,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="overview" className="py-14 md:py-20 border-t border-white/[0.04]">
+      <section id="overview" className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8">
             <div>
@@ -788,7 +788,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="pipeline" className="py-14 md:py-20 border-t border-white/[0.04]">
+      <section id="pipeline" className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(220_7%_12%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <div className="text-center mb-10">
             <div className="flex items-center justify-center gap-2 mb-1.5">
@@ -827,7 +827,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 border-t border-white/[0.04]">
+      <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(222_9%_9%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 text-center">
           <h2 className="text-lg font-semibold mb-1.5 text-white/90" data-testid="text-sources-title">
             Fontes Oficiais
@@ -846,7 +846,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 border-t border-white/[0.04]">
+      <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(220_7%_12%)]">
         <div className="max-w-xl mx-auto px-4 sm:px-6">
           <Card className="bg-white/[0.02] border-blue-500/15 overflow-hidden relative">
             <div className="absolute inset-0 bg-gradient-to-br from-blue-600/[0.04] via-transparent to-purple-600/[0.03]" />
