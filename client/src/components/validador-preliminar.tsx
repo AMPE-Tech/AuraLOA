@@ -34,7 +34,7 @@ interface ValidacaoResult {
 }
 
 const SCAN_MESSAGES = [
-  "Conectando ao DataJud CNJ...",
+  "Consultando fontes oficiais...",
   "Verificando integridade do processo...",
   "Cruzando dados com a LOA 2026...",
   "Validando cadeia de custódia...",
@@ -88,7 +88,7 @@ export function ValidadorPreliminarLOA() {
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        setErrorMsg(err.error || "Erro ao consultar DataJud.");
+        setErrorMsg(err.error || "Não foi possível completar a consulta nas bases oficiais.");
         setScanStatus("error");
         return;
       }
@@ -223,7 +223,7 @@ export function ValidadorPreliminarLOA() {
                           type="text"
                           value={oficio}
                           onChange={(e) => setOficio(e.target.value)}
-                          placeholder="Nº do Ofício Requisitório  —  Ex: 666 / 2021"
+                          placeholder="Nº do Ofício Requisitório  —  Ex: 666/2021 ou AUT.2024.008667"
                           className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
                           data-testid="input-oficio"
                         />
@@ -375,10 +375,10 @@ export function ValidadorPreliminarLOA() {
                   </div>
                   <div>
                     <h4 className="text-emerald-400 font-bold text-lg">
-                      {resultado.tipo === "PRECATORIO" ? "Precatório" : resultado.tipo === "RPV" ? "RPV" : "Processo"} Autêntico
+                      {resultado.tipo === "PRECATORIO" ? "Precatório" : resultado.tipo === "RPV" ? "RPV" : "Processo"} Localizado nas Bases Oficiais
                     </h4>
                     <p className="text-xs text-slate-400 font-mono">
-                      Fonte: DataJud CNJ · {resultado.tribunal.toUpperCase()}
+                      Fontes oficiais confirmaram · {resultado.tribunal.toUpperCase()}
                     </p>
                   </div>
                 </div>
@@ -440,6 +440,14 @@ export function ValidadorPreliminarLOA() {
                   </div>
                 </div>
 
+                {/* Aviso de aprofundamento */}
+                <div className="bg-amber-500/[0.06] border border-amber-500/20 rounded-lg px-4 py-3 mb-4 flex items-start gap-2.5">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                  <p className="text-xs text-amber-300/80 leading-relaxed">
+                    Esta é uma verificação preliminar. Recomendamos aprofundar e ampliar a busca para confirmação completa do precatório, valores e status na LOA.
+                  </p>
+                </div>
+
                 {/* SHA-256 evidência */}
                 <div className="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 flex items-center gap-2 mb-4">
                   <Hash className="w-3.5 h-3.5 text-emerald-500/60 shrink-0" />
@@ -462,13 +470,18 @@ export function ValidadorPreliminarLOA() {
             {/* Estado 3b: Não encontrado */}
             {scanStatus === "not_found" && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto text-center">
-                <div className="flex flex-col items-center gap-3 mb-6">
+                <div className="flex flex-col items-center gap-3 mb-5">
                   <div className="bg-amber-500/10 p-3 rounded-full border border-amber-500/20">
                     <AlertTriangle className="w-8 h-8 text-amber-400" />
                   </div>
-                  <h4 className="text-amber-400 font-bold text-xl">Não Localizado nas Bases Oficiais</h4>
+                  <h4 className="text-amber-400 font-bold text-xl">Fontes Oficiais Não Confirmaram</h4>
                   <p className="text-slate-400 text-sm max-w-md">
-                    O processo <span className="font-mono text-slate-300">{processoCNJ}</span> não foi encontrado no DataJud CNJ. Verifique os números informados ou acesse a plataforma para uma busca estendida.
+                    O processo <span className="font-mono text-slate-300">{processoCNJ}</span> não foi localizado nas bases consultadas. Verifique se os números estão corretos. Isso não descarta a existência do processo — recomendamos ampliar a busca.
+                  </p>
+                </div>
+                <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl px-5 py-3 mb-5 text-left">
+                  <p className="text-xs text-slate-500 leading-relaxed">
+                    <span className="text-slate-400 font-medium">Recomendação:</span> Esta verificação preliminar não esgota as fontes disponíveis. Para confirmação definitiva, acesse a plataforma completa com busca estendida em múltiplas bases.
                   </p>
                 </div>
                 <div className="flex gap-3 justify-center">
@@ -487,13 +500,14 @@ export function ValidadorPreliminarLOA() {
             {/* Estado 3c: Erro */}
             {scanStatus === "error" && (
               <div className="animate-in fade-in duration-300 max-w-2xl mx-auto text-center">
-                <div className="flex flex-col items-center gap-3 mb-6">
+                <div className="flex flex-col items-center gap-3 mb-5">
                   <div className="bg-red-500/10 p-3 rounded-full border border-red-500/20">
                     <AlertTriangle className="w-7 h-7 text-red-400" />
                   </div>
-                  <h4 className="text-red-400 font-semibold">Falha na Consulta</h4>
-                  <p className="text-slate-500 text-sm">{errorMsg || "Não foi possível conectar ao DataJud. Tente novamente."}</p>
+                  <h4 className="text-red-400 font-semibold">Falha ao Consultar as Bases Oficiais</h4>
+                  <p className="text-slate-500 text-sm">{errorMsg || "Não foi possível completar a consulta. Verifique sua conexão e tente novamente."}</p>
                 </div>
+                <p className="text-xs text-slate-600 mb-4">Esta verificação preliminar pode ser repetida. Para buscas mais robustas, acesse a plataforma completa.</p>
                 <button onClick={handleReset} className="px-6 py-3 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-sm flex items-center gap-2 mx-auto" data-testid="button-reset-error">
                   <Search className="w-4 h-4" /> Tentar novamente
                 </button>

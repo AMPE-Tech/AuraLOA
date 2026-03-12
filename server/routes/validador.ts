@@ -26,8 +26,7 @@ router.post("/api/validador/verificar", async (req: Request, res: Response) => {
     return res.json(resultado);
   } catch (err: any) {
     return res.status(500).json({
-      error: "Erro ao consultar DataJud",
-      message: err.message,
+      error: "Não foi possível completar a consulta nas bases oficiais.",
     });
   }
 });
