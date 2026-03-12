@@ -297,18 +297,17 @@ export default function LandingPage() {
             </div>
 
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight mb-4 leading-[1.1]" data-testid="text-hero-title">
-              Due Diligence de{" "}
+              Inteligência orçamentária para{" "}
               <span className="relative">
-                <span className="text-blue-400">Precatorios</span>
+                <span className="text-blue-400">análise profissional</span>
                 <span className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500/0 via-blue-400/60 to-blue-500/0" />
               </span>
               <br />
-              <span className="text-white/90">com Cadeia de Custodia</span>
+              <span className="text-white/90">de precatórios.</span>
             </h1>
 
             <p className="text-sm md:text-base text-white/60 max-w-lg mx-auto leading-relaxed mb-10">
-              Cruzamento automatico de 4 camadas orcamentarias com evidencia
-              criptografica SHA-256. Dados reais. Zero alucinacao.
+              O AuraLOA transforma dados da LOA, tribunais e execução orçamentária em evidências estruturadas para decisões seguras.
             </p>
 
             <div className="flex items-center justify-center gap-3 mb-12">

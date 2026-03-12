@@ -34,9 +34,9 @@ export function PublicTopbar({ scrollTo }: PublicTopbarProps) {
             <Shield className="w-5 h-5 text-primary-foreground" />
           </div>
           <div>
-            <h1 className="text-sm font-semibold tracking-tight">AuraTECH</h1>
+            <h1 className="text-sm font-semibold tracking-tight">AuraLOA</h1>
             <p className="text-[12px] text-muted-foreground font-semibold">
-              Digital Trust Infrastructure
+              Análise Inteligente de Precatórios
             </p>
           </div>
         </div>
