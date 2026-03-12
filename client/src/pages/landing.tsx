@@ -313,10 +313,31 @@ export default function LandingPage() {
             de precatórios.
           </h1>
 
-          {/* Subtexto */}
-          <p className="text-lg md:text-xl text-white/55 max-w-3xl mx-auto leading-relaxed mb-12 text-center">
-            O AuraLOA transforma dados da LOA, tribunais e execução orçamentária em evidências estruturadas para decisões seguras.
+          {/* Subtexto + pipeline ciclo de vida */}
+          <p className="text-lg md:text-xl text-white/55 max-w-3xl mx-auto leading-relaxed mb-8 text-center">
+            O AuraLOA identifica e monitora todo ciclo de vida de um precatório desde
           </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-2 mb-12 max-w-4xl mx-auto">
+            {[
+              "Processo Judicial",
+              "Trânsito em Julgado",
+              "Liquidação do Valor",
+              "Expedição do Precatório",
+              "Inclusão na LOA",
+              "Pagamento",
+            ].map((step, i, arr) => (
+              <div key={step} className="flex items-center gap-2">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.04] border border-white/[0.08]">
+                  <span className="text-[10px] font-bold text-blue-400/70 font-mono">{String(i + 1).padStart(2, "0")}</span>
+                  <span className="text-xs font-medium text-slate-300">{step}</span>
+                </div>
+                {i < arr.length - 1 && (
+                  <ArrowRight className="w-3.5 h-3.5 text-slate-600 shrink-0" />
+                )}
+              </div>
+            ))}
+          </div>
 
           {/* Botões */}
           <div className="flex items-center justify-center gap-4 mb-16">
