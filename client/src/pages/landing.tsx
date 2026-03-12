@@ -253,8 +253,8 @@ const features = [
   },
   {
     icon: Landmark,
-    title: "LOA 2004 a 2028 — 25 Anos",
-    description: "Acesso completo ao historico de 25 anos de LOA. Precatorios pendentes de pagamento identificados, rastreados e cruzados em todas as esferas.",
+    title: "LOA 2024 a 2028",
+    description: "Acesso completo ao historico de LOA 2024 a 2028. Precatorios pendentes de pagamento identificados, rastreados e cruzados em todas as esferas.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     highlight: true,
@@ -425,7 +425,7 @@ export default function LandingPage() {
                 {(feature as any).highlight && (
                   <div className="absolute top-3 right-3">
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-[10px] font-bold text-emerald-400 uppercase tracking-widest">
-                      25 anos
+                      2024–2028
                     </span>
                   </div>
                 )}
