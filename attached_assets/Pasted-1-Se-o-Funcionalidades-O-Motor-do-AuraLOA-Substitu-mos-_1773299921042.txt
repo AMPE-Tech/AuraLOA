@@ -1,0 +1,193 @@
+1. Seção: Funcionalidades (O Motor do AuraLOA)
+Substituímos a lista simples por um grid de cards no estilo "Matrix de Capacidades" (como visto no AuraCARBO).
+
+TypeScript
+import { Search, Link as LinkIcon, Layers, Users, Map, ShieldCheck } from "lucide-react";
+
+export function FuncionalidadesLOA() {
+  const features = [
+    {
+      title: "Pesquisa LOA",
+      desc: "Pesquisa e validação de precatórios inscritos na Lei Orçamentária Anual com dados reais.",
+      icon: <Search className="w-5 h-5 text-blue-400" />
+    },
+    {
+      title: "Cadeia de Custódia",
+      desc: "SHA-256 e evidências rastreáveis para cada dado coletado. Auditoria jurídica completa.",
+      icon: <LinkIcon className="w-5 h-5 text-blue-400" />
+    },
+    {
+      title: "Cruzamento 4 Camadas",
+      desc: "Dotação x Execução x Estoque x Valores. Visão integrada do ciclo orçamentário.",
+      icon: <Layers className="w-5 h-5 text-blue-400" />
+    },
+    {
+      title: "Contato do Credor",
+      desc: "Email, telefone, dados comerciais/pessoais, OAB, CPF e CNPJ do credor.",
+      icon: <Users className="w-5 h-5 text-blue-400" />
+    },
+    {
+      title: "Cobertura Nacional",
+      desc: "Federal (TRF1-6), Estadual e Municipal. Todas as esferas do poder judiciário.",
+      icon: <Map className="w-5 h-5 text-blue-400" />
+    },
+    {
+      title: "Anti-Alucinação",
+      desc: "Dados reais de fontes oficiais. Zero mock. Zero fabricação. Evidência verificável.",
+      icon: <ShieldCheck className="w-5 h-5 text-blue-400" />
+    }
+  ];
+
+  return (
+    <section className="w-full py-12">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+          <Layers className="text-blue-500 w-6 h-6" />
+          Módulos de Inteligência
+        </h2>
+        <p className="text-slate-400">Ferramenta completa para pesquisa, validação e auditoria de precatórios.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {features.map((feat, idx) => (
+          <div key={idx} className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 hover:border-blue-500/40 transition-all hover:bg-[#0f172a]/60 group">
+            <div className="w-10 h-10 rounded-lg bg-blue-500/10 flex items-center justify-center mb-4 border border-blue-500/20 group-hover:scale-110 transition-transform">
+              {feat.icon}
+            </div>
+            <h3 className="text-lg font-semibold text-slate-200 mb-2">{feat.title}</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">{feat.desc}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+2. Seção: Cadeia de Custódia (O Pipeline Forense)
+Esta seção imita a "Camada de Validação" maravilhosa que você fez no AuraCARBO, criando uma linha do tempo horizontal conectada, com as tags SHA-256 brilhando como evidências técnicas.
+
+TypeScript
+import { Database, FileCheck, GitMerge, Lock, PackageCheck } from "lucide-react";
+
+export function CadeiaCustodiaLOA() {
+  const steps = [
+    { id: "01", name: "Coleta", icon: <Database />, hash: "a3f2b1c8d4e5", desc: "Portal da Transparência, SIOP, DataJud" },
+    { id: "02", name: "Validação", icon: <FileCheck />, hash: "7e9f0a2b3c4d", desc: "Dotação, execução e estoque" },
+    { id: "03", name: "Cruzamento", icon: <GitMerge />, hash: "b5d8e1f4a7c0", desc: "Matching 4 camadas + Valores PDF" },
+    { id: "04", name: "Evidência", icon: <Lock />, hash: "c9e2d5f8a1b4", desc: "SHA-256 e timestamps preservados" },
+    { id: "05", name: "Entrega", icon: <PackageCheck />, hash: "f1a4d7e0b3c6", desc: "Pacote auditável 100% íntegro" },
+  ];
+
+  return (
+    <section className="w-full py-12">
+      <div className="bg-[#0f172a]/60 border border-slate-800/80 rounded-2xl p-8">
+        <div className="mb-10 flex flex-col md:flex-row justify-between md:items-end gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+              <Lock className="text-emerald-500 w-6 h-6" />
+              Cadeia de Custódia Digital
+            </h2>
+            <p className="text-slate-400 text-sm">Cada etapa gera evidências com hash SHA-256 encadeado, garantindo rastreabilidade total.</p>
+          </div>
+          <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-emerald-400 text-xs font-mono font-bold">
+            Lei 13.964/2019 COMPLIANT
+          </div>
+        </div>
+
+        {/* Pipeline Visual */}
+        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6 md:gap-2">
+          {/* Linha conectora (visível apenas em telas médias+) */}
+          <div className="hidden md:block absolute top-6 left-[5%] right-[5%] h-[2px] bg-slate-800 z-0"></div>
+
+          {steps.map((step, idx) => (
+            <div key={idx} className="relative z-10 flex flex-col items-center flex-1 w-full text-center">
+              <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-slate-300 mb-4 shadow-[0_0_15px_rgba(0,0,0,0.5)]">
+                {step.icon}
+              </div>
+              <h4 className="text-white font-semibold mb-1">{step.name}</h4>
+              <p className="text-xs text-slate-500 mb-3 px-2 h-8">{step.desc}</p>
+              <div className="bg-slate-950 border border-slate-800 rounded px-2 py-1 flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span className="font-mono text-[10px] text-emerald-400/80">SHA-{step.hash}...</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+3. Seção: Visão Geral do Mercado (Data Analytics)
+Aqui aplicamos o estilo de painéis segmentados para mostrar os volumes (R$ 300B) e os estoques por tribunal, divididos em cards limpos.
+
+TypeScript
+import { BarChart3, Globe, Building2, Landmark } from "lucide-react";
+
+export function VisaoMercadoLOA() {
+  return (
+    <section className="w-full py-12">
+      <div className="mb-8">
+        <h2 className="text-2xl font-bold text-white mb-2 flex items-center gap-2">
+          <BarChart3 className="text-cyan-500 w-6 h-6" />
+          Maturidade e Aplicação de Mercado
+        </h2>
+        <p className="text-slate-400">Dados agregados do mercado de precatórios e RPVs no Brasil.</p>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        {/* Card: Federal */}
+        <div className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-slate-400 text-sm font-medium flex items-center gap-2"><Globe className="w-4 h-4"/> Federal</span>
+            <span className="text-[10px] font-mono bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded border border-blue-500/30">TRF1-6</span>
+          </div>
+          <div className="flex items-end gap-2 mb-4">
+            <span className="text-3xl font-bold text-white">R$ 100B</span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-1.5 mb-2">
+            <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: '33%' }}></div>
+          </div>
+        </div>
+
+        {/* Card: Estadual */}
+        <div className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-slate-400 text-sm font-medium flex items-center gap-2"><Building2 className="w-4 h-4"/> Estadual</span>
+            <span className="text-[10px] font-mono bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded border border-indigo-500/30">TJSP e mais</span>
+          </div>
+          <div className="flex items-end gap-2 mb-4">
+            <span className="text-3xl font-bold text-white">R$ 130B</span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-1.5 mb-2">
+            <div className="bg-indigo-500 h-1.5 rounded-full" style={{ width: '43%' }}></div>
+          </div>
+        </div>
+
+        {/* Card: Municipal */}
+        <div className="bg-[#0f172a]/40 border border-slate-800/80 rounded-xl p-6 flex flex-col">
+          <div className="flex justify-between items-center mb-4">
+            <span className="text-slate-400 text-sm font-medium flex items-center gap-2"><Landmark className="w-4 h-4"/> Municipal</span>
+            <span className="text-[10px] font-mono bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/30">Prefeituras</span>
+          </div>
+          <div className="flex items-end gap-2 mb-4">
+            <span className="text-3xl font-bold text-white">R$ 70B</span>
+          </div>
+          <div className="w-full bg-slate-800 rounded-full h-1.5 mb-2">
+            <div className="bg-cyan-500 h-1.5 rounded-full" style={{ width: '23%' }}></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+Como Montar no seu page-template.tsx:
+
+Basta importar esses componentes e o HeroLOA que fizemos na etapa anterior, e empilhá-los dentro da div principal, assim:
+
+TypeScript
+<div className="p-6 space-y-8 max-w-[1400px] mx-auto">
+  <HeroLOA />
+  {/* Aquele card de "Manual vs Digital" que fizemos antes pode entrar aqui! */}
+  <FuncionalidadesLOA />
+  <CadeiaCustodiaLOA />
+  <VisaoMercadoLOA />
+</div>

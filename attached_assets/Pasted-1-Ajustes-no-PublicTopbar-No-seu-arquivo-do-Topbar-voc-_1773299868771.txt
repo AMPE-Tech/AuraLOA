@@ -1,0 +1,110 @@
+1. Ajustes no <PublicTopbar />
+No seu arquivo do Topbar, você vai substituir o bloco do logo e adicionar o novo botão ao lado do toggle de idioma. O botão usa as classes do Tailwind para criar aquele efeito de "pílula" com borda sutil, idêntico ao badge de plataforma ativa.
+
+Substituição do Logo e Descritivo:
+
+TypeScript
+<div className="flex flex-col">
+  <div className="flex items-center gap-2">
+    {/* Mantemos o Shield azul que é o padrão da marca */}
+    <Shield className="text-blue-600 w-5 h-5" /> 
+    <span className="font-bold text-lg tracking-tight">AuraLOA</span>
+  </div>
+  <span className="text-[12px] font-semibold text-muted-foreground">
+    Análise Inteligente de Precatórios
+  </span>
+</div>
+Novo Botão "AuraTECH Ecosystem" (Insira ao lado do Toggle PT/EN):
+
+TypeScript
+<a 
+  href="http://auratg.co" 
+  target="_blank" 
+  rel="noopener noreferrer"
+  className="hidden md:flex items-center justify-center px-4 py-1.5 text-xs font-medium rounded-full border border-slate-700 bg-slate-900/50 text-slate-300 hover:bg-slate-800 hover:text-white transition-all shadow-sm"
+>
+  AuraTECH Ecosystem
+</a>
+2. O Novo Hero Section do AuraLOA (Estilo Dashboard)
+Aqui está o código do Hero. Eu trouxe a mesma pegada de "cards de vidro" (Glassmorphism sutil) com bordas escuras que você usou no AuraCARBO para os três grandes números (R$ 300B+, 40x, 97%). Isso cria uma transição perfeita entre a landing page e a plataforma real.
+
+Você pode criar um componente <HeroSection /> ou colocar direto no seu page-template.tsx (abaixo da Topbar):
+
+TypeScript
+import { ArrowRight } from "lucide-react"; // Assumindo que você usa Lucide Icons
+
+export function HeroLOA() {
+  return (
+    <section className="relative pt-20 pb-16 md:pt-32 md:pb-24 overflow-hidden flex flex-col items-center justify-center text-center">
+      
+      {/* Elemento de Fundo: Glow sutil em azul para quebrar o fundo chapado */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-600/10 blur-[120px] rounded-full pointer-events-none"></div>
+
+      <div className="relative z-10 flex flex-col items-center max-w-5xl mx-auto w-full">
+        
+        {/* Badge: Plataforma Ativa (Estilo "Live") */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-500/30 bg-blue-500/10 text-blue-400 text-xs font-medium mb-8">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+          </span>
+          Plataforma ativa — dados em tempo real
+        </div>
+
+        {/* Título Principal */}
+        <h1 className="text-5xl md:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
+          Inteligência orçamentária para <br className="hidden md:block" />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+            análise profissional
+          </span> de precatórios.
+        </h1>
+
+        {/* Subtexto */}
+        <p className="text-lg md:text-xl text-slate-400 max-w-3xl mb-12">
+          O AuraLOA transforma dados da LOA, tribunais e execução orçamentária em evidências estruturadas para decisões seguras.
+        </p>
+
+        {/* Botões de Ação */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-20 w-full sm:w-auto">
+          <button className="px-8 py-3.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(37,99,235,0.3)]">
+            Acessar Plataforma
+            <ArrowRight className="w-4 h-4" />
+          </button>
+          <button className="px-8 py-3.5 rounded-lg bg-[#0B0F19] border border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white font-medium transition-colors">
+            Ver Dashboard
+          </button>
+        </div>
+
+        {/* Cards de Métricas (Inspirados no Dashboard AuraCARBO) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full max-w-4xl">
+          
+          <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-blue-500/30 transition-colors">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Mercado Total</span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-4xl font-bold text-white">R$ 300B</span>
+              <span className="text-2xl font-bold text-blue-500">+</span>
+            </div>
+          </div>
+
+          <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-cyan-500/30 transition-colors">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Performance</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-cyan-400">40x</span>
+              <span className="text-sm font-medium text-slate-400">Mais rápido</span>
+            </div>
+          </div>
+
+          <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-blue-500/30 transition-colors">
+            <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Impacto</span>
+            <div className="flex items-baseline gap-2">
+              <span className="text-4xl font-bold text-white">97%</span>
+              <span className="text-sm font-medium text-slate-400">Economia</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+  );
+}
+Essa estrutura mantém o fundo na cor do bg-background que você definiu no page-template.tsx (que imagino ser um slate bem escuro como #0B0F19 ou slate-950), e sobrepõe essas métricas em cards semitransparentes com bordas delicadas.
