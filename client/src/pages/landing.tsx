@@ -292,74 +292,84 @@ export default function LandingPage() {
         <div className="absolute top-0 left-1/3 w-[700px] h-[400px] rounded-full bg-blue-600/[0.06] blur-[120px]" />
         <div className="absolute bottom-0 right-1/4 w-[500px] h-[300px] rounded-full bg-indigo-500/[0.04] blur-[100px]" />
 
-        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-16 md:py-24">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-blue-400/15 bg-blue-500/[0.08] mb-6" data-testid="badge-beta">
-              <Activity className="w-3 h-3 text-emerald-400" />
-              <span className="text-[10px] text-blue-200/80 font-medium tracking-wide">Plataforma ativa — dados em tempo real</span>
-            </div>
+        <div className="relative z-10 max-w-[1400px] mx-auto px-4 sm:px-6 py-24 md:py-36">
 
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-white tracking-tight mb-4 leading-[1.1]" data-testid="text-hero-title">
-              Inteligência orçamentária para{" "}
-              <span className="relative">
-                <span className="text-blue-400">análise profissional</span>
-                <span className="absolute -bottom-1 left-0 right-0 h-[2px] bg-gradient-to-r from-blue-500/0 via-blue-400/60 to-blue-500/0" />
-              </span>
-              <br />
-              <span className="text-white/90">de precatórios.</span>
-            </h1>
-
-            <p className="text-sm md:text-base text-white/60 max-w-lg mx-auto leading-relaxed mb-10">
-              O AuraLOA transforma dados da LOA, tribunais e execução orçamentária em evidências estruturadas para decisões seguras.
-            </p>
-
-            <div className="flex items-center justify-center gap-3 mb-12">
-              <Link href="/login">
-                <Button size="lg" className="h-10 px-6 text-sm" data-testid="button-cta-hero">
-                  Acessar Plataforma
-                  <ArrowRight className="w-4 h-4 ml-2" />
-                </Button>
-              </Link>
-              <a href="#overview">
-                <Button size="lg" variant="outline" className="h-10 px-6 text-sm" data-testid="button-view-dashboard">
-                  Ver Dashboard
-                </Button>
-              </a>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-3xl mx-auto">
-              <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-blue-500/30 transition-colors" data-testid="kpi-hero-mercado">
-                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Mercado Total</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-white">R$ 300B</span>
-                  <span className="text-xl font-bold text-blue-500">+</span>
-                </div>
-              </div>
-              <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-cyan-500/30 transition-colors" data-testid="kpi-hero-performance">
-                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Performance</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-cyan-400">40x</span>
-                  <span className="text-sm font-medium text-slate-400">Mais rápido</span>
-                </div>
-              </div>
-              <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-6 text-left flex flex-col hover:border-blue-500/30 transition-colors" data-testid="kpi-hero-impacto">
-                <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-2">Impacto</span>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-white">97%</span>
-                  <span className="text-sm font-medium text-slate-400">Economia</span>
-                </div>
-              </div>
+          {/* Badge */}
+          <div className="flex justify-center mb-8">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-blue-400/20 bg-blue-500/[0.08]" data-testid="badge-beta">
+              <Activity className="w-3.5 h-3.5 text-emerald-400" />
+              <span className="text-xs text-blue-200/80 font-medium tracking-wide">Plataforma ativa — dados em tempo real</span>
             </div>
           </div>
 
-          <div className="flex items-center justify-center gap-2 flex-wrap mt-8" data-testid="badges-data-sources">
+          {/* Título — sem max-w restritivo */}
+          <h1 className="text-5xl sm:text-6xl md:text-7xl font-extrabold text-white tracking-tight mb-6 leading-[1.08] text-center" data-testid="text-hero-title">
+            Inteligência orçamentária para{" "}
+            <br className="hidden md:block" />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+              análise profissional
+            </span>{" "}
+            de precatórios.
+          </h1>
+
+          {/* Subtexto */}
+          <p className="text-lg md:text-xl text-white/55 max-w-3xl mx-auto leading-relaxed mb-12 text-center">
+            O AuraLOA transforma dados da LOA, tribunais e execução orçamentária em evidências estruturadas para decisões seguras.
+          </p>
+
+          {/* Botões */}
+          <div className="flex items-center justify-center gap-4 mb-16">
+            <Link href="/login">
+              <Button size="lg" className="h-12 px-8 text-base shadow-[0_0_20px_rgba(37,99,235,0.3)]" data-testid="button-cta-hero">
+                Acessar Plataforma
+                <ArrowRight className="w-5 h-5 ml-2" />
+              </Button>
+            </Link>
+            <a href="#overview">
+              <Button size="lg" variant="outline" className="h-12 px-8 text-base" data-testid="button-view-dashboard">
+                Ver Dashboard
+              </Button>
+            </a>
+          </div>
+
+          {/* KPI cards — largura total */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-8 text-left flex flex-col hover:border-blue-500/30 transition-colors" data-testid="kpi-hero-mercado">
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Mercado Total</span>
+              <div className="flex items-baseline gap-1">
+                <span className="text-4xl font-bold text-white">R$ 300B</span>
+                <span className="text-2xl font-bold text-blue-500">+</span>
+              </div>
+              <span className="text-slate-500 text-sm mt-2">Em precatórios no Brasil</span>
+            </div>
+            <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-8 text-left flex flex-col hover:border-cyan-500/30 transition-colors" data-testid="kpi-hero-performance">
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Performance</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-cyan-400">40x</span>
+                <span className="text-lg font-medium text-slate-400">Mais rápido</span>
+              </div>
+              <span className="text-slate-500 text-sm mt-2">Que o processo manual</span>
+            </div>
+            <div className="bg-[#0f172a]/60 backdrop-blur-md border border-slate-800/80 rounded-2xl p-8 text-left flex flex-col hover:border-blue-500/30 transition-colors" data-testid="kpi-hero-impacto">
+              <span className="text-slate-500 text-xs font-bold uppercase tracking-widest mb-3">Impacto</span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white">97%</span>
+                <span className="text-lg font-medium text-slate-400">Economia</span>
+              </div>
+              <span className="text-slate-500 text-sm mt-2">De tempo e custo operacional</span>
+            </div>
+          </div>
+
+          {/* Badges fontes */}
+          <div className="flex items-center justify-center gap-2 flex-wrap" data-testid="badges-data-sources">
             {["Portal da Transparencia", "SIOP", "CNJ DataJud", "TRF1-6", "TJSP"].map((s) => (
-              <span key={s} className="inline-flex items-center gap-1.5 text-[9px] text-white/40 px-2 py-1 rounded-md border border-white/[0.06] bg-white/[0.02]">
-                <CheckCircle2 className="w-2.5 h-2.5 text-emerald-500/60" />
+              <span key={s} className="inline-flex items-center gap-1.5 text-xs text-white/40 px-3 py-1.5 rounded-md border border-white/[0.06] bg-white/[0.02]">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500/60" />
                 {s}
               </span>
             ))}
           </div>
+
         </div>
       </section>
 
