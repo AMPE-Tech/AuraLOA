@@ -381,163 +381,83 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-14 md:py-20 border-t border-white/[0.05] bg-[hsl(220_7%_16%)]">
+      <section className="py-20 border-t border-white/[0.05] bg-[hsl(220_7%_16%)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between mb-8">
-            <div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Clock className="w-4 h-4 text-blue-400" />
-                <h2 className="text-lg font-semibold text-white/90" data-testid="text-timeline-title">
-                  Due Diligence: Manual vs Digital
-                </h2>
-              </div>
-              <p className="text-xs text-white/45">
-                Comparativo de tempo entre due diligence tradicional e a plataforma AuraLOA
-              </p>
-            </div>
-            <div className="flex items-center gap-4 text-[10px] mt-3 md:mt-0">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-red-500/70 inline-block" />
-                <span className="text-white/50">Manual (~280h)</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500/70 inline-block" />
-                <span className="text-white/50">AuraLOA (~7h)</span>
-              </div>
-            </div>
+
+          <div className="text-center mb-16">
+            <h2 className="text-4xl md:text-5xl font-bold tracking-tight mb-4" data-testid="text-timeline-title">
+              Due Diligence:{" "}
+              <span className="text-slate-500 line-through decoration-red-500/50">Manual</span>{" "}
+              vs{" "}
+              <span className="text-cyan-400">Digital</span>
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Transforme <span className="font-mono text-slate-300">35 dias úteis</span> em{" "}
+              <span className="font-mono text-cyan-400">1 dia útil</span>. Redução drástica de tempo com precisão forense e auditoria em tempo real.
+            </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 mb-6">
-            <div className="lg:col-span-3">
-              <Card className="bg-white/[0.02] border-white/[0.06]">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-xs font-medium uppercase tracking-wider text-white/40" data-testid="text-chart-timeline">Tempo por Etapa (horas)</h3>
-                    <Badge variant="outline" className="text-[9px] font-mono text-emerald-400 border-emerald-500/20 bg-emerald-500/[0.06]">
-                      40x mais rapido
-                    </Badge>
-                  </div>
-                  <ChartContainer config={timelineChartConfig} className="h-[220px] w-full">
-                    <BarChart data={timelineCompareData} layout="vertical" accessibilityLayer barGap={2} barSize={14}>
-                      <CartesianGrid horizontal={false} stroke="hsl(220 10% 18%)" strokeDasharray="3 3" />
-                      <XAxis type="number" tickLine={false} axisLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }} tickFormatter={(v) => `${v}h`} />
-                      <YAxis type="category" dataKey="etapa" tickLine={false} axisLine={false} width={100} tick={{ fontSize: 11, fill: "hsl(220 10% 50%)" }} />
-                      <ChartTooltip content={<ChartTooltipContent />} />
-                      <Bar dataKey="manual" fill="hsl(0 65% 42%)" radius={[0, 3, 3, 0]} name="Manual" />
-                      <Bar dataKey="digital" fill="hsl(142 72% 42%)" radius={[0, 3, 3, 0]} name="AuraLOA" />
-                    </BarChart>
-                  </ChartContainer>
-                </CardContent>
-              </Card>
+          <div className="grid md:grid-cols-2 gap-8 items-stretch">
+
+            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 opacity-90 flex flex-col" data-testid="card-manual-process">
+              <div className="flex items-center justify-between mb-8 border-b border-slate-800 pb-4">
+                <h3 className="text-2xl font-semibold text-slate-400">Processo Tradicional</h3>
+                <div className="text-right">
+                  <span className="block text-red-400 font-mono text-2xl font-bold">~280h</span>
+                  <span className="text-slate-500 text-sm">Custo: ~R$ 85K</span>
+                </div>
+              </div>
+              <ul className="space-y-6 flex-grow">
+                <li className="border-l-2 border-slate-700 pl-4" data-testid="timeline-manual-step-0">
+                  <p className="font-semibold text-slate-300">Coleta Manual <span className="text-slate-500 font-mono text-sm ml-2">120h</span></p>
+                  <p className="text-sm text-slate-500 mt-1">Acesso individual a cada tribunal (TRF1-6, TJSP). Consulta processo por processo.</p>
+                </li>
+                <li className="border-l-2 border-slate-700 pl-4" data-testid="timeline-manual-step-1">
+                  <p className="font-semibold text-slate-300">Cruzamento em Planilhas <span className="text-slate-500 font-mono text-sm ml-2">80h</span></p>
+                  <p className="text-sm text-slate-500 mt-1">Montagem manual cruzando dotação x execução. Copiar/colar suscetível a erro humano.</p>
+                </li>
+                <li className="border-l-2 border-slate-700 pl-4" data-testid="timeline-manual-step-2">
+                  <p className="font-semibold text-slate-300">Validação Individual <span className="text-slate-500 font-mono text-sm ml-2">40h</span></p>
+                  <p className="text-sm text-slate-500 mt-1">Conferência manual de cada valor e busca de PDFs oficiais.</p>
+                </li>
+              </ul>
             </div>
 
-            <div className="lg:col-span-2 grid grid-cols-2 gap-3">
-              <Card className="bg-white/[0.02] border-white/[0.06]" data-testid="kpi-manual-total">
-                <CardContent className="p-4 flex flex-col justify-between h-full">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">Due Diligence Manual</p>
-                  <div>
-                    <p className="text-2xl font-bold text-red-400">280h</p>
-                    <p className="text-[10px] text-white/40 mt-0.5">~35 dias uteis</p>
-                  </div>
-                  <div className="flex items-center gap-1 mt-2 text-[10px] text-red-400/60">
-                    <Users className="w-3 h-3" />
-                    2-3 analistas
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="bg-white/[0.02] border-emerald-500/15" data-testid="kpi-digital-total">
-                <CardContent className="p-4 flex flex-col justify-between h-full">
-                  <p className="text-[10px] text-white/40 uppercase tracking-wider mb-2">AuraLOA Digital</p>
-                  <div>
-                    <p className="text-2xl font-bold text-emerald-400">7h</p>
-                    <p className="text-[10px] text-white/40 mt-0.5">~1 dia util</p>
-                  </div>
-                  <div className="flex items-center gap-1 mt-2 text-[10px] text-emerald-400/60">
-                    <Zap className="w-3 h-3" />
-                    Automatizado
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="col-span-2 bg-white/[0.02] border-white/[0.06]" data-testid="kpi-economia">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Economia de Tempo</p>
-                      <p className="text-2xl font-bold text-blue-400">97.5%</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[10px] text-white/40 uppercase tracking-wider mb-1">Reducao de Custo</p>
-                      <p className="text-2xl font-bold text-blue-400">~R$ 85K</p>
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-white/35 mt-2">Baseado em custo/hora de analista senior de compliance (R$ 300/h)</p>
-                </CardContent>
-              </Card>
+            <div className="bg-slate-900 border border-cyan-500/40 rounded-2xl p-8 shadow-[0_0_40px_rgba(6,182,212,0.1)] relative flex flex-col transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(6,182,212,0.2)]" data-testid="card-digital-process">
+              <div className="absolute -top-4 -right-4 bg-cyan-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-full shadow-lg rotate-3">
+                40x MAIS RÁPIDO
+              </div>
+              <div className="flex items-center justify-between mb-8 border-b border-cyan-900 pb-4">
+                <h3 className="text-2xl font-bold text-white flex items-center gap-2">
+                  <Zap className="w-6 h-6 text-cyan-400" />
+                  AuraLOA
+                </h3>
+                <div className="text-right">
+                  <span className="block text-cyan-400 font-mono text-3xl font-bold">~7h</span>
+                  <span className="text-cyan-600 text-sm">Economia de 97.5%</span>
+                </div>
+              </div>
+              <ul className="space-y-6 flex-grow">
+                <li className="border-l-2 border-cyan-400 pl-4" data-testid="timeline-digital-step-0">
+                  <p className="font-semibold text-white">Coleta Automatizada <span className="text-cyan-500 font-mono text-sm ml-2">3h</span></p>
+                  <p className="text-sm text-slate-400 mt-1">APIs oficiais (Portal da Transparência, DataJud, SIOP). 10.000+ processos/consulta.</p>
+                </li>
+                <li className="border-l-2 border-cyan-400 pl-4" data-testid="timeline-digital-step-1">
+                  <p className="font-semibold text-white">Cruzamento 4 Camadas <span className="text-cyan-500 font-mono text-sm ml-2">2h</span></p>
+                  <p className="text-sm text-slate-400 mt-1">Dotação, Execução, Estoque e Valores PDF cruzados com matching automático.</p>
+                </li>
+                <li className="border-l-2 border-cyan-400 pl-4" data-testid="timeline-digital-step-2">
+                  <p className="font-semibold text-white">Anti-Alucinação & Evidência <span className="text-cyan-500 font-mono text-sm ml-2">1.5h</span></p>
+                  <p className="text-sm text-slate-400 mt-1">Guards validam dados. Hash SHA-256 automático de cada payload. Cadeia de custódia íntegra.</p>
+                </li>
+              </ul>
+              <Link href="/login">
+                <button className="mt-8 w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-lg transition-colors" data-testid="button-iniciar-automacao">
+                  Iniciar Automação
+                </button>
+              </Link>
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-            <Card className="bg-white/[0.02] border-white/[0.06]">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 rounded-full bg-red-500/70 inline-block" />
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-white/40">Processo Manual</h3>
-                  <Badge variant="outline" className="text-[9px] ml-auto text-red-400/80 border-red-500/20 bg-red-500/[0.05]">~280 horas</Badge>
-                </div>
-                <div className="space-y-3">
-                  {manualSteps.map((step, idx) => (
-                    <div key={step.title} className="flex items-start gap-3" data-testid={`timeline-manual-step-${idx}`}>
-                      <div className="flex flex-col items-center shrink-0">
-                        <div className="p-1.5 rounded-lg bg-red-500/10 border border-red-500/10">
-                          <step.icon className="w-3 h-3 text-red-400/70" />
-                        </div>
-                        {idx < manualSteps.length - 1 && (
-                          <div className="w-px h-full min-h-[24px] bg-red-500/10 mt-1" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 pb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-white/70">{step.title}</span>
-                          <span className="text-[9px] font-mono text-red-400/50">{step.duration}</span>
-                        </div>
-                        <p className="text-[10px] text-white/40 leading-relaxed mt-0.5">{step.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="bg-white/[0.02] border-emerald-500/15">
-              <CardContent className="p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500/70 inline-block" />
-                  <h3 className="text-xs font-medium uppercase tracking-wider text-white/40">AuraLOA Digital</h3>
-                  <Badge variant="outline" className="text-[9px] ml-auto text-emerald-400/80 border-emerald-500/20 bg-emerald-500/[0.05]">~7 horas</Badge>
-                </div>
-                <div className="space-y-3">
-                  {digitalSteps.map((step, idx) => (
-                    <div key={step.title} className="flex items-start gap-3" data-testid={`timeline-digital-step-${idx}`}>
-                      <div className="flex flex-col items-center shrink-0">
-                        <div className="p-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/10">
-                          <step.icon className="w-3 h-3 text-emerald-400/70" />
-                        </div>
-                        {idx < digitalSteps.length - 1 && (
-                          <div className="w-px h-full min-h-[24px] bg-emerald-500/10 mt-1" />
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0 pb-1">
-                        <div className="flex items-center gap-2">
-                          <span className="text-xs font-medium text-white/70">{step.title}</span>
-                          <span className="text-[9px] font-mono text-emerald-400/50">{step.duration}</span>
-                        </div>
-                        <p className="text-[10px] text-white/40 leading-relaxed mt-0.5">{step.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </section>

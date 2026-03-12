@@ -1,0 +1,93 @@
+1. O Código: Seção "Manual vs. Digital" (HTML + Tailwind CSS)
+Fiz essa estrutura usando Tailwind CSS para criar aquele visual "Dark Mode Executivo". O lado manual fica com um aspecto mais opaco e pesado, enquanto o lado do AuraLOA ganha bordas iluminadas, cores vibrantes (ciano) e um efeito de brilho suave (glow), destacando a superioridade da plataforma.
+
+Você pode copiar e colar este bloco diretamente no seu projeto:
+
+HTML
+<section class="bg-slate-950 text-white py-20 px-6 font-sans">
+  <div class="max-w-6xl mx-auto">
+    
+    <div class="text-center mb-16">
+      <h2 class="text-4xl md:text-5xl font-bold tracking-tight mb-4">
+        Due Diligence: <span class="text-slate-500 line-through decoration-red-500/50">Manual</span> vs <span class="text-cyan-400">Digital</span>
+      </h2>
+      <p class="text-slate-400 text-lg max-w-2xl mx-auto">
+        Transforme <span class="font-mono text-slate-300">35 dias úteis</span> em <span class="font-mono text-cyan-400">1 dia útil</span>. Redução drástica de tempo com precisão forense e auditoria em tempo real.
+      </p>
+    </div>
+
+    <div class="grid md:grid-cols-2 gap-8 items-stretch">
+      
+      <div class="bg-slate-900/50 border border-slate-800 rounded-2xl p-8 opacity-90 flex flex-col">
+        <div class="flex items-center justify-between mb-8 border-b border-slate-800 pb-4">
+          <h3 class="text-2xl font-semibold text-slate-400">Processo Tradicional</h3>
+          <div class="text-right">
+            <span class="block text-red-400 font-mono text-2xl font-bold">~280h</span>
+            <span class="text-slate-500 text-sm">Custo: ~R$ 85K</span>
+          </div>
+        </div>
+        
+        <ul class="space-y-6 flex-grow">
+          <li class="border-l-2 border-slate-700 pl-4">
+            <p class="font-semibold text-slate-300">Coleta Manual <span class="text-slate-500 font-mono text-sm ml-2">120h</span></p>
+            <p class="text-sm text-slate-500 mt-1">Acesso individual a cada tribunal (TRF1-6, TJSP). Consulta processo por processo.</p>
+          </li>
+          <li class="border-l-2 border-slate-700 pl-4">
+            <p class="font-semibold text-slate-300">Cruzamento em Planilhas <span class="text-slate-500 font-mono text-sm ml-2">80h</span></p>
+            <p class="text-sm text-slate-500 mt-1">Montagem manual cruzando dotação x execução. Copiar/colar suscetível a erro humano.</p>
+          </li>
+          <li class="border-l-2 border-slate-700 pl-4">
+            <p class="font-semibold text-slate-300">Validação Individual <span class="text-slate-500 font-mono text-sm ml-2">40h</span></p>
+            <p class="text-sm text-slate-500 mt-1">Conferência manual de cada valor e busca de PDFs oficiais.</p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="bg-slate-900 border border-cyan-500/40 rounded-2xl p-8 shadow-[0_0_40px_rgba(6,182,212,0.1)] relative flex flex-col transform transition hover:-translate-y-1 hover:shadow-[0_0_60px_rgba(6,182,212,0.2)]">
+        
+        <div class="absolute -top-4 -right-4 bg-cyan-400 text-slate-950 text-xs font-bold px-4 py-2 rounded-full shadow-lg transform rotate-3">
+          40x MAIS RÁPIDO
+        </div>
+
+        <div class="flex items-center justify-between mb-8 border-b border-cyan-900 pb-4">
+          <h3 class="text-2xl font-bold text-white flex items-center gap-2">
+            <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+            AuraLOA
+          </h3>
+          <div class="text-right">
+            <span class="block text-cyan-400 font-mono text-3xl font-bold">~7h</span>
+            <span class="text-cyan-600 text-sm">Economia de 97.5%</span>
+          </div>
+        </div>
+        
+        <ul class="space-y-6 flex-grow">
+          <li class="border-l-2 border-cyan-400 pl-4">
+            <p class="font-semibold text-white">Coleta Automatizada <span class="text-cyan-500 font-mono text-sm ml-2">3h</span></p>
+            <p class="text-sm text-slate-400 mt-1">APIs oficiais (Portal da Transparência, DataJud, SIOP). 10.000+ processos/consulta.</p>
+          </li>
+          <li class="border-l-2 border-cyan-400 pl-4">
+            <p class="font-semibold text-white">Cruzamento 4 Camadas <span class="text-cyan-500 font-mono text-sm ml-2">2h</span></p>
+            <p class="text-sm text-slate-400 mt-1">Dotação, Execução, Estoque e Valores PDF cruzados com matching automático.</p>
+          </li>
+          <li class="border-l-2 border-cyan-400 pl-4">
+            <p class="font-semibold text-white">Anti-Alucinação & Evidência <span class="text-cyan-500 font-mono text-sm ml-2">1.5h</span></p>
+            <p class="text-sm text-slate-400 mt-1">Guards validam dados. Hash SHA-256 automático de cada payload. Cadeia de custódia íntegra.</p>
+          </li>
+        </ul>
+        
+        <button class="mt-8 w-full bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold py-3 rounded-lg transition-colors">
+          Iniciar Automação
+        </button>
+      </div>
+
+    </div>
+  </div>
+</section>
+2. O Prompt para a Imagem de Fundo (Hero Section)
+Para a imagem do topo do site, precisamos de algo que fuja dos clichês de "tecnologia e matrix". Como você tem um excelente gosto para imagens de alta qualidade estética, preparei um prompt em inglês (que funciona melhor nas IAs de imagem) focado em fotografia editorial de ultra luxo aplicada ao mundo corporativo e de dados forenses:
+
+Copie e cole este prompt no gerador de imagens da sua preferência:
+
+Prompt: Ultra luxury editorial photography, macro shot of a sleek futuristic glass server or high-end financial terminal. Subdued dark slate and obsidian background. Faint, elegant glowing cyan and gold data nodes and cryptographic connection lines passing through the glass. Forensic precision, pristine setup, highly reflective surfaces, depth of field. Minimalist, corporate high-tech, cinematic studio lighting, 8k resolution, photorealistic, elegant composition, conveying trust and institutional authority.
+
+Essa imagem vai casar perfeitamente com o fundo escuro (bg-slate-950) que configuramos no código.
