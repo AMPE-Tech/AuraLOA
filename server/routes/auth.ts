@@ -12,6 +12,8 @@ export interface ManagedUser {
   name: string;
   createdAt: string;
   active: boolean;
+  expiresAt?: string;
+  lastLoginAt?: string;
 }
 
 // Mutable in-memory store — resets on restart, persist via DB quando necessário
@@ -96,6 +98,10 @@ router.post("/api/auth/login", (req: Request, res: Response) => {
   if (hashPassword(password) !== user.passwordHash) {
     return res.status(401).json({ message: "Credenciais invalidas" });
   }
+  if (user.expiresAt && new Date(user.expiresAt) < new Date()) {
+    return res.status(403).json({ message: "Acesso expirado. Entre em contato com o administrador." });
+  }
+  user.lastLoginAt = new Date().toISOString();
   const token = generateToken(user.email, user.role);
   return res.json({ token, email: user.email, role: user.role, name: user.name });
 });
@@ -126,7 +132,7 @@ router.get("/api/admin/users", requireAdmin, (_req: Request, res: Response) => {
 
 // Criar usuário
 router.post("/api/admin/users", requireAdmin, (req: Request, res: Response) => {
-  const { email, name, password, role } = req.body;
+  const { email, name, password, role, expiresAt } = req.body;
   if (!email || !name || !password) {
     return res.status(400).json({ message: "email, name e password sao obrigatorios" });
   }
@@ -140,6 +146,7 @@ router.post("/api/admin/users", requireAdmin, (req: Request, res: Response) => {
     role: role === "admin" ? "admin" : "user",
     createdAt: new Date().toISOString(),
     active: true,
+    expiresAt: expiresAt || undefined,
   };
   USERS.push(newUser);
   const { passwordHash: _h, ...safe } = newUser;
@@ -151,11 +158,12 @@ router.put("/api/admin/users/:email", requireAdmin, (req: Request, res: Response
   const user = findUser(req.params.email);
   if (!user) return res.status(404).json({ message: "Usuario nao encontrado" });
 
-  const { name, role, active, password } = req.body;
+  const { name, role, active, password, expiresAt } = req.body;
   if (name !== undefined) user.name = name.trim();
   if (role !== undefined) user.role = role === "admin" ? "admin" : "user";
   if (active !== undefined) user.active = Boolean(active);
   if (password && password.length >= 6) user.passwordHash = hashPassword(password);
+  if (expiresAt !== undefined) user.expiresAt = expiresAt || undefined;
 
   const { passwordHash: _h, ...safe } = user;
   return res.json(safe);
