@@ -14,6 +14,7 @@ import SpDashboard from "@/pages/sp-dashboard";
 import ChartPreview from "@/pages/chart-preview";
 import AdminPage from "@/pages/admin";
 import LandingPreview from "@/pages/landing-preview";
+import MarketPreview from "@/pages/market-preview";
 
 function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -99,6 +100,7 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/preview/charts" component={ChartPreview} />
       <Route path="/preview/landing" component={LandingPreview} />
+      <Route path="/preview/market" component={MarketPreview} />
       <Route path="/dashboard">
         <AuthGuard component={LOADashboard} />
       </Route>
