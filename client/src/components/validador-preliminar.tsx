@@ -143,7 +143,7 @@ const SITUACAO_LABELS: Record<string, string> = {
 
 export function ValidadorPreliminarLOA() {
   const [, navigate] = useLocation();
-  const [mode, setMode] = useState<InputMode>("numero");
+  const [mode, setMode] = useState<InputMode>("upload");
   const [scanStatus, setScanStatus] = useState<ScanStatus>("idle");
   const [scanStep, setScanStep] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
