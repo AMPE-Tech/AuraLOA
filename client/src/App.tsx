@@ -12,6 +12,7 @@ import PrecatoriosPendentes from "@/pages/precatorios-pendentes";
 import ContratoTecnico from "@/pages/contrato-tecnico";
 import SpDashboard from "@/pages/sp-dashboard";
 import ChartPreview from "@/pages/chart-preview";
+import AdminPage from "@/pages/admin";
 
 function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -58,6 +59,38 @@ function AuthGuard({ component: Component }: { component: React.ComponentType })
   return <Component />;
 }
 
+function AdminGuard({ component: Component }: { component: React.ComponentType }) {
+  const isAuthenticated = useAuth();
+  const role = localStorage.getItem("aura_role");
+
+  useEffect(() => {
+    if (isAuthenticated === false) {
+      window.location.href = "/login";
+    }
+  }, [isAuthenticated]);
+
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (isAuthenticated === false || role !== "admin") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <p className="text-muted-foreground text-sm">Acesso restrito a administradores.</p>
+          <a href="/dashboard" className="text-primary text-sm underline mt-2 inline-block">Voltar ao dashboard</a>
+        </div>
+      </div>
+    );
+  }
+
+  return <Component />;
+}
+
 function Router() {
   return (
     <Switch>
@@ -75,6 +108,9 @@ function Router() {
       </Route>
       <Route path="/dashboard/sp">
         <AuthGuard component={SpDashboard} />
+      </Route>
+      <Route path="/dashboard/admin">
+        <AdminGuard component={AdminPage} />
       </Route>
       <Route path="/pendentes">
         <Redirect to="/dashboard/pendentes" />

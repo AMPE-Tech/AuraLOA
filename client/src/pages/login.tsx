@@ -43,6 +43,7 @@ export default function LoginPage() {
       const data = await res.json();
       localStorage.setItem("aura_token", data.token);
       localStorage.setItem("aura_email", data.email);
+      localStorage.setItem("aura_role", data.role);
 
       toast({
         title: "Login realizado",

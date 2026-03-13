@@ -1680,6 +1680,14 @@ export default function LOADashboard() {
                   Contrato DPO
                 </Button>
               </Link>
+              {localStorage.getItem("aura_role") === "admin" && (
+                <Link href="/dashboard/admin">
+                  <Button variant="outline" size="sm" data-testid="link-admin" className="border-violet-500/40 text-violet-400 hover:text-violet-300">
+                    <Shield className="w-3.5 h-3.5 mr-1" />
+                    Admin
+                  </Button>
+                </Link>
+              )}
               <Button
                 variant="ghost"
                 size="sm"
@@ -1687,6 +1695,7 @@ export default function LOADashboard() {
                 onClick={() => {
                   localStorage.removeItem("aura_token");
                   localStorage.removeItem("aura_email");
+                  localStorage.removeItem("aura_role");
                   window.location.href = "/";
                 }}
               >
