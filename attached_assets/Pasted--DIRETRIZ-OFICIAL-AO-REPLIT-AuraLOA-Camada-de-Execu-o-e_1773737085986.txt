@@ -1,0 +1,305 @@
+🔐 DIRETRIZ OFICIAL AO REPLIT 
+
+AuraLOA — Camada de Execução e Governança Técnica 
+
+Papel emissor: DPO (Data Protection Officer) — AuraLOA 
+
+Módulo: AuraLOA — Inteligência Orçamentária de Precatórios 
+
+Versão: v1.0 
+
+Status: Mandatório — Execução Controlada 
+
+ 
+
+1. CONTEXTO E OBJETIVO 
+
+O sistema AuraLOA está evoluindo de um conjunto de scripts funcionais para uma infraestrutura auditável, determinística e juridicamente rastreável. 
+
+Atualmente, o sistema já possui: 
+
+Coleta de estoque judicial (DataJud) 
+
+Extração de PDF oficial com hash 
+
+Consulta de dotação (SIOP/SPARQL) 
+
+Execução financeira (Portal da Transparência) 
+
+EvidencePack com trilha forense 
+
+Conforme já documentado na especificação técnica , o próximo passo é: 
+
+transformar funções isoladas em uma arquitetura governada por agentes, jobs e evidência auditável 
+
+ 
+
+2. PRINCÍPIO INEGOCIÁVEL 
+
+O sistema deve operar sob o seguinte princípio: 
+
+🔐 Nenhum dado pode existir sem rastreabilidade completa (chain of custody) 
+
+Isso implica: 
+
+UUID obrigatório por execução 
+
+Hash SHA-256 por payload 
+
+Armazenamento do raw (quando aplicável) 
+
+Registro de execução (job_runs) 
+
+Reprodutibilidade do resultado 
+
+ 
+
+3. PAPEL DO REPLIT NA ARQUITETURA 
+
+O Replit NÃO é apenas ambiente de desenvolvimento. 
+
+Ele assume o papel de: 
+
+🧠 Runtime oficial da AuraLOA 
+
+Responsável por: 
+
+Execução dos agentes 
+
+Orquestração dos jobs 
+
+Persistência de execução 
+
+Garantia de consistência 
+
+Registro de evidência 
+
+ 
+
+4. PAPEL DO OPENCrawl (NÃO ATIVO AINDA) 
+
+O OpenCrawl será futuramente: 
+
+⚙️ orquestrador externo de escala e distribuição 
+
+Mas neste momento: 
+
+❌ NÃO deve ser implementado 
+
+❌ NÃO deve ser considerado na execução 
+
+❌ NÃO deve influenciar a arquitetura atual 
+
+👉 O sistema deve funcionar 100% dentro do Replit 
+
+ 
+
+5. O QUE SERÁ IMPLEMENTADO AGORA 
+
+Será criada a camada: 
+
+🧱 Runtime de Jobs + Contratos de Agentes 
+
+Com os seguintes componentes: 
+
+Tipos de job (job_types) 
+
+Contrato padrão de agentes (AgentContext, AgentResult) 
+
+Registro de execução (job_runs) 
+
+Executor de jobs (job_runner) 
+
+Identidade de execução (UUID + run_id) 
+
+ 
+
+6. REGRAS DE EXECUÇÃO (OBRIGATÓRIAS) 
+
+O Replit deve seguir EXATAMENTE: 
+
+6.1 NÃO antecipar etapas 
+
+Implementar apenas os arquivos do Bloco A 
+
+Não criar agents ainda 
+
+Não integrar fontes externas ainda 
+
+ 
+
+6.2 NÃO alterar código existente 
+
+Nenhum arquivo atual deve ser modificado 
+
+Apenas adicionar novos arquivos 
+
+ 
+
+6.3 NÃO abstrair além do necessário 
+
+MVP simples 
+
+Sem overengineering 
+
+Sem múltiplas camadas 
+
+(Alinhado com diretriz MVP salva) 
+
+ 
+
+6.4 TODO job deve ter identidade 
+
+Obrigatório: 
+
+run_id 
+process_id_uuid 
+started_at 
+finished_at 
+status 
+ 
+
+ 
+
+6.5 LOG obrigatório 
+
+Cada execução deve registrar: 
+
+[JOB START] 
+[JOB DONE] 
+[JOB ERROR] 
+ 
+
+ 
+
+7. EVIDÊNCIA OBRIGATÓRIA DE IMPLEMENTAÇÃO 
+
+Após implementar, o Replit deve apresentar: 
+
+✔️ 1. Lista de arquivos criados 
+
+Exemplo: 
+
+src/runtime/job_types.ts 
+src/runtime/agent_contracts.ts 
+src/runtime/job_runner.ts 
+src/storage/job_run_store.ts 
+src/storage/evidence_store.ts 
+src/schemas/job_run.schema.ts 
+ 
+
+ 
+
+✔️ 2. Código de cada arquivo (completo) 
+
+Sem resumo 
+
+Sem omissão 
+
+ 
+
+✔️ 3. Teste de execução 
+
+Deve rodar um job simples: 
+
+runJob("alerts.run", async () => { 
+ return { ok: true }; 
+}, {}); 
+ 
+
+ 
+
+✔️ 4. Output esperado 
+
+{ 
+ "status": "DONE", 
+ "run_id": "...", 
+ "process_id_uuid": "...", 
+ "result": { "ok": true } 
+} 
+ 
+
+ 
+
+✔️ 5. Log de execução 
+
+[JOB DONE] alerts.run run_... 
+ 
+
+ 
+
+8. CRITÉRIOS DE ACEITE (GO / NO-GO) 
+
+GO somente se: 
+
+UUID gerado corretamente 
+
+run_id único 
+
+job armazenado 
+
+execução concluída 
+
+sem erro de runtime 
+
+ 
+
+NO-GO se: 
+
+faltar qualquer campo obrigatório 
+
+execução não persistida 
+
+erro silencioso 
+
+ausência de log 
+
+ 
+
+9. RISCO CONTROLADO 
+
+Principais riscos: 
+
+Perda de rastreabilidade 
+
+Execução sem persistência 
+
+Dados não auditáveis 
+
+Mitigação: 
+
+Implementação do job_runner como camada obrigatória 
+
+ 
+
+10. DIRETRIZ FINAL AO REPLIT 
+
+Execute exclusivamente o Bloco A da Etapa 4, criando a base de runtime de jobs, garantindo rastreabilidade completa, identidade de execução (UUID), persistência mínima e logs auditáveis. 
+
+ 
+
+11. DECLARAÇÃO DO DPO 
+
+Este fluxo passa a ser: 
+
+obrigatório 
+
+versionado 
+
+auditável 
+
+base para todos os módulos AuraLOA 
+
+ 
+
+12. ANEXO — REFERÊNCIA TÉCNICA 
+
+A estrutura completa segue o blueprint já definido anteriormente 
+
+ 
+
+🚀 INSTRUÇÃO PARA VOCÊ AGORA 
+
+Você pode literalmente copiar esse bloco e colar no Replit como: 
+
+👉 INSTRUCAO_EXECUCAO_AURALOA.md 
