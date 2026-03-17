@@ -19,8 +19,15 @@ I prefer iterative development and clear communication. Ask before making major 
     -   `Login`: Standard email/password authentication.
 -   **UI/UX**: Layout containers expanded to `max-w-[1400px]`. Hero sections feature a gradient title and a visual pipeline for precatório lifecycle. KPI cards are full-width with descriptive subtexts. A "Free Verification" section for preliminary LOA validation. "Intelligence Modules" are presented as distinct cards with colored borders and enhanced descriptions. Terminology like "NPU" is replaced with "CNJ" for user-facing elements. Anti-Alucinação is an internal backend guard.
 
+**Database (PostgreSQL)**
+-   **Connection**: `server/db.ts` — pool + typed `query<T>()` helper.
+-   **Initialization**: `server/db_init.ts` — runs on startup via `initDb()`, creates all tables and seeds the admin user if absent.
+-   **Tables**: `aura_users` (auth), `loa_history` (A2 audit trail), `sp_loa_rows` (SP LOA CSV data), `sp_despesas_rows` (SP despesas CSV data).
+-   **Storage**: `server/storage.ts` — `PgStorage` class backed by PostgreSQL (replaced in-memory `MemStorage`).
+-   All four former in-memory stores (`USERS[]`, `history[]`, `SP_LOA[]`, `SP_DESPESAS[]`) are fully migrated to PostgreSQL.
+
 **Backend (Express)**
--   **Authentication**: HMAC-SHA256 token validation.
+-   **Authentication**: HMAC-SHA256 token validation. All user data persisted in `aura_users` table.
 -   **Core Modules**:
     -   `LOA Uniao A2`: Main Federal LOA analysis, history, and catalog.
     -   `LOA Estoque`: Estoque and Gap Analysis.

@@ -1,8 +1,6 @@
 import { type User, type InsertUser } from "@shared/schema";
 import { randomUUID } from "crypto";
-
-// modify the interface with any CRUD methods
-// you might need
+import { query } from "./db";
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
@@ -10,29 +8,31 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-
-  constructor() {
-    this.users = new Map();
-  }
-
+export class PgStorage implements IStorage {
   async getUser(id: string): Promise<User | undefined> {
-    return this.users.get(id);
+    const rows = await query<User>(
+      "SELECT id, username FROM app_users WHERE id = $1",
+      [id],
+    );
+    return rows[0];
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
+    const rows = await query<User>(
+      "SELECT id, username FROM app_users WHERE username = $1",
+      [username],
     );
+    return rows[0];
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = randomUUID();
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
-    return user;
+    await query(
+      "INSERT INTO app_users (id, username) VALUES ($1, $2) ON CONFLICT DO NOTHING",
+      [id, insertUser.username],
+    );
+    return { id, ...insertUser };
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new PgStorage();

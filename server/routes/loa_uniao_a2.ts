@@ -1,5 +1,6 @@
 import { Router, type Request, type Response } from "express";
 import { randomUUID } from "crypto";
+import { query } from "../db";
 import { a2RequestSchema, SCHEMA_VERSION } from "../../shared/loa_types";
 import type {
   A2Response,
@@ -19,8 +20,6 @@ import { ACOES_PRECATORIOS_UNIAO } from "../catalog/acoes_precatorios_uniao";
 import { downloadAllMonths, startMonthlyCron, stopMonthlyCron, getCronStatus } from "../services/cron_download";
 
 const router = Router();
-
-const history: A2HistoryEntry[] = [];
 
 router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
   const processId = randomUUID();
@@ -326,20 +325,25 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
     const totalPago = execucaoResults.reduce((s, e) => s + (e.pago || 0), 0);
     const totalDot = dotacaoResults.reduce((s, d) => s + (d.dotacao_atual || 0), 0);
 
-    history.unshift({
-      id: processId,
-      process_id_uuid: processId,
-      ano_exercicio,
-      ...(mes ? { mes } : {}),
-      status_geral: statusGeral,
-      generated_at_iso: responseObj.generated_at_iso,
-      evidencias_count: allEvidencias.length,
-      execucao_total_pago: totalPago || null,
-      dotacao_total: totalDot || null,
-      ...(zipDownloadResult ? { zip_downloaded: zipDownloadResult.ok } : {}),
-    });
-
-    if (history.length > 50) history.pop();
+    await query(
+      `INSERT INTO loa_history
+         (id, process_id_uuid, ano_exercicio, mes, status_geral, generated_at_iso,
+          evidencias_count, execucao_total_pago, dotacao_total, zip_downloaded)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (id) DO NOTHING`,
+      [
+        processId,
+        processId,
+        ano_exercicio,
+        mes ?? null,
+        statusGeral,
+        responseObj.generated_at_iso,
+        allEvidencias.length,
+        totalPago || null,
+        totalDot || null,
+        zipDownloadResult ? zipDownloadResult.ok : null,
+      ],
+    );
 
     return res.json(responseObj);
   } catch (error: any) {
@@ -354,8 +358,31 @@ router.post("/api/loa/uniao/a2", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/api/loa/uniao/a2/history", (_req: Request, res: Response) => {
-  return res.json(history);
+router.get("/api/loa/uniao/a2/history", async (_req: Request, res: Response) => {
+  try {
+    const rows = await query<{
+      id: string; process_id_uuid: string; ano_exercicio: number; mes: number | null;
+      status_geral: string; generated_at_iso: string; evidencias_count: number;
+      execucao_total_pago: number | null; dotacao_total: number | null; zip_downloaded: boolean | null;
+    }>(
+      "SELECT * FROM loa_history ORDER BY created_at DESC LIMIT 50",
+    );
+    const history = rows.map((r) => ({
+      id: r.id,
+      process_id_uuid: r.process_id_uuid,
+      ano_exercicio: r.ano_exercicio,
+      ...(r.mes != null ? { mes: r.mes } : {}),
+      status_geral: r.status_geral as "OK" | "PARCIAL" | "NAO_LOCALIZADO",
+      generated_at_iso: r.generated_at_iso,
+      evidencias_count: r.evidencias_count,
+      execucao_total_pago: r.execucao_total_pago,
+      dotacao_total: r.dotacao_total,
+      ...(r.zip_downloaded != null ? { zip_downloaded: r.zip_downloaded } : {}),
+    }));
+    return res.json(history);
+  } catch (err: any) {
+    return res.status(500).json({ error: "Erro ao buscar historico", message: err.message });
+  }
 });
 
 router.get("/api/loa/uniao/a2/catalog", (_req: Request, res: Response) => {

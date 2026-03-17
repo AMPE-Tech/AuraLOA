@@ -24,11 +24,11 @@ import {
   type SpLoaRow,
   type SpDespesaRow,
 } from "../../shared/loa_types";
+import { query } from "../db";
 
 const router = Router();
 
-const SP_LOA: SpLoaRow[] = [];
-const SP_DESPESAS: SpDespesaRow[] = [];
+// ── Utilidades ────────────────────────────────────────────────────────────────
 
 function safeNumberBR(v: any): number | undefined {
   if (v === null || v === undefined) return undefined;
@@ -54,7 +54,123 @@ function parseCsv(content: string, delimiter = ";"): Record<string, string>[] {
   return out;
 }
 
-router.post("/api/sp/loa/import", (req: Request, res: Response) => {
+// ── DB helpers ────────────────────────────────────────────────────────────────
+
+interface DbSpLoaRow {
+  id: number; ente: string; ano: number; orgao: string | null; uo: string | null;
+  programa: string | null; acao_local: string | null; dotacao_inicial: string | null;
+  dotacao_atual: string | null; raw: any;
+}
+
+interface DbSpDespesaRow {
+  id: number; ente: string; ano: number; orgao: string | null; uo: string | null;
+  fase: string | null; valor: string | null; favorecido: string | null; data: string | null;
+  raw: any;
+}
+
+function dbToSpLoaRow(r: DbSpLoaRow): SpLoaRow {
+  return {
+    ente: "SP",
+    ano: r.ano,
+    orgao: r.orgao ?? undefined,
+    uo: r.uo ?? undefined,
+    programa: r.programa ?? undefined,
+    acao_local: r.acao_local ?? undefined,
+    dotacao_inicial: r.dotacao_inicial != null ? Number(r.dotacao_inicial) : undefined,
+    dotacao_atual: r.dotacao_atual != null ? Number(r.dotacao_atual) : undefined,
+    raw: r.raw ?? {},
+  };
+}
+
+function dbToSpDespesaRow(r: DbSpDespesaRow): SpDespesaRow {
+  return {
+    ente: "SP",
+    ano: r.ano,
+    orgao: r.orgao ?? undefined,
+    uo: r.uo ?? undefined,
+    fase: r.fase ?? undefined,
+    valor: r.valor != null ? Number(r.valor) : undefined,
+    favorecido: r.favorecido ?? undefined,
+    data: r.data ?? undefined,
+    raw: r.raw ?? {},
+  };
+}
+
+async function insertSpLoaRow(item: SpLoaRow): Promise<void> {
+  await query(
+    `INSERT INTO sp_loa_rows (ente, ano, orgao, uo, programa, acao_local, dotacao_inicial, dotacao_atual, raw)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [
+      item.ente, item.ano,
+      item.orgao ?? null, item.uo ?? null,
+      item.programa ?? null, item.acao_local ?? null,
+      item.dotacao_inicial ?? null, item.dotacao_atual ?? null,
+      item.raw,
+    ],
+  );
+}
+
+async function insertSpDespesaRow(item: SpDespesaRow): Promise<void> {
+  await query(
+    `INSERT INTO sp_despesas_rows (ente, ano, orgao, uo, fase, valor, favorecido, data, raw)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)`,
+    [
+      item.ente, item.ano,
+      item.orgao ?? null, item.uo ?? null,
+      item.fase ?? null, item.valor ?? null,
+      item.favorecido ?? null, item.data ?? null,
+      item.raw,
+    ],
+  );
+}
+
+async function querySpLoa(ano: number, orgao?: string, uo?: string): Promise<SpLoaRow[]> {
+  const params: any[] = [ano];
+  let sql = "SELECT * FROM sp_loa_rows WHERE ano = $1";
+  if (orgao) { sql += ` AND orgao = $${params.length + 1}`; params.push(orgao); }
+  if (uo)    { sql += ` AND uo = $${params.length + 1}`;    params.push(uo); }
+  const rows = await query<DbSpLoaRow>(sql, params);
+  return rows.map(dbToSpLoaRow);
+}
+
+async function querySpDespesas(ano: number, orgao?: string, uo?: string): Promise<SpDespesaRow[]> {
+  const params: any[] = [ano];
+  let sql = "SELECT * FROM sp_despesas_rows WHERE ano = $1";
+  if (orgao) { sql += ` AND orgao = $${params.length + 1}`; params.push(orgao); }
+  if (uo)    { sql += ` AND uo = $${params.length + 1}`;    params.push(uo); }
+  const rows = await query<DbSpDespesaRow>(sql, params);
+  return rows.map(dbToSpDespesaRow);
+}
+
+async function countSpLoaByAno(ano: number): Promise<number> {
+  const r = await query<{ count: string }>("SELECT COUNT(*) AS count FROM sp_loa_rows WHERE ano = $1", [ano]);
+  return parseInt(r[0]?.count ?? "0");
+}
+
+async function countSpDespesasByAno(ano: number): Promise<number> {
+  const r = await query<{ count: string }>("SELECT COUNT(*) AS count FROM sp_despesas_rows WHERE ano = $1", [ano]);
+  return parseInt(r[0]?.count ?? "0");
+}
+
+async function getSpLoaStats(): Promise<{ total: number; anos: number[] }> {
+  const [cntRows, anosRows] = await Promise.all([
+    query<{ count: string }>("SELECT COUNT(*) AS count FROM sp_loa_rows"),
+    query<{ ano: number }>("SELECT DISTINCT ano FROM sp_loa_rows ORDER BY ano"),
+  ]);
+  return { total: parseInt(cntRows[0]?.count ?? "0"), anos: anosRows.map((r) => r.ano) };
+}
+
+async function getSpDespesasStats(): Promise<{ total: number; anos: number[] }> {
+  const [cntRows, anosRows] = await Promise.all([
+    query<{ count: string }>("SELECT COUNT(*) AS count FROM sp_despesas_rows"),
+    query<{ ano: number }>("SELECT DISTINCT ano FROM sp_despesas_rows ORDER BY ano"),
+  ]);
+  return { total: parseInt(cntRows[0]?.count ?? "0"), anos: anosRows.map((r) => r.ano) };
+}
+
+// ── Rotas: importação CSV ─────────────────────────────────────────────────────
+
+router.post("/api/sp/loa/import", async (req: Request, res: Response) => {
   const parsed = spLoaImportSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "ano e csvText sao obrigatorios", details: parsed.error.issues });
@@ -82,7 +198,7 @@ router.post("/api/sp/loa/import", (req: Request, res: Response) => {
       raw: r,
     };
     if (item.acao_local || item.programa || item.uo || item.orgao) {
-      SP_LOA.push(item);
+      await insertSpLoaRow(item);
       imported++;
     }
   }
@@ -96,7 +212,7 @@ router.post("/api/sp/loa/import", (req: Request, res: Response) => {
     ok: true,
     imported,
     total_rows_parsed: rows.length,
-    total_loa_stored: SP_LOA.filter((r) => r.ano === ano).length,
+    total_loa_stored: await countSpLoaByAno(Number(ano)),
     evidence: {
       schema_version: "evidence_pack_v1",
       generated_at_iso_utc: new Date().toISOString(),
@@ -106,7 +222,7 @@ router.post("/api/sp/loa/import", (req: Request, res: Response) => {
   });
 });
 
-router.post("/api/sp/despesas/import", (req: Request, res: Response) => {
+router.post("/api/sp/despesas/import", async (req: Request, res: Response) => {
   const parsed = spDespesasImportSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "ano e csvText sao obrigatorios", details: parsed.error.issues });
@@ -134,7 +250,7 @@ router.post("/api/sp/despesas/import", (req: Request, res: Response) => {
       raw: r,
     };
     if (item.valor || item.orgao || item.uo) {
-      SP_DESPESAS.push(item);
+      await insertSpDespesaRow(item);
       imported++;
     }
   }
@@ -148,7 +264,7 @@ router.post("/api/sp/despesas/import", (req: Request, res: Response) => {
     ok: true,
     imported,
     total_rows_parsed: rows.length,
-    total_despesas_stored: SP_DESPESAS.filter((r) => r.ano === ano).length,
+    total_despesas_stored: await countSpDespesasByAno(Number(ano)),
     evidence: {
       schema_version: "evidence_pack_v1",
       generated_at_iso_utc: new Date().toISOString(),
@@ -157,6 +273,8 @@ router.post("/api/sp/despesas/import", (req: Request, res: Response) => {
     },
   });
 });
+
+// ── TJSP: pendentes e pagamentos ──────────────────────────────────────────────
 
 router.get("/api/sp/tjsp/pendentes", async (req: Request, res: Response) => {
   const entidade = String(req.query.entidade ?? "").trim();
@@ -222,7 +340,9 @@ router.get("/api/sp/tjsp/pagamentos", async (req: Request, res: Response) => {
   });
 });
 
-router.post("/api/sp/a2", (req: Request, res: Response) => {
+// ── A2: conciliação SP ────────────────────────────────────────────────────────
+
+router.post("/api/sp/a2", async (req: Request, res: Response) => {
   const parsed = spA2RequestSchema.safeParse(req.body);
   if (!parsed.success) {
     return res.status(400).json({ error: "ano e obrigatorio", details: parsed.error.issues });
@@ -230,27 +350,13 @@ router.post("/api/sp/a2", (req: Request, res: Response) => {
 
   const { ano, orgao, uo } = parsed.data;
 
-  const loa = SP_LOA.filter(
-    (r) =>
-      r.ano === ano &&
-      (!orgao || r.orgao === orgao) &&
-      (!uo || r.uo === uo)
-  );
-  const despesas = SP_DESPESAS.filter(
-    (r) =>
-      r.ano === ano &&
-      (!orgao || r.orgao === orgao) &&
-      (!uo || r.uo === uo)
-  );
+  const [loa, despesas] = await Promise.all([
+    querySpLoa(ano, orgao, uo),
+    querySpDespesas(ano, orgao, uo),
+  ]);
 
-  const dotacao_atual_total = loa.reduce(
-    (acc, r) => acc + (r.dotacao_atual ?? 0),
-    0
-  );
-  const execucao_total = despesas.reduce(
-    (acc, r) => acc + (r.valor ?? 0),
-    0
-  );
+  const dotacao_atual_total = loa.reduce((acc, r) => acc + (r.dotacao_atual ?? 0), 0);
+  const execucao_total = despesas.reduce((acc, r) => acc + (r.valor ?? 0), 0);
 
   return res.json({
     ok: true,
@@ -269,6 +375,8 @@ router.post("/api/sp/a2", (req: Request, res: Response) => {
   });
 });
 
+// ── Auto import: execução Sefaz/SP ────────────────────────────────────────────
+
 router.post("/api/sp/auto/execucao", async (req: Request, res: Response) => {
   const ano = Number(req.body?.ano);
   if (!ano || ano < 2011 || ano > new Date().getFullYear() + 1) {
@@ -279,7 +387,7 @@ router.post("/api/sp/auto/execucao", async (req: Request, res: Response) => {
 
   if (result.ok) {
     for (const row of result.precatorios) {
-      SP_LOA.push({
+      await insertSpLoaRow({
         ente: "SP",
         ano,
         orgao: row.desc_orgao || undefined,
@@ -294,7 +402,7 @@ router.post("/api/sp/auto/execucao", async (req: Request, res: Response) => {
 
     for (const row of result.precatorios) {
       if (row.valor_liquidado && row.valor_liquidado > 0) {
-        SP_DESPESAS.push({
+        await insertSpDespesaRow({
           ente: "SP",
           ano,
           orgao: row.desc_orgao || undefined,
@@ -320,6 +428,8 @@ router.post("/api/sp/auto/execucao", async (req: Request, res: Response) => {
   });
 });
 
+// ── Auto import: dotação Sefaz/SP ─────────────────────────────────────────────
+
 router.post("/api/sp/auto/dotacao", async (req: Request, res: Response) => {
   const ano = Number(req.body?.ano);
   if (!ano || ano < 2011 || ano > new Date().getFullYear() + 1) {
@@ -330,7 +440,7 @@ router.post("/api/sp/auto/dotacao", async (req: Request, res: Response) => {
 
   if (result.ok) {
     for (const row of result.precatorios) {
-      SP_LOA.push({
+      await insertSpLoaRow({
         ente: "SP",
         ano,
         orgao: row.desc_orgao || undefined,
@@ -360,6 +470,8 @@ router.post("/api/sp/auto/dotacao", async (req: Request, res: Response) => {
 router.get("/api/sp/auto/anos", (_req: Request, res: Response) => {
   return res.json({ anos: getAnosDisponiveis() });
 });
+
+// ── DataJud SP: pendentes ─────────────────────────────────────────────────────
 
 router.post("/api/sp/pendentes-datajud", async (req: Request, res: Response) => {
   const processId = crypto.randomUUID();
@@ -435,21 +547,25 @@ router.post("/api/sp/pendentes-datajud", async (req: Request, res: Response) => 
   }
 });
 
-router.get("/api/sp/status", (_req: Request, res: Response) => {
-  const anos_loa = Array.from(new Set(SP_LOA.map((r) => r.ano))).sort();
-  const anos_despesas = Array.from(new Set(SP_DESPESAS.map((r) => r.ano))).sort();
+// ── Status SP ─────────────────────────────────────────────────────────────────
+
+router.get("/api/sp/status", async (_req: Request, res: Response) => {
+  const [loaStats, despesasStats] = await Promise.all([
+    getSpLoaStats(),
+    getSpDespesasStats(),
+  ]);
 
   return res.json({
     ente: "SP",
     status: "ATIVO",
     dados_importados: {
       loa: {
-        total_registros: SP_LOA.length,
-        anos: anos_loa,
+        total_registros: loaStats.total,
+        anos: loaStats.anos,
       },
       despesas: {
-        total_registros: SP_DESPESAS.length,
-        anos: anos_despesas,
+        total_registros: despesasStats.total,
+        anos: despesasStats.anos,
       },
     },
     fontes: {
