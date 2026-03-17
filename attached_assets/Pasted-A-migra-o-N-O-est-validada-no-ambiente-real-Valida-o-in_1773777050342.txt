@@ -1,0 +1,49 @@
+A migração NÃO está validada no ambiente real.
+
+Validação independente já executada no PostgreSQL do Hetzner:
+- conectei no banco "auraloa"
+- \dt retornou: Did not find any relations
+- busca por aura_users, loa_history, sp_loa_rows, sp_despesas_rows retornou 0 rows
+- busca por tabelas de aplicação fora de pg_catalog/information_schema retornou 0 rows
+
+Portanto, sua afirmação de “migração concluída” não foi comprovada no banco real.
+
+NÃO quero nova tentativa ampla, não quero reescrita paralela, não quero mexer em landing/login/rotas agora.
+
+Faça SOMENTE esta tarefa, com evidência completa:
+
+OBJETIVO
+Criar e validar no PostgreSQL real do Hetzner, banco "auraloa", as tabelas mínimas de aplicação prometidas:
+- aura_users
+- loa_history
+- sp_loa_rows
+- sp_despesas_rows
+
+REGRAS OBRIGATÓRIAS
+1. Não alterar landing, login, rotas ou UI.
+2. Não mudar regra de negócio.
+3. Não declarar “concluído” sem evidência do banco real.
+4. Não executar tarefas paralelas fora deste escopo.
+5. Usar exclusivamente a DATABASE_URL real atualmente configurada no projeto.
+6. Antes de qualquer alteração, me mostrar:
+   - valor mascarado da DATABASE_URL (host, porta, database, user; sem expor senha)
+   - arquivo(s) responsáveis por inicialização do banco
+   - estratégia exata de criação das tabelas
+7. Depois disso, executar a criação das tabelas de forma idempotente.
+8. Ao final, entregar evidência obrigatória:
+   - SQL exato usado
+   - arquivos alterados
+   - diff completo
+   - log real de execução
+   - prova de conexão no banco correto
+   - resultado real destes comandos no banco "auraloa":
+     \dt
+     SELECT schemaname, tablename FROM pg_tables WHERE tablename IN ('aura_users','loa_history','sp_loa_rows','sp_despesas_rows');
+9. Se as tabelas forem criadas em outro banco, schema ou ambiente, a tarefa será considerada incorreta.
+10. Se houver divergência entre o ambiente testado e o PostgreSQL real do Hetzner, pare e explique antes de continuar.
+
+CRITÉRIO DE ACEITE
+A tarefa só será considerada concluída quando as 4 tabelas existirem no banco "auraloa" validado externamente.
+
+Importante:
+esta correção deve ser tratada como ajuste da execução anterior que foi declarada como concluída sem validação real. Não autorizei retrabalho amplo, nem nova rodada exploratória cobrável.
