@@ -1,12 +1,14 @@
 import { Pool } from "pg";
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("[DB] DATABASE_URL não encontrado nas variáveis de ambiente.");
+const connectionString = process.env.PG_URL || process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error("[DB] PG_URL (ou DATABASE_URL) não encontrado nas variáveis de ambiente.");
 }
 
 export const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: process.env.DATABASE_URL.includes("localhost")
+  connectionString,
+  ssl: connectionString.includes("localhost") || connectionString.includes("127.0.0.1")
     ? false
     : { rejectUnauthorized: false },
 });
@@ -26,10 +28,12 @@ export async function query<T = Record<string, unknown>>(
 
 export async function testConnection(): Promise<void> {
   try {
-    const rows = await query<{ now: string }>("SELECT NOW() AS now");
-    console.log(`[DB] Conexão estabelecida com sucesso — servidor: ${rows[0].now}`);
+    const rows = await query<{ now: string; current_database: string }>(
+      "SELECT NOW() AS now, current_database()"
+    );
+    console.log(`[DB] Conexão estabelecida — banco: ${rows[0].current_database} — servidor: ${rows[0].now}`);
   } catch (err) {
-    console.error("[DB] Falha na conexão com o banco de dados:", err);
+    console.error("[DB] Falha na conexão:", err);
     throw err;
   }
 }
