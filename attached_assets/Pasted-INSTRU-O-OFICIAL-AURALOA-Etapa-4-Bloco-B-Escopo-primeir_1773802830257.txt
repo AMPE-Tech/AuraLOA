@@ -1,0 +1,246 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco B
+Escopo: primeiro agente real mínimo (estoque judicial)
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, sem extrapolar escopo
+
+1. OBJETIVO
+
+Implementar exclusivamente o primeiro agente real mínimo do AuraLOA, conectado ao domínio de estoque judicial, reaproveitando o código existente do projeto e usando o runtime auditável já validado no Bloco A.
+
+Este bloco deve entregar apenas:
+- 1 adapter
+- 1 normalizador
+- 1 agente
+- 1 teste real de execução via job_runner
+- persistência mínima de snapshot quando houver retorno utilizável
+
+NÃO implementar OpenCrawl.
+NÃO implementar filas distribuídas.
+NÃO criar agentes adicionais.
+NÃO criar UI, rotas, dashboards, cron ou endpoints novos.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- PG_URL funcional para o banco auraloa no Hetzner
+- runtime mínimo do Bloco A
+- job_runner com sucesso e erro validados
+- tabelas:
+  - job_runs
+  - source_snapshots
+  - aura_users
+  - loa_history
+  - sp_loa_rows
+  - sp_despesas_rows
+
+A partir daqui, o objetivo é conectar o primeiro agente real ao runtime existente.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas estes 3 arquivos novos:
+
+- src/adapters/datajud_adapter.ts
+- src/normalization/normalize_judicial_stock.ts
+- src/agents/judicial_stock_agent.ts
+
+Alterações permitidas apenas se forem estritamente necessárias para wiring mínimo.
+Se precisar alterar qualquer arquivo existente, parar antes e mostrar:
+- arquivo exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- outros adapters
+- outros agents
+- matching
+- alerts
+- jobs catalogados
+- OpenCrawl
+- queue dispatcher
+- retry policy nova
+- telas
+- endpoints
+
+4.2 Reaproveitar o código existente
+Não reinventar coleta judicial.
+Mapear e reutilizar a base já existente no projeto relacionada a:
+- fetchEstoque
+- fetchEstoqueFromDataJud
+- DataJud
+- collectors já presentes no repositório
+
+O adapter deve encapsular a lógica existente, não duplicá-la.
+
+4.3 MVP simples e estável
+Sem overengineering.
+Sem abstrações especulativas.
+Sem pacote novo.
+Sem framework novo.
+Sem ORM novo.
+
+4.4 Rastreabilidade obrigatória
+O agente deve rodar pelo job_runner já aprovado.
+Deve manter:
+- run_id
+- process_id_uuid
+- logs
+- persistência em job_runs
+
+4.5 Snapshot mínimo
+Se houver retorno utilizável, persistir em source_snapshots com:
+- run_id
+- agent_name
+- source_name
+- source_url quando disponível
+- tribunal_alias
+- ano_exercicio
+- source_kind
+- normalized_count
+- metadata_json mínimo
+
+5. ARQUIVOS E RESPONSABILIDADES
+
+5.1 src/adapters/datajud_adapter.ts
+Responsabilidade:
+encapsular a coleta judicial existente ligada ao DataJud.
+
+Assinatura esperada, ou equivalente muito próximo:
+
+fetchJudicialStockFromDataJud(params)
+
+Entrada mínima:
+- tribunal_alias
+- ano_exercicio
+- classe_codigos
+- max_results
+- evidencePack
+
+Saída mínima:
+- processos
+- summary
+- evidences ou metadata equivalente
+
+Obrigatório:
+- reutilizar a lógica existente do projeto
+- não copiar e colar implementação inteira sem necessidade
+- manter tratamento honesto quando a fonte falhar
+
+5.2 src/normalization/normalize_judicial_stock.ts
+Responsabilidade:
+converter o retorno bruto judicial para uma estrutura parcial canônica e estável.
+
+Assinatura esperada:
+
+normalizeJudicialStock(records, params)
+
+Entrada mínima:
+- records
+- ente
+- tribunal_alias
+- ano_exercicio
+
+Saída mínima por item:
+- asset_key provisório ou identificador lógico equivalente
+- tribunal_alias
+- numero_cnj quando existir
+- classe_codigo quando existir
+- classe_nome quando existir
+- valor_causa quando existir
+- valor_fonte
+- source_confidence
+
+Se asset_key ainda não estiver formalizado no projeto, pode usar uma chave lógica provisória documentada no próprio arquivo.
+
+5.3 src/agents/judicial_stock_agent.ts
+Responsabilidade:
+orquestrar a execução ponta a ponta do primeiro agente real.
+
+Assinatura esperada:
+
+runJudicialStockAgent(ctx)
+
+Fluxo mínimo esperado:
+- criar ou receber evidence pack pelo wrapper já existente
+- chamar datajud_adapter
+- normalizar retorno
+- persistir source_snapshot se houver dados ou metadata suficiente
+- devolver AgentResult compatível com o contrato do Bloco A
+
+Obrigatório:
+- agent_name explícito
+- source_name explícito
+- started_at / finished_at
+- normalized_records
+- metrics.total_records
+
+6. TESTE OBRIGATÓRIO
+
+Executar um teste real do agente via job_runner, com payload controlado.
+
+Pode usar um cenário mínimo, por exemplo:
+- 1 tribunal_alias
+- 1 ano_exercicio
+- classes padrão de precatório/RPV
+- limite pequeno
+
+O teste deve produzir evidência material de:
+- [JOB START]
+- [JOB DONE] ou [JOB ERROR]
+- registro em job_runs
+- retorno estruturado do agente
+
+Se a fonte externa falhar ou limitar a coleta, isso não reprova automaticamente.
+Mas deve haver:
+- erro honesto
+- log real
+- persistência adequada
+- nenhuma falsa declaração de sucesso
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+
+1. mapa objetivo do que será criado e reutilizado, antes de codificar
+2. lista exata de arquivos criados
+3. lista exata de arquivos alterados
+4. código completo dos arquivos criados
+5. diff completo de qualquer arquivo alterado
+6. descrição exata das funções existentes reutilizadas
+7. teste real via job_runner
+8. log real do teste
+9. prova de persistência em job_runs
+10. prova de persistência em source_snapshots, se aplicável
+11. confirmação explícita de zero escopo extra
+
+8. CRITÉRIO DE ACEITE
+
+GO somente se:
+- o adapter reutilizar a base existente
+- o normalizador existir e estiver estável
+- o agente rodar via job_runner
+- houver evidência material no banco
+- não houver escopo extra
+
+NO-GO se:
+- houver duplicação desnecessária de lógica existente
+- houver criação de escopo fora do bloco
+- houver simulação apresentada como coleta real
+- houver declaração de concluído sem evidência material
+
+9. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- quais funções existentes do projeto serão reutilizadas
+- quais 3 arquivos serão criados
+- se haverá ou não alteração em arquivos existentes
+- como será feito o teste real do agente
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não misture com OpenCrawl, LOA, PDF, Transparência, TJSP, UI ou outros módulos.
+Não declare concluído antes da evidência completa.
