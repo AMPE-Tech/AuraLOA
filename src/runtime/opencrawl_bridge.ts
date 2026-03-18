@@ -1,4 +1,4 @@
-import { opencrawlConfig } from "../config/opencrawl_config";
+import { getOpencrawlConfig } from "../config/opencrawl_config";
 import type { OpenCrawlRequest, OpenCrawlResponse } from "./opencrawl_contract";
 
 // Execution modes que indicam que a fonte já possui agente nativo aprovado.
@@ -14,6 +14,8 @@ const FUTURE_MODES = new Set([
 ]);
 
 export function executeOpenCrawlBridge(request: OpenCrawlRequest): OpenCrawlResponse {
+  const opencrawlConfig = getOpencrawlConfig();
+
   // ── Guarda 1: fonte com agente nativo → rejected (independente da flag) ──
   if (NATIVE_AGENT_MODES.has(request.execution_mode)) {
     return {
