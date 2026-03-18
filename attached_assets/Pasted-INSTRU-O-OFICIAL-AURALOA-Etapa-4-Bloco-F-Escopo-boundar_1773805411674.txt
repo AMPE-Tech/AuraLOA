@@ -1,0 +1,232 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco F
+Escopo: boundary de integração OpenCrawl
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, sem extrapolar escopo
+
+1. OBJETIVO
+
+Implementar exclusivamente a fronteira mínima de integração com OpenCrawl, sem ativar OpenCrawl em produção e sem substituir os agentes já aprovados.
+
+Este bloco deve entregar apenas:
+- 1 contrato de integração OpenCrawl
+- 1 adapter/bridge isolado
+- 1 configuração de feature flag disabled by default
+- 1 teste local/controlado de plumbing
+- 0 execução distribuída real
+
+Importante:
+OpenCrawl continua NÃO liberado para uso operacional amplo.
+Este bloco existe apenas para preparar a integração formal, auditável e reversível.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- Bloco A: runtime auditável
+- Bloco B: judicial_stock_agent real
+- Bloco C: loa_dotacao_agent real
+- Bloco D: execution_finance_agent real
+- Bloco E: catálogo de fontes + source_router + job_registry
+- PG_URL funcional no banco auraloa
+- job_runs e source_snapshots operacionais
+
+A partir daqui, o objetivo é criar a boundary que separa:
+- agentes AuraLOA já ativos
+de
+- futura execução OpenCrawl
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas estes 3 arquivos novos:
+- src/runtime/opencrawl_contract.ts
+- src/runtime/opencrawl_bridge.ts
+- src/config/opencrawl_config.ts
+
+Alterações em arquivos existentes só serão permitidas se forem estritamente necessárias.
+Se precisar alterar qualquer arquivo existente, parar antes e mostrar:
+- arquivo exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- crawler real
+- browser automation real
+- worker distribuído
+- fila nova
+- cron
+- UI
+- endpoints
+- adapters novos de fontes
+- agents novos
+- execução real contra fontes externas
+- instalação operacional ampla do OpenCrawl
+
+4.2 Disabled by default
+A integração OpenCrawl deve nascer desabilitada por padrão.
+Obrigatório existir uma flag explícita, por exemplo:
+- OPENCrawl_ENABLED=false
+ou equivalente no config tipado
+
+Se a flag estiver desabilitada:
+- a bridge não executa
+- apenas retorna bloqueio controlado / estado disabled
+
+4.3 Boundary isolada
+A bridge OpenCrawl não pode substituir diretamente:
+- judicial_stock_agent
+- loa_dotacao_agent
+- execution_finance_agent
+
+Ela deve existir como fronteira separada e futura.
+
+4.4 MVP simples e estável
+Sem overengineering.
+Sem pacote novo.
+Sem framework novo.
+Sem abstrações especulativas.
+
+4.5 Auditabilidade
+Mesmo sem execução real, a bridge deve ser auditável:
+- entrada tipada
+- saída tipada
+- estado explícito: disabled / enabled / planned
+- motivo de bloqueio quando disabled
+
+5. ARQUIVOS E RESPONSABILIDADES
+
+5.1 src/runtime/opencrawl_contract.ts
+Responsabilidade:
+definir o contrato mínimo da integração OpenCrawl.
+
+Deve conter no mínimo:
+- tipos de request
+- tipos de response
+- modos permitidos
+- estados possíveis
+
+Campos mínimos esperados:
+request:
+- source_name
+- source_kind
+- target_agent
+- target_job_type
+- execution_mode
+- payload
+- run_id?
+- process_id_uuid?
+
+response:
+- ok
+- status
+- execution_mode
+- message
+- blocked_reason?
+- dry_run?
+- metadata?
+
+Status possíveis, ou equivalentes muito próximos:
+- disabled
+- planned
+- ready_for_future_integration
+- rejected
+
+5.2 src/config/opencrawl_config.ts
+Responsabilidade:
+centralizar configuração mínima da integração OpenCrawl.
+
+Deve expor claramente:
+- enabled boolean
+- mode string
+- default timeout opcional
+- observação de que está disabled by default
+
+Obrigatório:
+ler de env quando fizer sentido, mas cair em default seguro desabilitado.
+
+5.3 src/runtime/opencrawl_bridge.ts
+Responsabilidade:
+implementar a bridge mínima e controlada.
+
+Assinatura esperada, ou equivalente muito próximo:
+executeOpenCrawlBridge(request)
+
+Comportamento obrigatório:
+- se disabled: retornar resposta estruturada informando bloqueio
+- se enabled mas fonte for planned/future: retornar estado compatível, sem execução real
+- não chamar rede
+- não chamar browser
+- não despachar job
+- não executar coleta
+
+A bridge neste bloco é só plumbing de integração, não execução.
+
+6. TESTE OBRIGATÓRIO
+
+Executar um teste local/controlado da bridge, sem rede, provando no mínimo 3 cenários:
+
+1. Fonte futura PDF oficial com OpenCrawl disabled
+Resultado esperado:
+- ok = false ou equivalente
+- status = disabled
+- blocked_reason explícito
+
+2. Fonte futura HTML público TJSP com OpenCrawl disabled
+Resultado esperado:
+- bloqueio controlado
+- sem execução real
+
+3. Fonte ativa hoje (por exemplo DataJud CNJ) passada indevidamente para a bridge
+Resultado esperado:
+- rejected ou equivalente
+- mensagem indicando que essa fonte já possui agente nativo e não deve usar OpenCrawl nesta etapa
+
+Importante:
+esse teste é de boundary/plumbing.
+Não é teste de coleta.
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+1. mapa objetivo do que será criado
+2. lista exata de arquivos criados
+3. lista exata de arquivos alterados
+4. código completo dos arquivos criados
+5. diff completo de qualquer arquivo alterado
+6. saída real do teste da bridge
+7. confirmação explícita de que nenhuma execução OpenCrawl foi ativada
+8. confirmação explícita de que nenhum agente atual foi substituído
+9. confirmação explícita de zero escopo extra
+
+8. CRITÉRIO DE ACEITE
+
+GO somente se:
+- existir contrato claro
+- existir config disabled by default
+- existir bridge isolada
+- o teste provar bloqueio controlado
+- nenhuma execução real ocorrer
+- nenhuma fonte ativa atual for desviada para OpenCrawl
+
+NO-GO se:
+- houver tentativa de executar crawler real
+- houver browser automation
+- houver chamada de rede
+- houver substituição dos agentes atuais
+- houver tentativa de “ligar” OpenCrawl já neste bloco
+
+9. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- quais 3 arquivos serão criados
+- como a flag disabled by default será implementada
+- como a bridge distinguirá fonte ativa hoje versus fonte futura
+- como será feito o teste local/controlado
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não misture com coleta real, UI, endpoints ou novos agentes.
+Não declare concluído antes da evidência completa.
