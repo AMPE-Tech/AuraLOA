@@ -34,7 +34,7 @@ import {
   Clock,
   LogOut,
 } from "lucide-react";
-import type { SpA2Result, SpImportResult, SpTjspResult, TjspItem } from "../../shared/loa_types";
+import type { SpA2Result, SpImportResult, SpTjspResult, TjspItem } from "@shared/loa_types";
 
 function formatCurrency(value: number | null | undefined): string {
   if (value === null || value === undefined) return "N/D";

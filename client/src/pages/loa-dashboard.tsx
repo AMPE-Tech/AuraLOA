@@ -54,7 +54,7 @@ import type {
   GapResult,
   GapAcaoItem,
   PDFOrcamentoSummary,
-} from "../../shared/loa_types";
+} from "@shared/loa_types";
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "OK") {

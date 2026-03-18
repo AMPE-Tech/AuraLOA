@@ -419,6 +419,7 @@ export interface SpTjspResult {
   entidade: string;
   count: number;
   data: TjspItem[];
+  urls_consulta?: Record<string, string>;
   evidence: {
     schema_version: string;
     generated_at_iso_utc: string;

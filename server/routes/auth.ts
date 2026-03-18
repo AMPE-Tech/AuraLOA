@@ -207,8 +207,9 @@ router.post("/api/admin/users", requireAdmin, async (req: Request, res: Response
 
 router.put("/api/admin/users/:email", requireAdmin, async (req: Request, res: Response) => {
   const { name, role, active, password, expiresAt } = req.body;
+  const paramEmail = String(req.params.email);
   try {
-    const user = await findUser(req.params.email);
+    const user = await findUser(paramEmail);
     if (!user) return res.status(404).json({ message: "Usuario nao encontrado" });
 
     const updates: string[] = [];
@@ -222,14 +223,14 @@ router.put("/api/admin/users/:email", requireAdmin, async (req: Request, res: Re
     if (expiresAt !== undefined) { updates.push(`expires_at = $${idx++}`); values.push(expiresAt || null); }
 
     if (updates.length > 0) {
-      values.push(req.params.email.toLowerCase());
+      values.push(paramEmail.toLowerCase());
       await query(
         `UPDATE aura_users SET ${updates.join(", ")} WHERE LOWER(email) = LOWER($${idx})`,
         values,
       );
     }
 
-    const updated = await findUser(req.params.email);
+    const updated = await findUser(paramEmail);
     if (!updated) return res.status(404).json({ message: "Usuario nao encontrado" });
     const { passwordHash: _h, ...safe } = updated;
     return res.json(safe);
@@ -240,13 +241,14 @@ router.put("/api/admin/users/:email", requireAdmin, async (req: Request, res: Re
 
 router.delete("/api/admin/users/:email", requireAdmin, async (req: Request, res: Response) => {
   const authUser = (req as any).authUser;
-  if (authUser.email.toLowerCase() === req.params.email.toLowerCase()) {
+  const paramEmail = String(req.params.email);
+  if (authUser.email.toLowerCase() === paramEmail.toLowerCase()) {
     return res.status(400).json({ message: "Nao e possivel remover seu proprio usuario" });
   }
   try {
     const result = await query<{ email: string }>(
       "DELETE FROM aura_users WHERE LOWER(email) = LOWER($1) RETURNING email",
-      [req.params.email],
+      [paramEmail],
     );
     if (result.length === 0) return res.status(404).json({ message: "Usuario nao encontrado" });
     return res.json({ ok: true });
