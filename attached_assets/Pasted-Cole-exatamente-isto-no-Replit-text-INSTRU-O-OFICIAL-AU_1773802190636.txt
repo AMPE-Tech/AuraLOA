@@ -1,0 +1,358 @@
+Cole exatamente isto no Replit:
+
+```text
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco A
+Escopo: runtime mínimo + contratos + storage base
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, sem extrapolar escopo
+
+1. OBJETIVO
+
+Executar exclusivamente o Bloco A da Etapa 4, criando a base mínima e auditável do runtime de jobs do AuraLOA.
+
+Este bloco deve entregar apenas a fundação operacional para execuções rastreáveis, com identidade de execução, persistência mínima e logs.
+
+NÃO implementar agentes reais ainda.
+NÃO integrar OpenCrawl agora.
+NÃO alterar lógica de negócio existente.
+NÃO modificar landing, login, rotas, UI ou coletores atuais.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+O ambiente correto já está validado e em uso:
+- PostgreSQL no Hetzner
+- host: 178.104.66.47
+- port: 5432
+- database: auraloa
+- user: auraloa_user
+- conexão via PG_URL já funcional
+- tabelas existentes já validadas:
+  - aura_users
+  - loa_history
+  - sp_loa_rows
+  - sp_despesas_rows
+
+A partir daqui, o objetivo é adicionar a camada de runtime auditável, sem mexer no restante do sistema.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas os arquivos do Bloco A:
+
+A. Runtime / contratos
+- src/runtime/job_types.ts
+- src/runtime/agent_contracts.ts
+
+B. Schemas base
+- src/schemas/job_run.schema.ts
+- src/schemas/source_snapshot.schema.ts
+- src/schemas/precatorio_master.schema.ts
+
+C. Storage base
+- src/storage/evidence_store.ts
+- src/storage/job_run_store.ts
+- src/storage/snapshot_store.ts
+
+D. Runtime mínimo
+- src/runtime/job_runner.ts
+
+Se houver necessidade técnica de um arquivo adicional mínimo para compilar corretamente, pare antes e explique. Não crie arquivos extras sem justificar.
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- agents
+- adapters
+- normalization
+- matching
+- alerts
+- jobs concretos
+- filas distribuídas
+- OpenCrawl
+- cron
+- dashboards
+- endpoints novos
+
+4.2 Não alterar código existente sem necessidade absoluta
+A preferência é:
+- apenas adicionar novos arquivos
+
+Se for absolutamente necessário tocar algum arquivo existente para wiring mínimo, pare antes e mostre:
+- arquivo exato
+- motivo exato
+- alteração mínima proposta
+
+Não prossiga sem mostrar isso.
+
+4.3 MVP simples e estável
+Sem overengineering.
+Sem múltiplas camadas desnecessárias.
+Sem abstrações especulativas.
+Sem framework novo.
+Sem fila externa.
+Sem dependência adicional se não for indispensável.
+
+4.4 Rastreabilidade obrigatória
+Todo job executado por job_runner deve gerar obrigatoriamente:
+- run_id
+- process_id_uuid
+- started_at
+- finished_at
+- status
+- payload_json
+- result_json ou error_message
+
+4.5 Logs obrigatórios
+Todo job deve registrar:
+- [JOB START]
+- [JOB DONE]
+- [JOB ERROR]
+
+4.6 Persistência mínima obrigatória
+Criar suporte para persistir:
+- job_runs
+- source_snapshots
+
+Se as tabelas ainda não existirem no banco, você pode propor SQL idempotente de criação, mas antes precisa me mostrar:
+- SQL exato
+- onde será executado
+- se haverá alteração de init
+
+5. CONTRATOS OBRIGATÓRIOS
+
+5.1 job_types.ts
+Definir os tipos base de job como union type string, incluindo no mínimo:
+- judicial_stock.collect
+- orcamento_pdf.collect
+- loa_dotacao.collect
+- execucao.collect
+- sp_auto_import.collect
+- tjsp_pendentes.collect
+- tjsp_pagamentos.collect
+- reconciliation.run
+- alerts.run
+- ranking.run
+
+5.2 agent_contracts.ts
+Definir no mínimo:
+- interface AgentContext
+- interface AgentResult<T = unknown>
+
+Campos mínimos esperados em AgentContext:
+- run_id
+- process_id_uuid
+- ente
+- ente_sigla?
+- tribunal_alias?
+- ano_exercicio
+- source_kind
+- priority
+- retry_count
+- evidence_base_path
+
+Campos mínimos esperados em AgentResult:
+- ok
+- agent_name
+- run_id
+- process_id_uuid
+- source_name
+- source_url?
+- started_at
+- finished_at
+- raw_payload_paths
+- raw_payload_sha256
+- normalized_records
+- metrics
+- note?
+
+5.3 job_run.schema.ts
+Definir interface JobRunRecord com no mínimo:
+- id
+- run_id
+- job_type
+- agent_name
+- status
+- priority
+- retry_count
+- started_at?
+- finished_at?
+- error_message?
+- payload_json
+- result_json?
+- created_at
+
+5.4 source_snapshot.schema.ts
+Definir interface SourceSnapshotRecord com no mínimo:
+- id
+- run_id
+- agent_name
+- source_name
+- source_url?
+- ente?
+- tribunal_alias?
+- ano_exercicio?
+- source_kind
+- raw_payload_path?
+- raw_payload_sha256?
+- normalized_count
+- collected_at
+- metadata_json?
+
+5.5 precatorio_master.schema.ts
+Definir interface PrecatorioMasterRecord com no mínimo:
+- asset_key
+- ente
+- ente_sigla?
+- tribunal_alias?
+- numero_cnj?
+- numero_precatorio?
+- ano_exercicio?
+- valor_rankeado?
+- valor_fonte_primaria?
+- tipo_precatorio?
+- preferencia?
+- na_loa
+- pago
+- procedente_sem_loa
+- cobertura_execucao_status?
+- first_seen_at?
+- last_seen_at?
+- last_reconciled_at?
+- data_json
+
+5.6 evidence_store.ts
+Criar wrapper mínimo para o EvidencePack já existente.
+Objetivo:
+- encapsular criação de evidence pack
+- evitar uso solto no restante do runtime
+
+Se o EvidencePack atual estiver em outro caminho, importe e adapte.
+Se ele não estiver utilizável diretamente, pare e explique.
+
+5.7 job_run_store.ts
+Criar funções mínimas:
+- insertJobRun(record)
+- updateJobRun(record)
+
+Usar PG_URL / db.ts já validado no projeto.
+Não criar camada ORM nova.
+Usar o padrão de acesso ao banco já existente no projeto.
+
+5.8 snapshot_store.ts
+Criar funções mínimas:
+- insertSourceSnapshot(record)
+- findLatestSnapshots(filters)
+
+Mesmo critério:
+- usar o banco já validado
+- sem inventar nova infraestrutura
+
+5.9 job_runner.ts
+Implementar executor mínimo de jobs com:
+- geração de run_id
+- geração de process_id_uuid
+- persistência de job start
+- execução do handler recebido
+- persistência de sucesso/erro
+- logs obrigatórios
+- retorno estruturado
+
+Assinatura esperada, ou equivalente muito próximo:
+runJob(jobType, handler, payload)
+
+Exemplo conceitual de uso que deve funcionar:
+runJob("alerts.run", async () => {
+  return { ok: true };
+}, {})
+
+6. CRITÉRIOS DE IMPLEMENTAÇÃO
+
+6.1 Compatibilidade
+Tudo deve ser compatível com a base atual do projeto.
+
+6.2 Determinismo
+Datas em ISO-8601.
+Campos obrigatórios sempre presentes.
+Sem erro silencioso.
+
+6.3 Erros
+Se falhar:
+- lançar erro
+- registrar [JOB ERROR]
+- persistir error_message no job_run
+
+6.4 Banco
+Se faltar tabela para job_runs e source_snapshots:
+- mostrar SQL idempotente antes
+- mostrar diff antes
+- mostrar onde isso será plugado antes
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, você deve me entregar obrigatoriamente, nesta ordem:
+
+1. Lista exata de arquivos criados
+2. Lista exata de arquivos alterados
+3. Código completo de cada arquivo criado
+4. Diff completo de qualquer arquivo alterado
+5. SQL exato usado, se houver criação de tabela
+6. Resultado do teste real de execução do job_runner
+7. Log real contendo:
+   - [JOB START]
+   - [JOB DONE] ou [JOB ERROR]
+8. Resultado persistido do job em banco, com prova material
+9. Confirmação explícita de que nenhum escopo extra foi executado
+
+8. TESTE OBRIGATÓRIO
+
+Rodar um teste real mínimo com algo equivalente a:
+
+runJob("alerts.run", async () => {
+  return { ok: true };
+}, {})
+
+Resultado esperado:
+- status DONE
+- run_id preenchido
+- process_id_uuid preenchido
+- payload_json persistido
+- result_json persistido
+- log emitido
+
+9. CRITÉRIO DE ACEITE
+
+GO somente se:
+- arquivos do Bloco A existirem
+- compilarem
+- o job_runner executar
+- houver log
+- houver persistência mínima
+- não houver escopo extra
+
+NO-GO se:
+- faltar qualquer arquivo do Bloco A
+- houver alteração indevida em código fora do escopo
+- houver abstração excessiva
+- houver ausência de persistência
+- houver ausência de log
+- houver declaração de “concluído” sem evidência material
+
+10. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- mapa objetivo dos arquivos que serão criados
+- dependências que pretende reutilizar
+- se precisará ou não criar tabelas novas
+- se precisará ou não alterar algum arquivo existente
+
+Só depois disso prossiga.
+
+Não execute tarefas em paralelo.
+Não misture com landing, login, LOA, DataJud, OpenCrawl ou UI.
+Não reescreva arquivos amplamente.
+Não declare concluído antes da evidência completa.
+```
+
+Quando ele responder com o mapa e a estratégia do Bloco A, me traga a resposta antes de deixar ele codificar.
