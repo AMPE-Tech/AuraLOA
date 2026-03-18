@@ -66,6 +66,45 @@ export async function initDb(): Promise<void> {
     )
   `);
 
+  // ── Tabela: job_runs ─────────────────────────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS job_runs (
+      run_id           TEXT PRIMARY KEY,
+      process_id_uuid  TEXT NOT NULL,
+      job_type         TEXT NOT NULL,
+      agent_name       TEXT NOT NULL,
+      status           TEXT NOT NULL DEFAULT 'PENDING',
+      priority         INTEGER NOT NULL DEFAULT 5,
+      retry_count      INTEGER NOT NULL DEFAULT 0,
+      started_at       TIMESTAMPTZ,
+      finished_at      TIMESTAMPTZ,
+      error_message    TEXT,
+      payload_json     JSONB NOT NULL DEFAULT '{}',
+      result_json      JSONB,
+      created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `);
+
+  // ── Tabela: source_snapshots ──────────────────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS source_snapshots (
+      id                  SERIAL PRIMARY KEY,
+      run_id              TEXT NOT NULL,
+      agent_name          TEXT NOT NULL,
+      source_name         TEXT NOT NULL,
+      source_url          TEXT,
+      ente                TEXT,
+      tribunal_alias      TEXT,
+      ano_exercicio       INTEGER,
+      source_kind         TEXT NOT NULL,
+      raw_payload_path    TEXT,
+      raw_payload_sha256  TEXT,
+      normalized_count    INTEGER NOT NULL DEFAULT 0,
+      collected_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      metadata_json       JSONB
+    )
+  `);
+
   // ── Seed: usuário admin padrão ────────────────────────────────────────────
   await query(`
     INSERT INTO aura_users (email, password_hash, role, name, created_at, active)
