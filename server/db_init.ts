@@ -105,6 +105,16 @@ export async function initDb(): Promise<void> {
     )
   `);
 
+  // ── Índices: source_snapshots ─────────────────────────────────────────────
+  // Débito técnico: source_snapshots.run_id não possui FK para job_runs.run_id
+  // no MVP — evita overhead de constraint em volume alto. Registrado para Bloco B.
+  await query(`CREATE INDEX IF NOT EXISTS idx_ss_run_id
+    ON source_snapshots (run_id)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_ss_agent_collected
+    ON source_snapshots (agent_name, collected_at DESC)`);
+  await query(`CREATE INDEX IF NOT EXISTS idx_ss_tribunal_ano
+    ON source_snapshots (tribunal_alias, ano_exercicio)`);
+
   // ── Seed: usuário admin padrão ────────────────────────────────────────────
   await query(`
     INSERT INTO aura_users (email, password_hash, role, name, created_at, active)
