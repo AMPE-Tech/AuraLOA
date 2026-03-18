@@ -1,0 +1,241 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco C
+Escopo: dotação LOA mínima
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, sem extrapolar escopo
+
+1. OBJETIVO
+
+Implementar exclusivamente o segundo agente real mínimo do AuraLOA, agora no domínio de dotação LOA, reaproveitando o código existente do projeto e usando o runtime auditável já validado nos Blocos A e B.
+
+Este bloco deve entregar apenas:
+- 1 adapter
+- 1 normalizador
+- 1 agente
+- 1 teste real via job_runner
+- persistência mínima em source_snapshots quando houver retorno utilizável
+
+Importante:
+o objetivo continua sendo preparar a base operacional para OpenCrawl no futuro.
+OpenCrawl NÃO deve ser implementado agora.
+Este bloco deve apenas deixar a camada LOA pronta para futura orquestração.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- PG_URL funcional para o banco auraloa no Hetzner
+- runtime mínimo do Bloco A
+- judicial_stock_agent do Bloco B com run_id íntegro
+- tabelas:
+  - job_runs
+  - source_snapshots
+  - aura_users
+  - loa_history
+  - sp_loa_rows
+  - sp_despesas_rows
+
+A partir daqui, o objetivo é conectar a segunda fonte estrutural: dotação LOA.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas estes 3 arquivos novos:
+- src/adapters/siop_adapter.ts
+- src/normalization/normalize_dotacao.ts
+- src/agents/loa_dotacao_agent.ts
+
+Alterações em arquivos existentes só serão permitidas se forem estritamente necessárias.
+Se precisar alterar qualquer arquivo existente, parar antes e mostrar:
+- arquivo exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- OpenCrawl
+- outros adapters
+- outros agents
+- matching
+- alerts
+- jobs catalogados
+- filas distribuídas
+- cron
+- endpoints
+- UI
+- dashboards
+
+4.2 Reaproveitar o código existente
+Não reinventar consulta de dotação.
+Mapear e reutilizar a base já existente no projeto relacionada a:
+- fetchDotacaoFromSIOP
+- siop_dotacao
+- consultas SPARQL/SIOP já existentes
+- tipos já presentes no repositório
+
+O adapter deve encapsular a lógica existente, não duplicá-la.
+
+4.3 MVP simples e estável
+Sem overengineering.
+Sem pacote novo.
+Sem framework novo.
+Sem abstrações especulativas.
+
+4.4 Rastreabilidade obrigatória
+O agente deve rodar pelo job_runner já aprovado.
+Deve manter:
+- run_id
+- process_id_uuid
+- logs
+- persistência em job_runs
+
+4.5 Snapshot mínimo
+Se houver retorno utilizável, persistir em source_snapshots com:
+- run_id
+- agent_name
+- source_name
+- source_url quando disponível
+- ano_exercicio
+- source_kind
+- normalized_count
+- metadata_json mínimo
+
+5. ARQUIVOS E RESPONSABILIDADES
+
+5.1 src/adapters/siop_adapter.ts
+Responsabilidade:
+encapsular a lógica existente de consulta de dotação LOA.
+
+Assinatura esperada, ou equivalente muito próximo:
+fetchDotacaoAdapter(params)
+
+Entrada mínima:
+- ano_exercicio
+- evidencePack
+
+Saída mínima:
+- records
+- summary ou metadata equivalente
+- evidences quando aplicável
+
+Obrigatório:
+- reutilizar a lógica existente do projeto
+- não copiar e colar implementação inteira sem necessidade
+- manter tratamento honesto quando a fonte pública estiver incompleta, bloqueada ou indisponível
+
+5.2 src/normalization/normalize_dotacao.ts
+Responsabilidade:
+converter o retorno bruto de dotação para uma estrutura parcial canônica e estável.
+
+Assinatura esperada:
+normalizeDotacao(records, params)
+
+Entrada mínima:
+- records
+- ente
+- ano_exercicio
+
+Saída mínima por item:
+- identificador lógico provisório ou asset_key provisório documentado
+- ente
+- ano_exercicio
+- codigo_acao quando existir
+- descricao_acao quando existir
+- dotacao_inicial quando existir
+- dotacao_atual quando existir
+- status
+- source_confidence
+
+5.3 src/agents/loa_dotacao_agent.ts
+Responsabilidade:
+orquestrar a execução ponta a ponta do agente de dotação.
+
+Assinatura esperada:
+runLoadotacaoAgent(ctx)
+
+Fluxo mínimo esperado:
+- criar ou receber evidence pack pelo wrapper já existente
+- chamar siop_adapter
+- normalizar retorno
+- persistir source_snapshot se houver dados ou metadata suficiente
+- devolver AgentResult compatível com o contrato do Bloco A
+
+Obrigatório:
+- agent_name explícito
+- source_name explícito
+- started_at / finished_at
+- normalized_records
+- metrics.total_records
+
+6. TESTE OBRIGATÓRIO
+
+Executar um teste real do agente via job_runner, com payload controlado mínimo.
+
+Exemplo de payload:
+{
+  "ano_exercicio": 2025
+}
+
+O teste deve produzir evidência material de:
+- [JOB START]
+- [JOB DONE] ou [JOB ERROR]
+- registro em job_runs
+- retorno estruturado do agente
+
+Se a fonte externa estiver incompleta, bloqueada ou indisponível, isso não reprova automaticamente.
+Mas deve haver:
+- erro honesto ou status honesto
+- log real
+- persistência adequada
+- nenhuma falsa declaração de sucesso
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+1. mapa objetivo do que será criado e reutilizado, antes de codificar
+2. lista exata de arquivos criados
+3. lista exata de arquivos alterados
+4. código completo dos arquivos criados
+5. diff completo de qualquer arquivo alterado
+6. descrição exata das funções existentes reutilizadas
+7. teste real via runJob com loa_dotacao.collect
+8. log real do teste
+9. prova de persistência em job_runs
+10. prova de persistência em source_snapshots, se aplicável
+11. confirmação explícita de zero escopo extra
+
+8. JOB TYPE
+
+Usar explicitamente:
+- loa_dotacao.collect
+
+Não usar nomes alternativos.
+
+9. CRITÉRIO DE ACEITE
+
+GO somente se:
+- o adapter reutilizar a base existente
+- o normalizador existir e estiver estável
+- o agente rodar via job_runner
+- houver evidência material no banco
+- não houver escopo extra
+
+NO-GO se:
+- houver duplicação desnecessária de lógica existente
+- houver simulação apresentada como coleta real
+- houver declaração de concluído sem evidência material
+- houver tentativa de implementar OpenCrawl nesta etapa
+
+10. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- quais funções existentes do projeto serão reutilizadas
+- quais 3 arquivos serão criados
+- se haverá ou não alteração em arquivos existentes
+- como será feito o teste real do agente
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não misture com OpenCrawl, PDF, Transparência, TJSP, UI ou outros módulos.
+Não declare concluído antes da evidência completa.
