@@ -1,0 +1,245 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco H
+Escopo: PDF intake + classificação documental mínima
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, incremental e sem extrapolar escopo
+
+1. OBJETIVO
+
+Implementar exclusivamente a primeira camada útil de tratamento documental em PDF no AuraLOA, preparada para futura integração com OpenCrawl e para futura monetização na área de pesquisa/validação.
+
+Este bloco deve entregar apenas:
+- 1 adapter mínimo de intake de PDF
+- 1 classificador documental mínimo
+- 1 agente de intake/classificação
+- 1 teste controlado
+- 0 promessa de parsing universal
+
+Objetivo de negócio associado:
+permitir que o AuraLOA comece a tratar PDF de processo ou documento oficial de forma auditável, classificando minimamente o tipo documental e registrando metadados úteis para futura extração de credor, advogado, ofício requisitório, cessão e eventos do ciclo de vida.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- Bloco A: runtime auditável
+- Bloco B: judicial_stock_agent
+- Bloco C: loa_dotacao_agent
+- Bloco D: execution_finance_agent
+- Bloco E: catálogo + source_router + job_registry
+- Bloco F: boundary OpenCrawl
+- Bloco G: primeiro teste controlado OpenCrawl em fonte PDF futura
+
+A partir daqui, o objetivo é sair do nível “bridge/plumbing” e criar o primeiro bloco documental útil, ainda sem tentar resolver toda a heterogeneidade de PDFs do país.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas estes 3 arquivos novos:
+- src/adapters/pdf_intake_adapter.ts
+- src/normalization/classify_pdf_document.ts
+- src/agents/pdf_intake_agent.ts
+
+Alterações em arquivos existentes só serão permitidas se forem estritamente necessárias.
+Se precisar alterar qualquer arquivo existente, parar antes e mostrar:
+- arquivo exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- parser universal de PDF
+- extração robusta de credor/advogado/ofício
+- OCR em massa
+- browser automation ampla
+- endpoint novo
+- UI
+- dashboard
+- fila nova
+- crawler amplo
+- agentes adicionais
+- matching novo
+- lead engine nova
+
+4.2 Não prometer inteligência documental plena
+Este bloco NÃO deve prometer:
+- identificação perfeita de credor
+- identificação perfeita de advogado
+- identificação universal de ofício requisitório
+- leitura universal de qualquer tribunal
+- normalização semântica completa
+
+4.3 Entrega mínima, porém útil
+O bloco deve ser capaz de produzir pelo menos:
+- hash do conteúdo ou referência
+- metadados básicos
+- classificação documental mínima
+- sinais documentais básicos
+- status e confiança
+
+4.4 Auditabilidade
+O agente deve rodar via job_runner.
+Deve manter:
+- run_id
+- process_id_uuid
+- logs
+- persistência em job_runs
+- persistência em source_snapshots quando houver resultado utilizável
+
+4.5 OpenCrawl continua sem uso amplo
+Este bloco pode ser preparado para se beneficiar do OpenCrawl depois, mas não deve depender de OpenCrawl para funcionar.
+Se o teste usar PDF de referência controlada, isso deve ficar explícito.
+
+5. ARQUIVOS E RESPONSABILIDADES
+
+5.1 src/adapters/pdf_intake_adapter.ts
+Responsabilidade:
+realizar o intake mínimo do PDF ou de sua referência controlada.
+
+Entrada mínima esperada:
+- tribunal?
+- ano?
+- url_referencia? ou caminho controlado?
+- evidencePack
+- metadados opcionais
+
+Saída mínima:
+- source_name
+- source_kind
+- file_name ou reference_name
+- reference_url quando existir
+- hash quando existir conteúdo ou referência suficiente
+- metadata básica
+- raw_text_excerpt opcional
+- note
+
+Regra:
+se nesta etapa não houver download real de PDF, o adapter pode trabalhar com referência controlada e registrar isso explicitamente.
+Não apresentar referência como parsing real do documento.
+
+5.2 src/normalization/classify_pdf_document.ts
+Responsabilidade:
+classificar minimamente o tipo documental do PDF ou referência associada.
+
+Assinatura esperada:
+classifyPdfDocument(input)
+
+Saída mínima esperada:
+- document_type
+- tribunal_alias provável quando possível
+- confidence_score
+- signals_detected[]
+- classification_note
+
+Tipos documentais mínimos sugeridos:
+- precatorio_lista_oficial
+- oficio_requisitorio
+- decisao_judicial
+- documento_processual_generico
+- desconhecido
+
+Signals mínimos sugeridos:
+- numero_cnj_candidato
+- numero_precatorio_candidato
+- valor_candidato
+- nome_credor_candidato
+- nome_advogado_candidato
+- mencao_cessao
+- mencao_pagamento
+- mencao_oficio_requisitorio
+
+Importante:
+esses sinais podem ser apenas heurísticos e candidatos.
+Não tratá-los como verdade confirmada nesta etapa.
+
+5.3 src/agents/pdf_intake_agent.ts
+Responsabilidade:
+orquestrar intake + classificação documental mínima.
+
+Assinatura esperada:
+runPdfIntakeAgent(ctx)
+
+Fluxo mínimo esperado:
+- criar ou receber evidence pack
+- chamar pdf_intake_adapter
+- chamar classify_pdf_document
+- persistir source_snapshot quando houver resultado utilizável
+- devolver AgentResult compatível com o contrato do Bloco A
+
+Obrigatório:
+- agent_name explícito
+- source_name explícito
+- started_at / finished_at
+- normalized_records
+- metrics.total_records
+
+6. TESTE OBRIGATÓRIO
+
+Executar um teste controlado mínimo com 1 PDF ou 1 referência controlada de PDF/documento oficial relacionado ao precatório.
+
+O teste deve deixar explícito:
+- se houve apenas intake de referência
+ou
+- se houve leitura mínima controlada de conteúdo
+
+A evidência deve mostrar:
+- [JOB START]
+- [JOB DONE] ou [JOB ERROR]
+- registro em job_runs
+- resultado estruturado do classificador
+
+Aceitável nesta etapa:
+- classificação como desconhecido com confiança baixa/moderada
+- identificação apenas de sinais candidatos
+- ausência de extração perfeita
+
+Não aceitável:
+- apresentar heurística como certeza
+- apresentar referência como parsing pleno
+- prometer cobertura universal
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+1. mapa objetivo do que será criado e reutilizado, antes de codificar
+2. lista exata de arquivos criados
+3. lista exata de arquivos alterados
+4. código completo dos arquivos criados
+5. diff completo de qualquer arquivo alterado
+6. teste real/controlado do pdf_intake_agent
+7. log real do teste
+8. prova de persistência em job_runs
+9. prova de persistência em source_snapshots, se aplicável
+10. classificação retornada pelo classificador
+11. confirmação explícita do que foi apenas referência e do que foi conteúdo real
+12. confirmação explícita de zero escopo extra
+
+8. CRITÉRIO DE ACEITE
+
+GO somente se:
+- houver intake mínimo auditável
+- houver classificador mínimo funcional
+- houver separação clara entre heurística e confirmação
+- o agente rodar via job_runner
+- houver evidência material
+- não houver escopo extra
+
+NO-GO se:
+- houver promessa de parser universal
+- houver overengineering
+- houver heurística apresentada como verdade confirmada
+- houver ampliação indevida para OCR, crawler amplo ou pipeline massivo
+
+9. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- quais 3 arquivos serão criados
+- se vai usar referência controlada ou conteúdo real mínimo
+- o que exatamente será classificado nesta etapa
+- se precisará alterar algum arquivo existente
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não amplie escopo.
+Não declare concluído antes da evidência completa.
