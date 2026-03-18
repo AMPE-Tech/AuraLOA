@@ -1,0 +1,261 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco D
+Escopo: execução financeira mínima
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, sem extrapolar escopo
+
+1. OBJETIVO
+
+Implementar exclusivamente o terceiro agente real mínimo do AuraLOA, agora no domínio de execução financeira, reaproveitando o código existente do projeto e usando o runtime auditável já validado nos Blocos A, B e C.
+
+Este bloco deve entregar apenas:
+- 1 adapter
+- 1 normalizador
+- 1 agente
+- 1 teste real via job_runner
+- persistência mínima em source_snapshots quando houver retorno utilizável
+
+Importante:
+o objetivo continua sendo preparar a base operacional para OpenCrawl no futuro.
+OpenCrawl NÃO deve ser implementado agora.
+Este bloco deve apenas deixar a camada de execução financeira pronta para futura orquestração.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- PG_URL funcional para o banco auraloa no Hetzner
+- runtime mínimo do Bloco A
+- judicial_stock_agent do Bloco B com run_id íntegro
+- loa_dotacao_agent do Bloco C com status funcional honesto
+- tabelas:
+  - job_runs
+  - source_snapshots
+  - aura_users
+  - loa_history
+  - sp_loa_rows
+  - sp_despesas_rows
+
+A partir daqui, o objetivo é conectar a terceira fonte estrutural: execução financeira.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas estes 3 arquivos novos:
+- src/adapters/transparencia_adapter.ts
+- src/normalization/normalize_execucao.ts
+- src/agents/execution_finance_agent.ts
+
+Alterações em arquivos existentes só serão permitidas se forem estritamente necessárias.
+Se precisar alterar qualquer arquivo existente, parar antes e mostrar:
+- arquivo exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- OpenCrawl
+- outros adapters
+- outros agents
+- matching
+- alerts
+- jobs catalogados
+- filas distribuídas
+- cron
+- endpoints
+- UI
+- dashboards
+
+4.2 Reaproveitar o código existente
+Não reinventar coleta de execução financeira.
+Mapear e reutilizar a base já existente no projeto relacionada a:
+- fetchExecucaoFromTransparencia
+- paginação já existente
+- parsing monetário já existente
+- tratamento de ausência de PORTAL_TRANSPARENCIA_API_KEY
+- tipos já presentes no repositório
+
+O adapter deve encapsular a lógica existente, não duplicá-la.
+
+4.3 MVP simples e estável
+Sem overengineering.
+Sem pacote novo.
+Sem framework novo.
+Sem abstrações especulativas.
+
+4.4 Rastreabilidade obrigatória
+O agente deve rodar pelo job_runner já aprovado.
+Deve manter:
+- run_id
+- process_id_uuid
+- logs
+- persistência em job_runs
+
+4.5 Snapshot mínimo
+Se houver retorno utilizável, persistir em source_snapshots com:
+- run_id
+- agent_name
+- source_name
+- source_url quando disponível
+- ano_exercicio
+- source_kind
+- normalized_count
+- metadata_json mínimo
+
+5. ARQUIVOS E RESPONSABILIDADES
+
+5.1 src/adapters/transparencia_adapter.ts
+Responsabilidade:
+encapsular a lógica existente de coleta de execução financeira.
+
+Assinatura esperada, ou equivalente muito próximo:
+fetchExecucaoAdapter(params)
+
+Entrada mínima:
+- ano_exercicio
+- evidencePack
+
+Saída mínima:
+- records
+- summary ou metadata equivalente
+- evidences quando aplicável
+
+Obrigatório:
+- reutilizar a lógica existente do projeto
+- não copiar e colar implementação inteira sem necessidade
+- manter tratamento honesto quando a API estiver sem chave, indisponível, bloqueada ou parcial
+
+5.2 src/normalization/normalize_execucao.ts
+Responsabilidade:
+converter o retorno bruto de execução para uma estrutura parcial canônica e estável.
+
+Assinatura esperada:
+normalizeExecucao(records, params)
+
+Entrada mínima:
+- records
+- ente
+- ano_exercicio
+
+Saída mínima por item:
+- identificador lógico provisório ou asset_key provisório documentado
+- ente
+- ano_exercicio
+- codigo_acao quando existir
+- descricao_acao quando existir
+- empenhado quando existir
+- liquidado quando existir
+- pago quando existir
+- status
+- source_confidence
+
+5.3 src/agents/execution_finance_agent.ts
+Responsabilidade:
+orquestrar a execução ponta a ponta do agente de execução financeira.
+
+Assinatura esperada:
+runExecutionFinanceAgent(ctx)
+
+Fluxo mínimo esperado:
+- criar ou receber evidence pack pelo wrapper já existente
+- chamar transparencia_adapter
+- normalizar retorno
+- persistir source_snapshot se houver dados ou metadata suficiente
+- devolver AgentResult compatível com o contrato do Bloco A
+
+Obrigatório:
+- agent_name explícito
+- source_name explícito
+- started_at / finished_at
+- normalized_records
+- metrics.total_records
+
+6. TESTE OBRIGATÓRIO
+
+Executar um teste real do agente via job_runner, com payload controlado mínimo.
+
+Exemplo de payload:
+{
+  "ano_exercicio": 2025,
+  "ente": "UNIAO"
+}
+
+O teste deve produzir evidência material de:
+- [JOB START]
+- [JOB DONE] ou [JOB ERROR]
+- registro em job_runs
+- retorno estruturado do agente
+
+Importante:
+se faltar PORTAL_TRANSPARENCIA_API_KEY, se a API estiver indisponível ou se a cobertura estiver parcial, isso não reprova automaticamente.
+Mas deve haver:
+- erro honesto ou status honesto
+- log real
+- persistência adequada
+- nenhuma falsa declaração de sucesso
+
+7. SEPARAÇÃO OBRIGATÓRIA DE STATUS
+
+Na evidência final, separar explicitamente:
+1. status técnico do job_runner
+   - DONE ou ERROR
+2. status funcional da fonte/coleta
+   - OK, PARCIAL ou NAO_LOCALIZADO
+
+Exemplo aceitável:
+- job_runs.status = DONE
+- metadata_json.status_funcional = NAO_LOCALIZADO
+
+Isso é válido se a execução ocorreu corretamente, mas a fonte não entregou dados por limitação externa ou ausência de chave.
+
+8. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+1. mapa objetivo do que será criado e reutilizado, antes de codificar
+2. lista exata de arquivos criados
+3. lista exata de arquivos alterados
+4. código completo dos arquivos criados
+5. diff completo de qualquer arquivo alterado
+6. descrição exata das funções existentes reutilizadas
+7. teste real via runJob com execucao.collect
+8. log real do teste
+9. prova de persistência em job_runs
+10. prova de persistência em source_snapshots, se aplicável
+11. separação explícita entre status técnico do job e status funcional da fonte
+12. confirmação explícita de zero escopo extra
+
+9. JOB TYPE
+
+Usar explicitamente:
+- execucao.collect
+
+Não usar nomes alternativos.
+
+10. CRITÉRIO DE ACEITE
+
+GO somente se:
+- o adapter reutilizar a base existente
+- o normalizador existir e estiver estável
+- o agente rodar via job_runner
+- houver evidência material no banco
+- não houver escopo extra
+
+NO-GO se:
+- houver duplicação desnecessária de lógica existente
+- houver simulação apresentada como coleta real
+- houver declaração de concluído sem evidência material
+- houver tentativa de implementar OpenCrawl nesta etapa
+
+11. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- quais funções existentes do projeto serão reutilizadas
+- quais 3 arquivos serão criados
+- se haverá ou não alteração em arquivos existentes
+- como será feito o teste real do agente
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não misture com OpenCrawl, PDF, TJSP, UI ou outros módulos.
+Não declare concluído antes da evidência completa.
