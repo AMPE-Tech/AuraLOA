@@ -1,0 +1,247 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco E
+Escopo: preparação operacional para OpenCrawl
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, sem extrapolar escopo
+
+1. OBJETIVO
+
+Implementar exclusivamente a camada preparatória mínima para futura orquestração OpenCrawl, sem ativar OpenCrawl agora.
+
+Este bloco deve entregar apenas:
+- 1 catálogo de tipos de fonte
+- 1 catálogo mínimo de fontes AuraLOA
+- 1 roteador de fonte (source router) determinístico
+- 1 registro mínimo de jobs
+- 1 teste real de roteamento
+- 0 integração com crawler distribuído
+
+Importante:
+OpenCrawl continua FORA do escopo de implementação.
+Este bloco existe apenas para deixar a arquitetura pronta para futura conexão com OpenCrawl, sem perder governança.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- Bloco A: runtime auditável
+- Bloco B: judicial_stock_agent real
+- Bloco C: loa_dotacao_agent real
+- Bloco D: execution_finance_agent real
+- PG_URL funcional no banco auraloa
+- job_runs e source_snapshots operacionais
+
+A partir daqui, o objetivo é organizar a decisão operacional:
+qual fonte usa qual agente, e por qual tipo de coleta.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas estes 4 arquivos novos:
+- src/catalog/source_kinds.ts
+- src/catalog/auraloa_sources.ts
+- src/runtime/source_router.ts
+- src/runtime/job_registry.ts
+
+Alterações em arquivos existentes só serão permitidas se forem estritamente necessárias.
+Se precisar alterar qualquer arquivo existente, parar antes e mostrar:
+- arquivo exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- OpenCrawl real
+- crawlers distribuídos
+- filas novas
+- cron
+- queue dispatcher novo
+- retry policy nova
+- UI
+- endpoints
+- dashboards
+- adapters novos
+- agents novos
+- matching
+- alerts
+
+4.2 Não ativar execução externa
+Nada de browser automation.
+Nada de headless runtime.
+Nada de workers distribuídos.
+Nada de fetch adicional fora do que já existe nos agentes aprovados.
+
+4.3 MVP simples e estável
+Sem overengineering.
+Sem pacotes novos.
+Sem framework novo.
+Sem abstrações especulativas.
+
+4.4 Determinismo obrigatório
+O roteamento deve ser determinístico, legível e auditável.
+Dada uma fonte catalogada, o source_router deve conseguir responder de forma estável:
+- qual tipo de fonte é
+- qual agente deve ser usado
+- qual job_type deve ser usado
+- qual estratégia operacional futura será aplicável
+
+5. ARQUIVOS E RESPONSABILIDADES
+
+5.1 src/catalog/source_kinds.ts
+Responsabilidade:
+definir os tipos de fonte canônicos do AuraLOA.
+
+Deve incluir no mínimo:
+- api_datajud
+- sparql_dotacao
+- api_execucao_financeira
+- pdf_oficial
+- html_publico
+- csv_publico
+- zip_publico
+
+Pode ser enum, union type ou const object tipado, desde que fique claro e simples.
+
+5.2 src/catalog/auraloa_sources.ts
+Responsabilidade:
+catalogar minimamente as fontes já conhecidas do AuraLOA, sem inventar fontes novas.
+
+Incluir apenas fontes já compatíveis com o que o projeto já discute hoje, no mínimo:
+- DataJud CNJ
+- SIOP / Orçamento SPARQL
+- Portal da Transparência REST API
+- PDF oficial de precatórios (como categoria, sem ativar crawler)
+- HTML público TJSP (como categoria, sem ativar crawler)
+- CSV Fazenda/SP (como categoria, sem ativar crawler)
+- ZIP mensal de despesas (como categoria, sem ativar crawler)
+
+Cada item deve ter no mínimo:
+- source_name
+- source_kind
+- dominio ou sistema_origem
+- ente padrão quando fizer sentido
+- agente alvo atual ou futuro
+- job_type atual ou futuro
+- observacao_operacional
+
+5.3 src/runtime/source_router.ts
+Responsabilidade:
+dado um registro do catálogo, decidir deterministicamente o roteamento operacional.
+
+Assinatura esperada, ou equivalente muito próximo:
+routeSource(source)
+
+Saída mínima:
+- source_name
+- source_kind
+- target_agent
+- target_job_type
+- execution_mode
+
+execution_mode deve indicar apenas estratégia, não execução real.
+Exemplos aceitáveis:
+- existing_api_agent
+- existing_sparql_agent
+- future_pdf_agent
+- future_html_agent
+- future_csv_agent
+- future_zip_agent
+
+Obrigatório:
+- usar os agentes já aprovados quando a fonte já estiver implementada
+- marcar como future_* as fontes ainda não ligadas
+- não disparar execução real aqui
+
+5.4 src/runtime/job_registry.ts
+Responsabilidade:
+registrar de forma mínima e auditável os job types e seus agentes atuais ou previstos.
+
+Deve contemplar no mínimo:
+- judicial_stock.collect → judicial_stock_agent
+- loa_dotacao.collect → loa_dotacao_agent
+- execucao.collect → execution_finance_agent
+
+E pode registrar como planejados/futuros:
+- orcamento_pdf.collect
+- sp_auto_import.collect
+- tjsp_pendentes.collect
+- tjsp_pagamentos.collect
+- reconciliation.run
+- alerts.run
+- ranking.run
+
+Obrigatório:
+separar claramente o que é:
+- ativo hoje
+- planejado para depois
+
+6. TESTE OBRIGATÓRIO
+
+Executar um teste real mínimo, sem crawler, provando que o roteador funciona.
+
+O teste deve demonstrar pelo menos 3 casos:
+1. DataJud CNJ
+   - deve rotear para judicial_stock_agent
+   - job_type judicial_stock.collect
+   - execution_mode existing_api_agent
+
+2. SIOP / Orçamento SPARQL
+   - deve rotear para loa_dotacao_agent
+   - job_type loa_dotacao.collect
+   - execution_mode existing_sparql_agent
+
+3. Portal da Transparência REST API
+   - deve rotear para execution_finance_agent
+   - job_type execucao.collect
+   - execution_mode existing_api_agent
+
+Pode incluir também 1 ou 2 exemplos futuros, como:
+- PDF oficial de precatórios → future_pdf_agent
+- HTML público TJSP → future_html_agent
+
+Importante:
+esse teste é de roteamento e catálogo, não de coleta.
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+1. mapa objetivo do que será criado e reutilizado, antes de codificar
+2. lista exata de arquivos criados
+3. lista exata de arquivos alterados
+4. código completo dos arquivos criados
+5. diff completo de qualquer arquivo alterado
+6. teste real do source_router
+7. saída real do teste mostrando os roteamentos
+8. confirmação explícita de que nenhuma execução OpenCrawl foi ativada
+9. confirmação explícita de zero escopo extra
+
+8. CRITÉRIO DE ACEITE
+
+GO somente se:
+- o catálogo ficar claro e mínimo
+- o source_router for determinístico
+- o job_registry refletir corretamente o que já existe e o que é futuro
+- não houver execução real de OpenCrawl
+- não houver escopo extra
+
+NO-GO se:
+- houver tentativa de implementar OpenCrawl nesta etapa
+- houver crawler real
+- houver browser automation
+- houver fila nova
+- houver execução externa
+- houver abstração excessiva sem valor operacional
+
+9. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de codificar, me entregue primeiro:
+- quais 4 arquivos serão criados
+- quais fontes atuais entrarão no catálogo
+- como distinguirá fonte ativa hoje versus fonte futura
+- como será feito o teste real do source_router
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não misture com OpenCrawl real, UI, endpoints ou novos agentes.
+Não declare concluído antes da evidência completa.
