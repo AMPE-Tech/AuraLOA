@@ -1,0 +1,163 @@
+INSTRUÇÃO OFICIAL — AURALOA
+Etapa 4 — Bloco G
+Escopo: primeiro teste controlado real do OpenCrawl em PDF
+Emissor: DPO / Governança Técnica AuraLOA
+Status: mandatório
+Modo de execução: controlado, reversível e sem extrapolar escopo
+
+1. OBJETIVO
+
+Executar o primeiro teste controlado real de integração do OpenCrawl no AuraLOA, usando exclusivamente uma fonte futura da categoria PDF.
+
+Este bloco deve entregar apenas:
+- 1 caminho controlado de teste via OpenCrawl bridge
+- 1 request real contra uma fonte PDF futura
+- 1 resposta estruturada e auditável
+- 0 substituição dos agentes já ativos
+- 0 ativação ampla do OpenCrawl
+
+Objetivo de negócio associado:
+validar a trilha que futuramente permitirá enriquecer a área de pesquisa/validação do aplicativo com leitura e extração de informações documentais a partir de PDFs de processo ou documentos oficiais relacionados ao precatório.
+
+2. CONTEXTO TÉCNICO VALIDADO
+
+Já existem e estão aprovados:
+- Bloco A: runtime auditável
+- Bloco B: judicial_stock_agent
+- Bloco C: loa_dotacao_agent
+- Bloco D: execution_finance_agent
+- Bloco E: catálogo + source_router + job_registry
+- Bloco F: opencrawl_contract + opencrawl_config + opencrawl_bridge
+- OpenCrawl permanece isolado e disabled by default
+- nenhum agente atual deve ser substituído
+
+A partir daqui, o objetivo é validar o primeiro uso real e controlado do OpenCrawl em uma fonte futura do tipo PDF.
+
+3. ESCOPO EXATO DESTA ETAPA
+
+Criar apenas o mínimo necessário para este teste controlado.
+
+Arquivos permitidos:
+- 1 arquivo de teste controlado local, temporário e não versionado
+- alteração mínima em config se estritamente necessária para habilitar a flag em modo de teste
+- nenhum novo agent permanente
+- nenhum novo adapter permanente de fonte ampla
+
+Se for necessário criar 1 arquivo permanente pequeno de suporte exclusivamente para o teste, parar antes e mostrar:
+- nome exato
+- motivo exato
+- diff mínimo proposto
+
+4. REGRAS INEGOCIÁVEIS
+
+4.1 Não sair do escopo
+Não criar:
+- crawler amplo
+- browser automation ampla
+- fila nova
+- endpoint novo
+- UI
+- dashboard
+- agente novo permanente de produção
+- substituição dos agentes nativos
+- integração em massa com múltiplas fontes
+
+4.2 Fonte do teste
+Usar apenas uma fonte futura da categoria:
+- pdf_oficial
+
+Não usar DataJud, SIOP ou Portal da Transparência nesta etapa.
+
+4.3 Feature flag controlada
+OpenCrawl deve ser habilitado apenas para o teste controlado.
+Ao final:
+- a configuração deve voltar ao estado seguro
+ou
+- o teste deve provar que a habilitação ficou restrita ao contexto local do teste
+
+4.4 Auditabilidade mínima
+O teste deve mostrar:
+- request enviado à bridge
+- decisão da bridge
+- response estruturada
+- status final
+- nenhuma substituição dos agentes atuais
+
+4.5 Objetivo do teste
+O objetivo não é ainda fazer parsing completo de produção.
+O objetivo é provar:
+- a bridge aceita uma fonte PDF futura
+- a flag pode habilitar o caminho
+- a resposta é controlada e estruturada
+- o plumbing real do OpenCrawl funciona
+
+5. CENÁRIO DO TESTE
+
+Usar uma fonte do catálogo equivalente a:
+- PDF Oficial de Precatórios
+ou
+- PDF de processo/documento oficial relacionado
+
+A request deve conter no mínimo:
+- source_name
+- source_kind = pdf_oficial
+- target_agent = orcamento_pdf_agent ou equivalente futuro
+- target_job_type = orcamento_pdf.collect
+- execution_mode = future_pdf_agent
+- payload mínimo com URL ou referência controlada do PDF
+- run_id opcional
+- process_id_uuid opcional
+
+6. RESULTADO ESPERADO
+
+A saída deve ser estruturada e mostrar claramente:
+- se a bridge aceitou a execução controlada
+- qual status retornou
+- qual message retornou
+- qual execution_mode foi usado
+- qual metadata foi produzida
+- se houve dry_run ou execução controlada real
+
+Se a integração ainda estiver parcialmente simulada por limitação do executor real, isso deve ser declarado explicitamente.
+Não apresentar simulação como execução real.
+
+7. EVIDÊNCIA OBRIGATÓRIA DE ENTREGA
+
+Ao final, entregar nesta ordem:
+1. mapa objetivo do que será usado no teste
+2. se algum arquivo existente precisou ser alterado, mostrar diff mínimo antes
+3. request exato usado no teste
+4. saída real do teste
+5. confirmação explícita de que a fonte testada foi PDF
+6. confirmação explícita de que nenhum agente atual foi substituído
+7. confirmação explícita de que OpenCrawl não foi liberado amplamente
+8. confirmação de remoção do arquivo temporário de teste
+9. confirmação explícita de zero escopo extra
+
+8. CRITÉRIO DE ACEITE
+
+GO somente se:
+- o teste usar PDF como fonte futura
+- a bridge sair do estado puramente disabled e entrar em caminho controlado
+- a resposta for estruturada
+- nenhum agente atual for substituído
+- o escopo permanecer pequeno e reversível
+
+NO-GO se:
+- houver tentativa de usar DataJud/SIOP/execução nesta etapa
+- houver ativação ampla do OpenCrawl
+- houver simulação apresentada como execução real
+- houver criação de escopo além do teste controlado
+
+9. FORMA DE TRABALHAR NESTA TAREFA
+
+Antes de executar, me entregue primeiro:
+- qual PDF/fonte futura será usado no teste
+- se será dry_run ou execução controlada real
+- se precisará alterar algum arquivo existente
+- como garantirá que nenhum agente atual será substituído
+
+Só depois disso prossiga.
+Não execute tarefas em paralelo.
+Não amplie escopo.
+Não declare concluído antes da evidência completa.
