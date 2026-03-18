@@ -7,6 +7,7 @@ export interface RunJobOptions {
   priority?: number;
   retry_count?: number;
   agent_name?: string;
+  run_id?: string;
 }
 
 export async function runJob(
@@ -15,7 +16,7 @@ export async function runJob(
   payload: Record<string, unknown>,
   options?: RunJobOptions,
 ): Promise<JobRunRecord> {
-  const run_id = randomUUID();
+  const run_id = options?.run_id ?? randomUUID();
   const process_id_uuid = randomUUID();
   const agent_name = options?.agent_name ?? "job_runner";
   const priority = options?.priority ?? 5;
