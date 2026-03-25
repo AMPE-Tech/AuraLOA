@@ -9,4 +9,7 @@ vite.config.ts.*
 .env
 .env.local
 .env.production
-Saida/
+Saida/Documento Entrada/
+Documento Saída/
+BDE*.md
+Datajud_New_Code.txt
