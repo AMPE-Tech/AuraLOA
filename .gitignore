@@ -4,3 +4,9 @@ dist
 server/public
 vite.config.ts.*
 *.tar.gz
+
+# Variáveis de ambiente — NUNCA commitar
+.env
+.env.local
+.env.production
+Saida/

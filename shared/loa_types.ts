@@ -273,6 +273,7 @@ export interface EstoqueResult {
   };
   evidence_pack_path: string;
   pdf_orcamento_summaries?: PDFOrcamentoSummary[];
+  dotacao_orcamentaria?: DotacaoItem[];
 }
 
 export const estoqueRequestSchema = z.object({

@@ -1,7 +1,8 @@
-import type { EstoqueProcesso, EstoqueSummaryByTribunal, EstoqueProvider, SourceInfo } from "../../shared/loa_types";
+import type { EstoqueProcesso, EstoqueSummaryByTribunal, EstoqueProvider, SourceInfo, DotacaoItem } from "../../shared/loa_types";
 import { EvidencePack } from "./evidence_pack";
-import { fetchEstoqueFromDataJud, TRIBUNAIS_FEDERAIS, CLASSE_PRECATORIO, CLASSE_RPV } from "./estoque_datajud";
+import { fetchEstoqueFromDataJud, TRIBUNAIS_FEDERAIS, TRIBUNAIS_SP, CLASSE_PRECATORIO, CLASSE_RPV } from "./estoque_datajud";
 import { downloadAndParseTribunalPDF, enrichProcessosWithValores, computePDFSummary } from "./valor_precatorio_pdf";
+import { fetchDotacaoFromSIOP } from "./siop_dotacao";
 
 export interface EstoqueOrchestratorOptions {
   ano_exercicio: number;
@@ -34,6 +35,7 @@ export interface EstoqueOrchestratorResult {
   total_precatorios: number;
   total_rpvs: number;
   pdf_orcamento_summaries: PDFOrcamentoSummary[];
+  dotacao_orcamentaria: DotacaoItem[];
 }
 
 export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise<EstoqueOrchestratorResult> {
@@ -45,9 +47,11 @@ export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise
     evidencePack,
   } = options;
 
+  const TODOS_TRIBUNAIS = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP];
+
   const targetTribunais = tribunais && tribunais.length > 0
-    ? TRIBUNAIS_FEDERAIS.filter((t) => tribunais.includes(t.alias))
-    : TRIBUNAIS_FEDERAIS;
+    ? TODOS_TRIBUNAIS.filter((t) => tribunais.includes(t.alias))
+    : TODOS_TRIBUNAIS;
 
   const classeCodigos = classes && classes.length > 0
     ? classes
@@ -90,7 +94,8 @@ export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise
   evidencePack.log(`Estoque orchestrator: total=${allProcessos.length} (prec=${totalPrec}, rpv=${totalRpv}) from ${porTribunal.length} tribunais`);
 
   const tribunaisComProcessos = Array.from(new Set(allProcessos.map((p) => p.tribunal_alias)));
-  const tribunaisParaEnriquecer = ["trf6"].filter((t) => tribunaisComProcessos.includes(t));
+  const TRIBUNAIS_COM_PDF = ["trf1", "trf2", "trf3", "trf4", "trf5", "trf6", "tjsp"];
+  const tribunaisParaEnriquecer = TRIBUNAIS_COM_PDF.filter((t) => tribunaisComProcessos.includes(t));
   const pdfSummaries: PDFOrcamentoSummary[] = [];
 
   for (const tribunalAlias of tribunaisParaEnriquecer) {
@@ -131,6 +136,14 @@ export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise
       : [],
   ];
 
+  let dotacaoItems: DotacaoItem[] = [];
+  try {
+    dotacaoItems = await fetchDotacaoFromSIOP(ano_exercicio, evidencePack);
+    evidencePack.log(`Dotacao: ${dotacaoItems.length} itens carregados via Portal da Transparência`);
+  } catch (err: any) {
+    evidencePack.log(`Dotacao fetch error: ${err.message}`);
+  }
+
   return {
     processos: allProcessos,
     por_tribunal: porTribunal,
@@ -141,6 +154,7 @@ export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise
     total_precatorios: totalPrec,
     total_rpvs: totalRpv,
     pdf_orcamento_summaries: pdfSummaries,
+    dotacao_orcamentaria: dotacaoItems,
   };
 }
 
@@ -171,7 +185,7 @@ async function fetchFromProviders(params: {
     };
   }
 
-  params.evidencePack.log(`DataJud failed for ${params.tribunal_alias}, CSV/scraping providers not yet implemented`);
+  params.evidencePack.log(`DataJud ERRO para tribunal=${params.tribunal_alias} ano=${params.ano_exercicio} — providers alternativos não implementados. Status: ${datajudResult.summary.status}. Detalhe: ${datajudResult.summary.observacoes}`);
 
   return {
     processos: [],

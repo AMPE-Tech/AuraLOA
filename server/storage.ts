@@ -31,7 +31,17 @@ export class PgStorage implements IStorage {
       "INSERT INTO app_users (id, username) VALUES ($1, $2) ON CONFLICT DO NOTHING",
       [id, insertUser.username],
     );
-    return { id, ...insertUser };
+    return {
+      id,
+      ...insertUser,
+      email: insertUser.email ?? null,
+      stripe_customer_id: null,
+      stripe_subscription_id: null,
+      subscription_status: "free",
+      plan: "free",
+      plan_expires_at: null,
+      created_at: new Date(),
+    };
   }
 }
 

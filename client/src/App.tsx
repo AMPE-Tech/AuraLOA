@@ -14,6 +14,7 @@ import SpDashboard from "@/pages/sp-dashboard";
 import ChartPreview from "@/pages/chart-preview";
 import AdminPage from "@/pages/admin";
 import LandingPreview from "@/pages/landing-preview";
+import DashboardPage from "./pages/dashboard";
 
 function useAuth() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -99,30 +100,23 @@ function Router() {
       <Route path="/login" component={LoginPage} />
       <Route path="/preview/charts" component={ChartPreview} />
       <Route path="/preview/landing" component={LandingPreview} />
-      <Route path="/dashboard">
-        <AuthGuard component={LOADashboard} />
-      </Route>
-      <Route path="/dashboard/pendentes">
-        <AuthGuard component={PrecatoriosPendentes} />
-      </Route>
-      <Route path="/dashboard/contrato">
-        <AuthGuard component={ContratoTecnico} />
-      </Route>
-      <Route path="/dashboard/sp">
-        <AuthGuard component={SpDashboard} />
-      </Route>
-      <Route path="/dashboard/admin">
-        <AdminGuard component={AdminPage} />
-      </Route>
-      <Route path="/pendentes">
-        <Redirect to="/dashboard/pendentes" />
-      </Route>
-      <Route path="/contrato">
-        <Redirect to="/dashboard/contrato" />
-      </Route>
-      <Route path="/sp">
-        <Redirect to="/dashboard/sp" />
-      </Route>
+
+      {/* Dashboard novo — shell principal do investidor */}
+      <Route path="/dashboard" component={DashboardPage} />
+
+      {/* Páginas internas — layout próprio */}
+      <Route path="/pendentes" component={PrecatoriosPendentes} />
+      <Route path="/loa" component={LOADashboard} />
+      <Route path="/sp" component={SpDashboard} />
+      <Route path="/admin" component={AdminPage} />
+      <Route path="/contrato" component={ContratoTecnico} />
+
+      {/* Rotas legadas — mantém compatibilidade */}
+      <Route path="/dashboard/pendentes" component={PrecatoriosPendentes} />
+      <Route path="/dashboard/sp" component={SpDashboard} />
+      <Route path="/dashboard/admin" component={AdminPage} />
+      <Route path="/dashboard/contrato" component={ContratoTecnico} />
+
       <Route component={NotFound} />
     </Switch>
   );

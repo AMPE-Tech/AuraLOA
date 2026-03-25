@@ -15,6 +15,13 @@ export async function initDb(): Promise<void> {
     )
   `);
 
+  // ── Colunas Stripe em aura_users (idempotente) ───────────────────────────
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT UNIQUE`);
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`);
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS subscription_status TEXT DEFAULT 'free'`);
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT 'free'`);
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ`);
+
   // ── Tabela: loa_history ───────────────────────────────────────────────────
   await query(`
     CREATE TABLE IF NOT EXISTS loa_history (
@@ -114,6 +121,73 @@ export async function initDb(): Promise<void> {
     ON source_snapshots (agent_name, collected_at DESC)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_ss_tribunal_ano
     ON source_snapshots (tribunal_alias, ano_exercicio)`);
+
+  // ─── Validações de documentos (AuraRISK BR) ──────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS document_validations (
+      id                    SERIAL PRIMARY KEY,
+      uuid                  TEXT NOT NULL UNIQUE DEFAULT gen_random_uuid()::text,
+      created_at            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      file_hash_sha256      TEXT NOT NULL,
+      score                 INTEGER NOT NULL,
+      status                TEXT NOT NULL CHECK (status IN ('APROVADO','VERIFICAR','SUSPEITO')),
+      numero_cnj            TEXT,
+      numero_oficio         TEXT,
+      tribunal              TEXT,
+      juiz_assinante        TEXT,
+      credor_nome           TEXT,
+      credor_cpf_cnpj       TEXT,
+      devedor               TEXT,
+      valor_rs              TEXT,
+      data_transito         TEXT,
+      url_verificacao       TEXT,
+      codigo_verificador    TEXT,
+      tem_qrcode            BOOLEAN DEFAULT FALSE,
+      tem_assinatura_digital BOOLEAN DEFAULT FALSE,
+      findings_json         JSONB,
+      ip_origem             TEXT,
+      user_agent            TEXT
+    );
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_dv_status
+      ON document_validations (status);
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_dv_created_at
+      ON document_validations (created_at DESC);
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_dv_cnj
+      ON document_validations (numero_cnj)
+      WHERE numero_cnj IS NOT NULL;
+  `);
+
+  // ─── Suspeitos (score < 50) ───────────────────────────────────────────────
+  await query(`
+    CREATE TABLE IF NOT EXISTS document_suspects (
+      id                SERIAL PRIMARY KEY,
+      validation_id     INTEGER NOT NULL REFERENCES document_validations(id),
+      created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      motivo_reprovacao TEXT NOT NULL,
+      alertas_json      JSONB,
+      ip_origem         TEXT,
+      file_hash_sha256  TEXT NOT NULL
+    );
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_ds_created_at
+      ON document_suspects (created_at DESC);
+  `);
+
+  await query(`
+    CREATE INDEX IF NOT EXISTS idx_ds_hash
+      ON document_suspects (file_hash_sha256);
+  `);
 
   // ── Seed: usuário admin padrão ────────────────────────────────────────────
   await query(`

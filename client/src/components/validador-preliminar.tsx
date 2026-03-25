@@ -17,7 +17,6 @@ import {
   Sparkles,
 } from "lucide-react";
 
-type InputMode = "numero" | "upload";
 type ScanStatus = "idle" | "scanning" | "found" | "not_found" | "error";
 type ParseStatus = "idle" | "parsing" | "ready" | "partial" | "failed";
 
@@ -126,6 +125,15 @@ interface ValidacaoResult {
   consultado_em: string;
 }
 
+interface BRAnaliseResult {
+  score: number;
+  status: "APROVADO" | "VERIFICAR" | "SUSPEITO";
+  statusLabel: string;
+  statusColor: "green" | "yellow" | "red";
+  findings: Array<{ ruleId: string; severity: string; title: string; detail: string; found: boolean }>;
+  extracted: { numero_cnj: string | null; numero_oficio: string | null; [key: string]: unknown };
+}
+
 const SCAN_MESSAGES = [
   "Consultando fontes oficiais...",
   "Verificando integridade do processo...",
@@ -143,7 +151,6 @@ const SITUACAO_LABELS: Record<string, string> = {
 
 export function ValidadorPreliminarLOA() {
   const [, navigate] = useLocation();
-  const [mode, setMode] = useState<InputMode>("upload");
   const [scanStatus, setScanStatus] = useState<ScanStatus>("idle");
   const [scanStep, setScanStep] = useState(0);
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -154,15 +161,30 @@ export function ValidadorPreliminarLOA() {
   const [errorMsg, setErrorMsg] = useState("");
   const [parseStatus, setParseStatus] = useState<ParseStatus>("idle");
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [consultasUsadas, setConsultasUsadas] = useState<number>(() => {
+    const stored = sessionStorage.getItem("auraloa_consultas_gratuitas");
+    return stored ? parseInt(stored, 10) : 0;
+  });
+  const [showLimiteModal, setShowLimiteModal] = useState(false);
+  const [extractedText, setExtractedText] = useState("");
+  const [analiseResult, setAnaliseResult] = useState<BRAnaliseResult | null>(null);
 
-  const canSubmitNumero = oficio.trim().length > 0 && processoCNJ.trim().length > 0;
-  const canSubmitUpload = uploadedFile !== null && (parseStatus === "ready" || parseStatus === "partial") && oficio.trim().length > 0 && processoCNJ.trim().length > 0;
+  const canSubmitUpload = uploadedFile !== null;
 
   const handleStartScan = async () => {
+    if (consultasUsadas >= 3) {
+      setShowLimiteModal(true);
+      return;
+    }
+    const novasConsultas = consultasUsadas + 1;
+    setConsultasUsadas(novasConsultas);
+    sessionStorage.setItem("auraloa_consultas_gratuitas", String(novasConsultas));
+
     setScanStatus("scanning");
     setScanStep(0);
     setResultado(null);
     setErrorMsg("");
+    setAnaliseResult(null);
 
     // Animação de progresso enquanto aguarda API
     const interval = setInterval(() => {
@@ -170,6 +192,31 @@ export function ValidadorPreliminarLOA() {
     }, 700);
 
     try {
+      // Análise heurística do documento (modo upload)
+      if (extractedText) {
+        const analiseRes = await fetch("/api/analise/documento", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ texto: extractedText }),
+        });
+        if (analiseRes.ok) {
+          const ar: BRAnaliseResult = await analiseRes.json();
+          setAnaliseResult(ar);
+          console.log("[DEBUG] Resultado análise backend:", JSON.stringify(ar.extracted));
+          // Auto-preenche CNJ se vazio
+          if (!processoCNJ && ar.extracted.numero_cnj) {
+            setProcessoCNJ(ar.extracted.numero_cnj as string);
+          }
+          // Bloqueia se documento suspeito
+          if (ar.status === "SUSPEITO") {
+            clearInterval(interval);
+            setErrorMsg(ar.statusLabel);
+            setScanStatus("error");
+            return;
+          }
+        }
+      }
+
       const res = await fetch("/api/validador/verificar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -207,17 +254,26 @@ export function ValidadorPreliminarLOA() {
     setResultado(null);
     setErrorMsg("");
     setParseStatus("idle");
+    setExtractedText("");
+    setAnaliseResult(null);
   };
 
   const handleFileChange = async (file: File | null) => {
-    if (!file || file.type !== "application/pdf") return;
+    if (!file) return;
+    if (file.type !== "application/pdf") {
+      setParseStatus("failed");
+      setUploadedFile(file);
+      return;
+    }
     setUploadedFile(file);
     setParseStatus("parsing");
     setOficio("");
     setProcessoCNJ("");
 
     try {
+      // Extrai texto localmente para pré-preencher campos enquanto aguarda o backend
       const text = await extractTextFromPdf(file);
+      setExtractedText(text);
       const { cnj, oficio: oficioDetectado } = extractFieldsFromText(text);
 
       if (cnj) setProcessoCNJ(cnj);
@@ -225,6 +281,29 @@ export function ValidadorPreliminarLOA() {
 
       const found = !!cnj || !!oficioDetectado;
       setParseStatus(cnj && oficioDetectado ? "ready" : found ? "partial" : "failed");
+
+      // Auto-análise server-side: envia PDF binário para extração completa
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        const autoAnalise = await fetch("/api/analise/documento-pdf", {
+          method: "POST",
+          body: formData,
+        });
+        const autoResult = await autoAnalise.json();
+        if (autoResult?.extracted?.numero_cnj && !cnj) {
+          setProcessoCNJ(autoResult.extracted.numero_cnj);
+        }
+        if (autoResult?.extracted?.numero_oficio && !oficioDetectado) {
+          setOficio(autoResult.extracted.numero_oficio);
+        }
+        if (autoResult?.extracted?.numero_cnj || autoResult?.extracted?.numero_oficio) {
+          setParseStatus("ready");
+        }
+        setAnaliseResult(autoResult);
+      } catch (e) {
+        console.warn("[analise-pdf] falhou:", e);
+      }
     } catch {
       setParseStatus("failed");
     }
@@ -293,84 +372,7 @@ export function ValidadorPreliminarLOA() {
                   <span className="text-slate-300">Proteja-se contra fraudes e documentos falsos.</span>
                 </p>
 
-                {/* Toggle de modo */}
-                <div className="flex justify-center mb-8">
-                  <div className="inline-flex rounded-xl bg-[#0b1120] border border-slate-700/60 p-1 gap-1">
-                    <button
-                      onClick={() => setMode("numero")}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        mode === "numero"
-                          ? "bg-blue-600 text-white shadow-[0_0_16px_rgba(37,99,235,0.4)]"
-                          : "text-slate-400 hover:text-slate-200"
-                      }`}
-                      data-testid="tab-modo-numero"
-                    >
-                      <Hash className="w-4 h-4" />
-                      Número do Processo
-                    </button>
-                    <button
-                      onClick={() => setMode("upload")}
-                      className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                        mode === "upload"
-                          ? "bg-blue-600 text-white shadow-[0_0_16px_rgba(37,99,235,0.4)]"
-                          : "text-slate-400 hover:text-slate-200"
-                      }`}
-                      data-testid="tab-modo-upload"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload do Ofício
-                    </button>
-                  </div>
-                </div>
-
-                {/* MODO 1: Número do Ofício + Número do Processo */}
-                {mode === "numero" && (
-                  <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-left-2 duration-200">
-                    <div className="space-y-3 mb-4">
-                      {/* Campo Ofício Requisitório — vem primeiro, como no documento */}
-                      <div className="relative">
-                        <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                        <input
-                          type="text"
-                          value={oficio}
-                          onChange={(e) => setOficio(e.target.value)}
-                          placeholder="Nº do Ofício Requisitório  —  Ex: 666/2021 ou AUT.2024.008667"
-                          className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
-                          data-testid="input-oficio"
-                        />
-                      </div>
-                      {/* Campo processo CNJ */}
-                      <div className="relative">
-                        <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                        <input
-                          type="text"
-                          value={processoCNJ}
-                          onChange={(e) => setProcessoCNJ(e.target.value)}
-                          placeholder="Nº CNJ do Processo  —  Ex: 1931-10.1990.4.01.3400"
-                          className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
-                          data-testid="input-cnj"
-                        />
-                      </div>
-                      <p className="text-xs text-slate-600 text-center">
-                        Ambos os campos são obrigatórios para cruzar as bases oficiais
-                      </p>
-                    </div>
-
-                    <button
-                      onClick={handleStartScan}
-                      disabled={!canSubmitNumero}
-                      className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
-                      data-testid="button-iniciar-varredura"
-                    >
-                      <ShieldCheck className="w-5 h-5" />
-                      {canSubmitNumero ? "Verificar Precatório Agora" : "Preencha os dois campos para continuar"}
-                    </button>
-                  </div>
-                )}
-
-                {/* MODO 2: Upload do Ofício Requisitório */}
-                {mode === "upload" && (
-                  <div className="max-w-3xl mx-auto animate-in fade-in slide-in-from-right-2 duration-200">
+                <div className="max-w-3xl mx-auto">
 
                     {/* Dropzone — só quando nenhum arquivo selecionado */}
                     {!uploadedFile && (
@@ -427,7 +429,13 @@ export function ValidadorPreliminarLOA() {
                             {parseStatus === "parsing" && "Lendo PDF..."}
                             {parseStatus === "ready" && <span className="text-emerald-400">✓ Campos detectados automaticamente</span>}
                             {parseStatus === "partial" && <span className="text-amber-400">⚠ Detecção parcial — revise os campos</span>}
-                            {parseStatus === "failed" && <span className="text-red-400">Não foi possível detectar automaticamente — preencha manualmente</span>}
+                            {parseStatus === "failed" && (
+                              <span className="text-red-400">
+                                {uploadedFile && uploadedFile.type !== "application/pdf"
+                                  ? "❌ Formato inválido — apenas arquivos PDF são aceitos"
+                                  : "Não foi possível detectar automaticamente — preencha manualmente"}
+                              </span>
+                            )}
                           </p>
                         </div>
                         <button
@@ -440,59 +448,22 @@ export function ValidadorPreliminarLOA() {
                       </div>
                     )}
 
-                    {/* Campos extraídos (editáveis) — aparecem após parsing */}
-                    {uploadedFile && parseStatus !== "parsing" && parseStatus !== "idle" && (
-                      <div className="space-y-3 mb-4 animate-in fade-in slide-in-from-top-2 duration-300">
-                        {parseStatus === "ready" && (
-                          <div className="flex items-center gap-1.5 text-xs text-emerald-400/80 mb-1">
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Campos extraídos do documento — confirme antes de verificar
-                          </div>
-                        )}
-                        <div className="relative">
-                          <FileText className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                          <input
-                            type="text"
-                            value={oficio}
-                            onChange={(e) => setOficio(e.target.value)}
-                            placeholder="Nº do Ofício Requisitório  —  Ex: AUT.2024.008667"
-                            className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
-                            data-testid="input-oficio-upload"
-                          />
-                        </div>
-                        <div className="relative">
-                          <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-500" />
-                          <input
-                            type="text"
-                            value={processoCNJ}
-                            onChange={(e) => setProcessoCNJ(e.target.value)}
-                            placeholder="Nº CNJ do Processo  —  Ex: 0041645-56.2007.8.19.0001"
-                            className="w-full bg-[#0b1120] border-2 border-slate-700 focus:border-blue-500 text-white text-base rounded-xl pl-14 pr-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all placeholder:text-slate-600 font-mono shadow-inner"
-                            data-testid="input-cnj-upload"
-                          />
-                        </div>
-                        {(parseStatus === "partial" || parseStatus === "failed") && (
-                          <p className="text-xs text-slate-600 text-center">
-                            PDF digital funciona melhor · documentos escaneados requerem análise completa
-                          </p>
-                        )}
-                      </div>
-                    )}
-
                     <button
                       onClick={handleStartScan}
-                      disabled={parseStatus === "parsing" || !canSubmitUpload}
+                      disabled={!canSubmitUpload}
                       className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 disabled:opacity-30 disabled:cursor-not-allowed text-slate-900 font-bold py-4 text-base rounded-xl transition-opacity flex items-center justify-center gap-2 shadow-[0_0_30px_rgba(96,165,250,0.3)]"
                       data-testid="button-iniciar-varredura-upload"
                     >
                       <ShieldCheck className="w-5 h-5" />
                       {!uploadedFile && "Selecione um arquivo PDF"}
-                      {uploadedFile && parseStatus === "parsing" && "Lendo documento..."}
-                      {uploadedFile && parseStatus !== "parsing" && !canSubmitUpload && "Preencha os campos para continuar"}
-                      {uploadedFile && parseStatus !== "parsing" && canSubmitUpload && "Verificar Ofício Agora"}
+                      {uploadedFile && "Verificar Ofício Agora"}
                     </button>
-                  </div>
-                )}
+                    {consultasUsadas > 0 && (
+                      <p className="text-xs text-slate-500 text-center mt-2">
+                        {consultasUsadas} de 3 consultas gratuitas utilizadas
+                      </p>
+                    )}
+                </div>
 
                 {/* Checklist */}
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-8 pt-8 mt-8 border-t border-slate-800/60">
@@ -534,6 +505,28 @@ export function ValidadorPreliminarLOA() {
             {/* Estado 3a: Encontrado — dados reais + seção bloqueada */}
             {scanStatus === "found" && resultado && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-2xl mx-auto">
+
+                {/* Badge / Banner de autenticidade */}
+                {analiseResult && analiseResult.status === "APROVADO" && (
+                  <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                    <span className="text-xs text-emerald-400 font-medium">✓ Documento autenticado — Score: {analiseResult.score}/100</span>
+                  </div>
+                )}
+                {analiseResult && analiseResult.status === "VERIFICAR" && (
+                  <div className="mb-4 p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <AlertTriangle className="w-4 h-4 text-amber-400 shrink-0" />
+                      <span className="text-xs text-amber-400 font-medium">⚠️ Verificação com restrições — Score: {analiseResult.score}/100</span>
+                    </div>
+                    <ul className="space-y-0.5">
+                      {analiseResult.findings.filter(f => !f.found).map(f => (
+                        <li key={f.ruleId} className="text-xs text-amber-300/60 pl-4">• {f.title}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+
                 <div className="flex items-center gap-3 mb-5 border-b border-emerald-900/40 pb-5">
                   <div className="bg-emerald-500/15 p-2.5 rounded-full border border-emerald-500/20">
                     <CheckCircle2 className="w-7 h-7 text-emerald-400" />
@@ -664,15 +657,42 @@ export function ValidadorPreliminarLOA() {
 
             {/* Estado 3c: Erro */}
             {scanStatus === "error" && (
-              <div className="animate-in fade-in duration-300 max-w-2xl mx-auto text-center">
-                <div className="flex flex-col items-center gap-3 mb-5">
-                  <div className="bg-red-500/10 p-3 rounded-full border border-red-500/20">
-                    <AlertTriangle className="w-7 h-7 text-red-400" />
+              <div className="animate-in fade-in duration-300 max-w-2xl mx-auto">
+                {analiseResult?.status === "SUSPEITO" ? (
+                  <>
+                    <div className="flex flex-col items-center gap-3 mb-5 text-center">
+                      <div className="bg-red-500/10 p-3 rounded-full border border-red-500/20">
+                        <AlertTriangle className="w-7 h-7 text-red-400" />
+                      </div>
+                      <h4 className="text-red-400 font-bold text-lg">⚠️ Documento suspeito — análise preliminar negada</h4>
+                      <p className="text-slate-400 text-sm">{analiseResult.statusLabel}</p>
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-500/10 border border-red-500/20">
+                        <span className="text-xs text-red-300 font-mono font-bold">Score: {analiseResult.score}/100</span>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/60 border border-red-500/20 rounded-xl p-4 mb-4">
+                      <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Campos ausentes ou irregulares:</p>
+                      <ul className="space-y-2">
+                        {analiseResult.findings.filter(f => !f.found).map(f => (
+                          <li key={f.ruleId} className="flex items-start gap-2 text-xs text-slate-300">
+                            <AlertTriangle className={`w-3.5 h-3.5 mt-0.5 shrink-0 ${f.severity === "critical" || f.severity === "high" ? "text-red-400" : "text-amber-400"}`} />
+                            <span><span className="font-medium">{f.title}:</span> {f.detail}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <p className="text-xs text-slate-500 text-center mb-4">Este documento não passou na verificação preliminar de autenticidade. A consulta foi bloqueada.</p>
+                  </>
+                ) : (
+                  <div className="flex flex-col items-center gap-3 mb-5 text-center">
+                    <div className="bg-red-500/10 p-3 rounded-full border border-red-500/20">
+                      <AlertTriangle className="w-7 h-7 text-red-400" />
+                    </div>
+                    <h4 className="text-red-400 font-semibold">Falha ao Consultar as Bases Oficiais</h4>
+                    <p className="text-slate-500 text-sm">{errorMsg || "Não foi possível completar a consulta. Verifique sua conexão e tente novamente."}</p>
                   </div>
-                  <h4 className="text-red-400 font-semibold">Falha ao Consultar as Bases Oficiais</h4>
-                  <p className="text-slate-500 text-sm">{errorMsg || "Não foi possível completar a consulta. Verifique sua conexão e tente novamente."}</p>
-                </div>
-                <p className="text-xs text-slate-600 mb-4">Esta verificação preliminar pode ser repetida. Para buscas mais robustas, acesse a plataforma completa.</p>
+                )}
+                <p className="text-xs text-slate-600 mb-4 text-center">Esta verificação preliminar pode ser repetida. Para buscas mais robustas, acesse a plataforma completa.</p>
                 <button onClick={handleReset} className="px-6 py-3 border border-slate-700 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors text-sm flex items-center gap-2 mx-auto" data-testid="button-reset-error">
                   <Search className="w-4 h-4" /> Tentar novamente
                 </button>
@@ -682,6 +702,64 @@ export function ValidadorPreliminarLOA() {
           </div>
         </div>
       </div>
+
+      {/* Modal de limite de consultas gratuitas */}
+      {showLimiteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowLimiteModal(false)} />
+          <div className="relative w-full max-w-md bg-[#080e1c] border border-blue-500/25 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.7),0_0_40px_rgba(37,99,235,0.15)] overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70" />
+            <div className="p-8">
+              <div className="flex justify-between items-start mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center">
+                    <Lock className="w-5 h-5 text-amber-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-white font-bold text-lg leading-tight">Limite de consultas gratuitas atingido</h3>
+                    <p className="text-slate-400 text-sm mt-0.5">Você utilizou suas 3 consultas gratuitas.</p>
+                  </div>
+                </div>
+                <button onClick={() => setShowLimiteModal(false)} className="text-slate-500 hover:text-slate-300 transition-colors p-1 rounded-lg hover:bg-slate-800">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl p-4 mb-6">
+                <p className="text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Com o plano PRO você tem:</p>
+                <ul className="space-y-2.5">
+                  {[
+                    "Consultas ilimitadas",
+                    "Pesquisa em lote (até 10 processos)",
+                    "Exportação com cadeia de custódia",
+                    "Acesso ao dashboard completo",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-2.5 text-sm text-slate-300">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      {item}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <div className="flex flex-col gap-3">
+                <a
+                  href="mailto:contato@auratech.com.br"
+                  className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold py-3.5 rounded-xl transition-opacity text-sm text-center shadow-[0_0_20px_rgba(96,165,250,0.3)]"
+                >
+                  Assinar AuraLOA
+                </a>
+                <a
+                  href="/login"
+                  className="w-full border border-slate-700 hover:border-slate-500 hover:bg-slate-800 text-slate-300 font-medium py-3.5 rounded-xl transition-colors text-sm text-center"
+                >
+                  Já tenho conta
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
     </section>
   );

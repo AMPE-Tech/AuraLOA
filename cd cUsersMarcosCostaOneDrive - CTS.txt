@@ -1,0 +1,21 @@
+quando retornar ou abrir um nova seção no VSCode solicitar ao Claude: Leia docs/MASTER.md e docs/CONTEXT.md antes de qualquer ação.
+
+
+cd "c:\Users\MarcosCosta\OneDrive - CTS Brasil\Área de Trabalho\ClaudeCode\AuraLOA"
+npm install
+npm run dev
+
+Siga as instruções que o Claude Code já deu:
+
+Passo 1 — Acesse https://nodejs.org e baixe o instalador LTS (botão verde grande)
+
+Passo 2 — Execute o instalador: Next → Next → Finish sem alterar nada
+
+Passo 3 — Depois de instalar, abra o terminal do VSCode (Ctrl + J) e rode:
+bashcd "c:\Users\MarcosCosta\OneDrive - CTS Brasil\Área de Trabalho\ClaudeCode\AuraLOA"
+npm install
+npm run dev
+
+sk_live_...06vN
+
+ddPvRZIgONE

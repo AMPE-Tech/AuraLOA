@@ -2,7 +2,7 @@ import type { EstoqueProcesso, EstoqueSummaryByTribunal, MovimentoProcesso } fro
 import { EvidencePack, computeSHA256 } from "./evidence_pack";
 
 const DATAJUD_BASE = "https://api-publica.datajud.cnj.jus.br";
-const DATAJUD_API_KEY = "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
+const DATAJUD_API_KEY = process.env.DATAJUD_API_KEY || "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
 
 const CLASSE_PRECATORIO = 1265;
 const CLASSE_RPV = 1266;
@@ -93,7 +93,7 @@ const TRIBUNAL_CONSULTA_URLS: Record<string, string> = {
   trf3: "https://pje1g.trf3.jus.br/pje/ConsultaPublica/listView.seam",
   trf4: "https://eproc.trf4.jus.br/eproc2trf4/externo_controlador.php?acao=processo_seleciona_publica",
   trf5: "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
-  trf6: "https://processual.trf1.jus.br/consultaProcessual/processo.php",
+  trf6: "https://processual.trf6.jus.br/consultaProcessual/processo.php",
   tjsp: "https://esaj.tjsp.jus.br/cpopg/open.do",
 };
 
@@ -202,7 +202,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
   try {
     while (page < maxPages && processos.length < max_results) {
       const currentSize = Math.min(pageSize, max_results - processos.length);
-      const query = buildElasticsearchQuery(classe_codigos, null, currentSize, searchAfter);
+      const query = buildElasticsearchQuery(classe_codigos, ano_exercicio, currentSize, searchAfter);
 
       const response = await fetch(endpoint, {
         method: "POST",
@@ -211,6 +211,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
           "Content-Type": "application/json",
         },
         body: JSON.stringify(query),
+        signal: AbortSignal.timeout(15000),
       });
 
       const captured_at_iso = new Date().toISOString();

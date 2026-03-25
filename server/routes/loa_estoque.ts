@@ -73,6 +73,7 @@ router.post("/api/loa/uniao/estoque", async (req: Request, res: Response) => {
       },
       evidence_pack_path: evidencePack.getBasePath(),
       pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
+      dotacao_orcamentaria: estoqueResult.dotacao_orcamentaria ?? [],
     };
 
     const preHash = JSON.stringify(responseObj, null, 2);
@@ -122,9 +123,8 @@ router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) =
     evidencePack.log(`start gap-analysis process_id=${processId} year=${ano_exercicio}`);
     evidencePack.saveRequest(req.body);
 
-    const [execucaoResults, dotacaoResults, estoqueResult] = await Promise.all([
+    const [execucaoResults, estoqueResult] = await Promise.all([
       fetchExecucaoFromTransparencia(ano_exercicio, evidencePack),
-      fetchDotacaoFromSIOP(ano_exercicio, evidencePack),
       fetchEstoque({
         ano_exercicio,
         tribunais,
@@ -132,6 +132,7 @@ router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) =
         evidencePack,
       }),
     ]);
+    const dotacaoResults = estoqueResult.dotacao_orcamentaria ?? [];
 
     const cruzamento: CruzamentoAcaoItem[] = ACOES_PRECATORIOS_UNIAO.map((acao) => {
       const exec = execucaoResults.find((e) => e.codigo_acao === acao.codigo_acao);
@@ -143,7 +144,7 @@ router.post("/api/loa/uniao/gap-analysis", async (req: Request, res: Response) =
       const liqApi = exec?.liquidado ?? null;
       const pagApi = exec?.pago ?? null;
 
-      const fonteDot = dotAtual !== null ? "SIOP SPARQL" : "Indisponivel";
+      const fonteDot = dotAtual !== null ? "Portal da Transparência" : "Indisponivel";
       const fonteExec = empApi !== null || pagApi !== null ? "API REST Portal Transparencia" : "Indisponivel";
 
       let pctExec: number | null = null;
@@ -476,9 +477,8 @@ router.post("/api/loa/uniao/gap-analysis/csv", async (req: Request, res: Respons
     evidencePack.log(`start gap-analysis CSV export process_id=${processId} year=${ano_exercicio}`);
     evidencePack.saveRequest(req.body);
 
-    const [execucaoResults, dotacaoResults, estoqueResult] = await Promise.all([
+    const [execucaoResults, estoqueResult] = await Promise.all([
       fetchExecucaoFromTransparencia(ano_exercicio, evidencePack),
-      fetchDotacaoFromSIOP(ano_exercicio, evidencePack),
       fetchEstoque({
         ano_exercicio,
         tribunais,
@@ -486,6 +486,7 @@ router.post("/api/loa/uniao/gap-analysis/csv", async (req: Request, res: Respons
         evidencePack,
       }),
     ]);
+    const dotacaoResults = estoqueResult.dotacao_orcamentaria ?? [];
 
     const BOM = "\uFEFF";
     const sep = ";";
@@ -514,7 +515,7 @@ router.post("/api/loa/uniao/gap-analysis/csv", async (req: Request, res: Respons
       const empApi = exec?.empenhado ?? null;
       const liqApi = exec?.liquidado ?? null;
       const pagApi = exec?.pago ?? null;
-      const fonteDot = dotAtual !== null ? "SIOP SPARQL" : "Indisponivel";
+      const fonteDot = dotAtual !== null ? "Portal da Transparência" : "Indisponivel";
       const fonteExec = empApi !== null || pagApi !== null ? "API REST Portal Transparencia" : "Indisponivel";
 
       let gap: number | null = null;
