@@ -1,0 +1,38 @@
+2026-03-22T06:03:23.809Z start precatorios-pendentes process_id=6c102436-87e8-4996-96ef-f4173d08630c year=2025
+2026-03-22T06:03:23.817Z saved request.json
+2026-03-22T06:03:23.834Z Estoque orchestrator: 6 tribunais, classes=[1265,1266], max=2000/tribunal
+2026-03-22T06:03:23.843Z DataJud: querying trf1 for classes [1265,1266] year=2025 max=2000
+2026-03-22T06:03:23.953Z DataJud: querying trf2 for classes [1265,1266] year=2025 max=2000
+2026-03-22T06:03:23.955Z DataJud: querying trf3 for classes [1265,1266] year=2025 max=2000
+2026-03-22T06:03:23.956Z DataJud: querying trf4 for classes [1265,1266] year=2025 max=2000
+2026-03-22T06:03:23.958Z DataJud: querying trf5 for classes [1265,1266] year=2025 max=2000
+2026-03-22T06:03:23.959Z DataJud: querying trf6 for classes [1265,1266] year=2025 max=2000
+2026-03-22T06:03:26.837Z saved raw/datajud_trf2_page0.json bytes=163 sha256=7da38abf7d2de15e0807ba8f3464fefc3b807cf67c30a5a9aba8338d1fa19cff
+2026-03-22T06:03:26.838Z DataJud trf2: total_hits=0 (capped at 2000)
+2026-03-22T06:03:26.838Z DataJud trf2: fetched 0 processos (0 prec, 0 RPV) in 1 pages
+2026-03-22T06:03:27.011Z saved raw/datajud_trf6_page0.json bytes=2313142 sha256=92be16237039e12b6c1f8bf53a67cfbd06a62b5f48c20756e5db923d2a8d96da
+2026-03-22T06:03:27.169Z DataJud trf6: total_hits=290052 (capped at 2000)
+2026-03-22T06:03:27.204Z saved raw/datajud_trf1_page0.json bytes=163 sha256=714545a85de3f47658def8518c0895034ee49de1afe8366812c917ba0b4f09f8
+2026-03-22T06:03:27.204Z DataJud trf1: total_hits=0 (capped at 2000)
+2026-03-22T06:03:27.204Z DataJud trf1: fetched 0 processos (0 prec, 0 RPV) in 1 pages
+2026-03-22T06:03:27.255Z saved raw/datajud_trf5_page0.json bytes=163 sha256=3f5682ff56b6267407892f3f661a3bb9b7fc84b9fd153cb2cd0341083e5f67ed
+2026-03-22T06:03:27.255Z DataJud trf5: total_hits=0 (capped at 2000)
+2026-03-22T06:03:27.255Z DataJud trf5: fetched 0 processos (0 prec, 0 RPV) in 1 pages
+2026-03-22T06:03:27.511Z saved raw/datajud_trf6_page1.json bytes=2282484 sha256=ad0f317a52852eedcf064e4a3ad3a53aea7d1641893200be189083a7de51876a
+2026-03-22T06:03:27.563Z DataJud trf6: fetched 2000 processos (0 prec, 2000 RPV) in 3 pages
+2026-03-22T06:03:29.128Z saved raw/datajud_trf4_page0.json bytes=1767994 sha256=9f6a28bca06f61777de2ad9452c921380582566634992c44b5ec1e51c36daad7
+2026-03-22T06:03:29.164Z DataJud trf4: total_hits=756487 (capped at 2000)
+2026-03-22T06:03:29.587Z saved raw/datajud_trf3_page0.json bytes=2938609 sha256=498034f40ee22be28b36f3e759cf1058e704c218cf094cf35fbe8c851d67c813
+2026-03-22T06:03:29.623Z DataJud trf3: total_hits=9250 (capped at 2000)
+2026-03-22T06:03:30.073Z saved raw/datajud_trf4_page1.json bytes=1783353 sha256=0a6fc25fb76c63ebc080ebdbcff1efe0dc2da8c418404b72938f0d9eebde55c6
+2026-03-22T06:03:30.114Z DataJud trf4: fetched 2000 processos (12 prec, 1988 RPV) in 3 pages
+2026-03-22T06:03:30.212Z saved raw/datajud_trf3_page1.json bytes=1433084 sha256=a640be34fad94c6dde84ede7682561191ddcab3bf9f993c9f7527913f559e8a8
+2026-03-22T06:03:30.229Z DataJud trf3: fetched 2000 processos (624 prec, 1376 RPV) in 3 pages
+2026-03-22T06:03:30.231Z Estoque orchestrator: total=6000 (prec=636, rpv=5364) from 6 tribunais
+2026-03-22T06:03:30.232Z ValorEnrichment: starting for trf6 year=2025
+2026-03-22T06:03:30.267Z ValorPDF: using cache for trf6 (9585 entries)
+2026-03-22T06:03:30.273Z ValorEnrichment trf6: enriched 0/2000 processos with values from PDF
+2026-03-22T06:03:30.277Z ValorEnrichment trf6 PDF summary: 9585 prec, valor_total=1697717219.48
+2026-03-22T06:03:30.285Z saved response.json sha256=a13ffd4beef7bdd6377ea4c15b865ecf66a6a967b30ecb316cbd0f3e752cb286
+2026-03-22T06:03:30.286Z saved hashes.json
+2026-03-22T06:03:30.286Z end precatorios-pendentes total_pendentes=128 prec=12 rpv=116

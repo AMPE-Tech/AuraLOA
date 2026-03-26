@@ -1,0 +1,15 @@
+2026-03-24T19:41:50.984Z start estoque process_id=23ec0296-72a6-4aa3-bb9d-820e86bc57e7 year=2024
+2026-03-24T19:41:50.989Z saved request.json
+2026-03-24T19:41:50.990Z Estoque orchestrator: 1 tribunais, classes=[1265,1266], max=10/tribunal
+2026-03-24T19:41:50.991Z DataJud: querying trf1 for classes [1265,1266] year=2024 max=10
+2026-03-24T19:41:54.150Z saved raw/datajud_trf1_page0.json bytes=163 sha256=78ab1b7dd5bf45e3292eb383587c4de7bb216d3e3fff18325b3539f5b6899576
+2026-03-24T19:41:54.150Z DataJud trf1: total_hits=0 (capped at 10)
+2026-03-24T19:41:54.150Z DataJud trf1: fetched 0 processos (0 prec, 0 RPV) in 1 pages
+2026-03-24T19:41:54.151Z Estoque orchestrator: total=0 (prec=0, rpv=0) from 1 tribunais
+2026-03-24T19:41:54.153Z fetchDotacao: Portal Transparência API ano=2024 acao=0005
+2026-03-24T19:41:54.625Z saved raw/portal_transparencia_dotacao_2024.json bytes=359 sha256=c3b50922e6b2c80f198545574c12510381a80f234e21ebafacb1c839f26a4bcf
+2026-03-24T19:41:54.625Z Portal Transparência: 1 registros — empenhado=00,00 pago=00,00
+2026-03-24T19:41:54.625Z Dotacao: 7 itens carregados via Portal da Transparência
+2026-03-24T19:41:54.627Z saved response.json sha256=c0762abb6bc9b0378eebd11b3bc05477e29164257a09a2781b187c7a72a2bdc7
+2026-03-24T19:41:54.628Z saved hashes.json
+2026-03-24T19:41:54.628Z end estoque status=PARCIAL total=0

@@ -1,0 +1,45 @@
+{
+  "schema_version": "br.gov.orcamento.precatorios.uniao.a2.v1",
+  "process_id_uuid": "23ec0296-72a6-4aa3-bb9d-820e86bc57e7",
+  "ano_exercicio": 2024,
+  "generated_at_iso": "2026-03-24T19:41:54.625Z",
+  "status_geral": "PARCIAL",
+  "providers_used": [
+    "datajud"
+  ],
+  "tribunais_consultados": [
+    "trf1"
+  ],
+  "summary": {
+    "total_processos": 0,
+    "total_precatorios": 0,
+    "total_rpvs": 0,
+    "por_tribunal": [
+      {
+        "tribunal": "Tribunal Regional Federal da 1ª Região",
+        "tribunal_alias": "trf1",
+        "total_processos": 0,
+        "total_disponivel": 0,
+        "precatorios": 0,
+        "rpvs": 0,
+        "provider": "datajud",
+        "status": "PARCIAL",
+        "observacoes": "Nenhum processo encontrado para o ano"
+      }
+    ]
+  },
+  "processos": [],
+  "sources": [
+    {
+      "name": "CNJ DataJud API Publica",
+      "url": "https://api-publica.datajud.cnj.jus.br",
+      "type": "API"
+    }
+  ],
+  "evidencias_count": 1,
+  "hashes": {
+    "output_sha256": "71668fb7812dd1e250c1f3cade6dbc052bc44a271d60c8772d342eb36ba82d12"
+  },
+  "evidence_pack_path": "C:\\Users\\MarcosCosta\\OneDrive - CTS Brasil\\Área de Trabalho\\ClaudeCode\\AuraLOA\\Saida\\evidence\\23ec0296-72a6-4aa3-bb9d-820e86bc57e7",
+  "pdf_orcamento_summaries": []
+}
