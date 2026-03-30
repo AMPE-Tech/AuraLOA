@@ -2,10 +2,18 @@ import type { EstoqueProcesso, EstoqueSummaryByTribunal, MovimentoProcesso } fro
 import { EvidencePack, computeSHA256 } from "./evidence_pack";
 
 const DATAJUD_BASE = "https://api-publica.datajud.cnj.jus.br";
-const DATAJUD_API_KEY = process.env.DATAJUD_API_KEY || "cDZHYzlZa0JadVREZDJCendQbXY6SkJlTzNjLV9TRENyQk1RdnFKZGRQdw==";
+const DATAJUD_API_KEY = process.env.DATAJUD_API_KEY;
+if (!DATAJUD_API_KEY) {
+  throw new Error("[DataJud] DATAJUD_API_KEY não definida nas variáveis de ambiente.");
+}
 
 const CLASSE_PRECATORIO = 1265;
 const CLASSE_RPV = 1266;
+
+// Tribunais confirmados sem dados de precatórios/RPV no DataJud (classes 1265/1266)
+// Verificado em 29/03/2026 — HTTP 200 com total.value=0 — problema na fonte (CNJ)
+// Não tentar fallback automático — registrar como PARCIAL_FONTE no summary
+export const TRIBUNAIS_SEM_DADOS_DATAJUD = ["trf1", "trf2", "trf5"] as const;
 
 export const TRIBUNAIS_FEDERAIS: { alias: string; nome: string }[] = [
   { alias: "trf1", nome: "Tribunal Regional Federal da 1ª Região" },
@@ -18,6 +26,16 @@ export const TRIBUNAIS_FEDERAIS: { alias: string; nome: string }[] = [
 
 export const TRIBUNAIS_SP: { alias: string; nome: string }[] = [
   { alias: "tjsp", nome: "Tribunal de Justiça do Estado de São Paulo" },
+];
+
+export const TRIBUNAIS_ESTADUAIS: { alias: string; nome: string }[] = [
+  { alias: "tjrj", nome: "Tribunal de Justiça do Estado do Rio de Janeiro" },
+  { alias: "tjmg", nome: "Tribunal de Justiça do Estado de Minas Gerais" },
+  { alias: "tjrs", nome: "Tribunal de Justiça do Estado do Rio Grande do Sul" },
+  { alias: "tjpr", nome: "Tribunal de Justiça do Estado do Paraná" },
+  { alias: "tjsc", nome: "Tribunal de Justiça do Estado de Santa Catarina" },
+  { alias: "tjba", nome: "Tribunal de Justiça do Estado da Bahia" },
+  { alias: "tjam", nome: "Tribunal de Justiça do Estado do Amazonas" },
 ];
 
 export interface DataJudFetchOptions {
@@ -95,6 +113,13 @@ const TRIBUNAL_CONSULTA_URLS: Record<string, string> = {
   trf5: "https://pje.trf5.jus.br/pje/ConsultaPublica/listView.seam",
   trf6: "https://processual.trf6.jus.br/consultaProcessual/processo.php",
   tjsp: "https://esaj.tjsp.jus.br/cpopg/open.do",
+  tjrj: "https://www3.tjrj.jus.br/consultaprocessual/processo.do",
+  tjmg: "https://processo.tjmg.jus.br/cpopg/search.do",
+  tjrs: "https://www.tjrs.jus.br/site_php/consulta/consultaProcesso.php",
+  tjpr: "https://portal.tjpr.jus.br/jurisprudencia/j/12100/",
+  tjsc: "https://esaj.tjsc.jus.br/cpopg/open.do",
+  tjba: "https://esaj.tjba.jus.br/cpopg/open.do",
+  tjam: "https://consultasaj.tjam.jus.br/cpopg/open.do",
 };
 
 const TRIBUNAL_CONSULTA_EPROC: Record<string, string> = {
@@ -110,8 +135,18 @@ function buildConsultaUrl(tribunalAlias: string, numeroCnj: string): string | nu
   if (tribunalAlias === "trf6") {
     return `${base}?proc=${numeroCnj}&secao=TRF6`;
   }
-  if (tribunalAlias === "tjsp") {
+  // eSAJ-based tribunals (tjsp, tjsc, tjba, tjam)
+  if (["tjsp", "tjsc", "tjba", "tjam"].includes(tribunalAlias)) {
     return `${base}?processo.numero=${numeroCnj}`;
+  }
+  if (tribunalAlias === "tjrj") {
+    return `${base}?numProcesso=${numeroCnj}`;
+  }
+  if (tribunalAlias === "tjmg") {
+    return `${base}?numeroCNJ=${numeroCnj}`;
+  }
+  if (tribunalAlias === "tjrs") {
+    return `${base}?numProcesso=${numeroCnj}`;
   }
   return base;
 }
@@ -184,7 +219,7 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
   evidences: { source_name: string; source_url: string; captured_at_iso: string; raw_payload_sha256: string; raw_payload_path: string; bytes: number }[];
 }> {
   const { tribunal_alias, classe_codigos, ano_exercicio, max_results, evidencePack } = options;
-  const tribunalInfo = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP].find((t) => t.alias === tribunal_alias);
+  const tribunalInfo = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP, ...TRIBUNAIS_ESTADUAIS].find((t) => t.alias === tribunal_alias);
   const tribunalNome = tribunalInfo?.nome || tribunal_alias.toUpperCase();
 
   const endpoint = `${DATAJUD_BASE}/api_publica_${tribunal_alias}/_search`;
@@ -248,7 +283,12 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
         bytes: rawText.length,
       });
 
-      const data = JSON.parse(rawText);
+      let data: any;
+      try {
+        data = JSON.parse(rawText);
+      } catch {
+        throw new Error(`Resposta inválida da API DataJud (não é JSON válido). Tribunal: ${tribunal_alias}`);
+      }
       const hits: DataJudHit[] = data.hits?.hits || [];
       const totalValue = data.hits?.total?.value || 0;
 
@@ -290,7 +330,9 @@ export async function fetchEstoqueFromDataJud(options: DataJudFetchOptions): Pro
         rpvs,
         provider: "datajud",
         status: processos.length > 0 ? "OK" : "PARCIAL",
-        observacoes: processos.length === 0 ? "Nenhum processo encontrado para o ano" : loadedObs,
+        observacoes: processos.length === 0
+          ? `Nenhum precatório/RPV (classes 1265/1266) indexado no DataJud para ${tribunal_alias.toUpperCase()} no ano ${ano_exercicio}`
+          : loadedObs,
       },
       evidences,
     };
@@ -338,10 +380,41 @@ export interface ValidacaoPreliminarResult {
   loa_status_locked: true;
 }
 
+// Mapa J=8 (Justiça Estadual): TT → alias
+const TT_ESTADUAL: Record<string, string> = {
+  "01": "tjac",
+  "02": "tjal",
+  "03": "tjap",
+  "04": "tjam",
+  "05": "tjba",
+  "06": "tjce",
+  "07": "tjdf",
+  "08": "tjes",
+  "09": "tjgo",
+  "10": "tjma",
+  "11": "tjmt",
+  "12": "tjms",
+  "13": "tjmg",
+  "14": "tjpa",
+  "15": "tjpb",
+  "16": "tjpr",
+  "17": "tjpe",
+  "18": "tjpi",
+  "19": "tjrj",
+  "20": "tjrn",
+  "21": "tjrs",
+  "22": "tjro",
+  "23": "tjrr",
+  "24": "tjsc",
+  "25": "tjse",
+  "26": "tjsp",
+  "27": "tjto",
+};
+
 function extrairTribunalDoCNJ(numeroCNJ: string): string | null {
   // Formato CNJ: NNNNNNN-DD.AAAA.J.TT.OOOO
   // J=4 → Federal (TRF), TT=01-06 → TRF1-TRF6
-  // J=8, TT=26 → TJSP
+  // J=8 → Estadual, TT conforme tabela CNJ
   const partes = numeroCNJ.replace(/[^\d.]/g, "").split(".");
   if (partes.length < 5) return null;
   const j = partes[2];   // ramo da justiça
@@ -350,24 +423,20 @@ function extrairTribunalDoCNJ(numeroCNJ: string): string | null {
     const num = parseInt(tt, 10);
     if (num >= 1 && num <= 6) return `trf${num}`;
   }
-  if (j === "8" && tt === "26") return "tjsp";
+  if (j === "8") {
+    return TT_ESTADUAL[tt.padStart(2, "0")] || null;
+  }
   return null;
 }
 
-export async function fetchPrecatorioByNumero(
-  numeroCNJ: string,
-  numeroOficio: string
-): Promise<ValidacaoPreliminarResult> {
-  const consultado_em = new Date().toISOString();
-  const numeroCNJNorm = numeroCNJ.trim();
-
-  // Determinar tribunal pelo CNJ
-  const tribunalAlias = extrairTribunalDoCNJ(numeroCNJNorm);
-  const tribunaisParaConsultar: string[] = tribunalAlias
-    ? [tribunalAlias]
-    : ["trf1", "trf2", "trf3", "trf4", "trf5", "trf6", "tjsp"];
-
-  const query = {
+async function consultarTribunal(
+  alias: string,
+  numeroCNJNorm: string,
+  numeroOficio: string,
+  consultado_em: string,
+): Promise<ValidacaoPreliminarResult | null> {
+  const endpoint = `${DATAJUD_BASE}/api_publica_${alias}/_search`;
+  const esQuery = {
     query: {
       bool: {
         should: [
@@ -380,55 +449,93 @@ export async function fetchPrecatorioByNumero(
     size: 3,
   };
 
-  for (const alias of tribunaisParaConsultar) {
-    const endpoint = `${DATAJUD_BASE}/api_publica_${alias}/_search`;
-    try {
-      const resp = await fetch(endpoint, {
-        method: "POST",
-        headers: {
-          Authorization: `APIKey ${DATAJUD_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(query),
-        signal: AbortSignal.timeout(8000),
-      });
+  try {
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `APIKey ${DATAJUD_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(esQuery),
+      signal: AbortSignal.timeout(8000),
+    });
 
-      if (!resp.ok) continue;
+    if (!resp.ok) return null;
 
-      const data = await resp.json();
-      const hits: DataJudHit[] = data.hits?.hits || [];
-      if (hits.length === 0) continue;
+    const data = await resp.json();
+    const hits: DataJudHit[] = data.hits?.hits || [];
+    if (hits.length === 0) return null;
 
-      const hit = hits[0];
-      const processo = parseHitToProcesso(hit, alias, alias.toUpperCase());
+    const processo = parseHitToProcesso(hits[0], alias, alias.toUpperCase());
+    const payload = JSON.stringify({ numeroCNJ: numeroCNJNorm, numeroOficio, resultado: processo, consultado_em });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
 
-      const payload = JSON.stringify({ numeroCNJ: numeroCNJNorm, numeroOficio, resultado: processo, consultado_em });
-      const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+    return {
+      encontrado: true,
+      numero_cnj: processo.numero_cnj,
+      numero_oficio: numeroOficio,
+      tribunal: processo.tribunal,
+      tribunal_alias: alias,
+      tipo: processo.classe_codigo === CLASSE_PRECATORIO ? "PRECATORIO" : processo.classe_codigo === CLASSE_RPV ? "RPV" : "DESCONHECIDO",
+      situacao: processo.situacao,
+      grau: processo.grau,
+      data_ajuizamento_ano: processo.data_ajuizamento ? String(processo.data_ajuizamento).substring(0, 4) : null,
+      pagamento_pendente: processo.pagamento_pendente,
+      url_consulta: processo.url_consulta,
+      sha256_evidencia: sha256,
+      consultado_em,
+      valor_causa_locked: true,
+      credor_locked: true,
+      loa_status_locked: true,
+    };
+  } catch {
+    return null;
+  }
+}
 
-      return {
-        encontrado: true,
-        numero_cnj: processo.numero_cnj,
-        numero_oficio: numeroOficio,
-        tribunal: processo.tribunal,
-        tribunal_alias: alias,
-        tipo: processo.classe_codigo === CLASSE_PRECATORIO ? "PRECATORIO" : processo.classe_codigo === CLASSE_RPV ? "RPV" : "DESCONHECIDO",
-        situacao: processo.situacao,
-        grau: processo.grau,
-        data_ajuizamento_ano: processo.data_ajuizamento ? String(processo.data_ajuizamento).substring(0, 4) : null,
-        pagamento_pendente: processo.pagamento_pendente,
-        url_consulta: processo.url_consulta,
-        sha256_evidencia: sha256,
-        consultado_em,
-        valor_causa_locked: true,
-        credor_locked: true,
-        loa_status_locked: true,
-      };
-    } catch {
-      continue;
+export async function fetchPrecatorioByNumero(
+  numeroCNJ: string,
+  numeroOficio: string,
+  urlDocumento?: string,
+): Promise<ValidacaoPreliminarResult> {
+  const consultado_em = new Date().toISOString();
+  const numeroCNJNorm = numeroCNJ.trim();
+
+  // Determina tribunal pelo número CNJ — se identificado, consulta só ele
+  const tribunalAlias = extrairTribunalDoCNJ(numeroCNJNorm);
+  const tribunaisParaConsultar: string[] = tribunalAlias
+    ? [tribunalAlias]
+    : [
+        "trf1", "trf2", "trf3", "trf4", "trf5", "trf6",
+        "tjsp",
+        ...TRIBUNAIS_ESTADUAIS.map((t) => t.alias),
+      ];
+
+  // Consulta todos os tribunais em paralelo — tempo total = max(timeout) ~8s
+  const resultados = await Promise.all(
+    tribunaisParaConsultar.map((alias) =>
+      consultarTribunal(alias, numeroCNJNorm, numeroOficio, consultado_em)
+    )
+  );
+
+  const encontrado = resultados.find((r) => r !== null && r.encontrado);
+  if (encontrado) {
+    // URL do documento tem prioridade sobre a URL padrão do tribunal no DataJud
+    if (urlDocumento && !encontrado.url_consulta) {
+      encontrado.url_consulta = urlDocumento;
+      (encontrado as any).url_origem = "documento";
     }
+    return encontrado;
   }
 
-  // Não encontrado em nenhum tribunal
+  // TJRJ: usa numeração interna (ex: 2024.09516-4), não CNJ padrão
+  // DataJud retorna 0 resultados para classes 1265/1266 no índice api_publica_tjrj
+  // Fallback: retornar URL de consulta manual
+  const isTJRJ = tribunalAlias === "tjrj";
+  if (isTJRJ) {
+    console.warn("[DataJud] TJRJ: numeração interna não suportada pelo DataJud. Retornando URL de consulta manual.");
+  }
+
   const payload = JSON.stringify({ numeroCNJ: numeroCNJNorm, numeroOficio, encontrado: false, consultado_em });
   const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
 
@@ -436,18 +543,20 @@ export async function fetchPrecatorioByNumero(
     encontrado: false,
     numero_cnj: numeroCNJNorm,
     numero_oficio: numeroOficio,
-    tribunal: "—",
-    tribunal_alias: "—",
-    tipo: "DESCONHECIDO",
-    situacao: "nao_localizado",
+    tribunal: isTJRJ ? "Tribunal de Justiça do Estado do Rio de Janeiro" : "—",
+    tribunal_alias: isTJRJ ? "tjrj" : "—",
+    tipo: "DESCONHECIDO" as const,
+    situacao: isTJRJ ? "consulta_manual_necessaria" : "nao_localizado",
     grau: null,
     data_ajuizamento_ano: null,
     pagamento_pendente: false,
-    url_consulta: null,
+    url_consulta: urlDocumento || (isTJRJ ? "https://www3.tjrj.jus.br/consultaprocessual/processo.do" : null),
+    ...(isTJRJ ? { observacao: "TJRJ utiliza numeração interna. Consulte diretamente o portal do tribunal." } : {}),
+    ...(urlDocumento ? { url_origem: "documento" } : {}),
     sha256_evidencia: sha256,
     consultado_em,
-    valor_causa_locked: true,
-    credor_locked: true,
-    loa_status_locked: true,
+    valor_causa_locked: true as const,
+    credor_locked: true as const,
+    loa_status_locked: true as const,
   };
 }

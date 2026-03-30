@@ -12,6 +12,11 @@ Missão: validar autenticidade de documentos (ofícios requisitórios, precatór
 
 Faz parte do ecossistema **AuraTECH** — infraestrutura digital de confiança baseada em evidências.
 
+- **Produção:** https://loa.auradue.com
+- **Servidor:** Hetzner VPS · ssh root@178.104.66.47 · /var/www/auraloa · PM2 + Nginx + SSL
+- **Repositório:** github.com/AMPE-Tech/AuraLOA
+- **Local:** c:\Users\MarcosCosta\OneDrive - CTS Brasil\Área de Trabalho\ClaudeCode\AuraLOA
+
 ---
 
 ## 2. STACK TÉCNICO
@@ -41,29 +46,45 @@ AuraLOA/
 │   ├── components/
 │   │   └── validador-preliminar.tsx
 │   └── pages/
-│       └── landing.tsx
+│       ├── landing.tsx
+│       ├── login.tsx
+│       ├── loa-dashboard.tsx
+│       ├── precatorios-pendentes.tsx
+│       ├── contrato-tecnico.tsx
+│       ├── sp-dashboard.tsx
+│       └── admin.tsx
 ├── server/
+│   ├── index.ts
+│   ├── db.ts
+│   ├── db_init.ts
+│   ├── storage.ts
 │   ├── routes/
 │   │   ├── auth.ts
 │   │   ├── stripe_routes.ts
 │   │   ├── loa_estoque.ts
-│   │   └── analise_documento.ts
-│   ├── services/
-│   │   ├── estoque_datajud.ts
-│   │   ├── estoque_tribunais.ts
-│   │   ├── siop_dotacao.ts
-│   │   ├── analysis-engine-br.ts
-│   │   ├── stripe.ts
-│   │   └── evidence_pack.ts
-│   ├── db.ts
-│   └── db_init.ts
+│   │   ├── loa_uniao_a2.ts
+│   │   ├── loa_sp.ts
+│   │   ├── loa_dpo.ts
+│   │   ├── validador.ts             (/api/validador/verificar)
+│   │   └── analise_documento.ts     (/api/analise/documento-pdf)
+│   └── services/
+│       ├── estoque_datajud.ts       (FONTE CENTRAL — 549 linhas)
+│       ├── estoque_tribunais.ts     (ORQUESTRADOR — 200 linhas)
+│       ├── valor_precatorio_pdf.ts
+│       ├── siop_dotacao.ts
+│       ├── transparencia_execucao.ts
+│       ├── analysis-engine-br.ts
+│       ├── stripe.ts
+│       ├── laudo_pdf.ts
+│       └── evidence_pack.ts
 ├── shared/
 │   ├── schema.ts
 │   ├── loa_types.ts
 │   └── plans.ts
-└── docs/
-    ├── CONTEXT.md
-    └── MASTER.md
+├── docs/
+│   ├── CONTEXT.md
+│   └── MASTER.md
+└── Saida/evidence/                  ← NÃO commitar (git rm --cached)
 ```
 
 ---
@@ -93,7 +114,8 @@ AuraLOA/
 
 ## 5. AUTENTICAÇÃO
 
-- Sistema: Bearer token Base64
+- Sistema: JWT (jsonwebtoken) com expiração de 7 dias — alterar JWT_EXPIRATION em auth.ts
+- Hash de senha: bcrypt (12 rounds) com migração automática de hashes SHA256 legados no login
 - Middleware: requireAuth em server/routes/auth.ts
 - Acesso: (req as any).authUser.email
 - NÃO usa req.session
@@ -134,6 +156,47 @@ AuraLOA/
 
 ---
 
+## 7-A. PIPELINE DE PESQUISA — ESTADO ATUAL (29/03/2026)
+
+### Fluxo completo
+```
+Entrada (PDF upload ou CNJ manual)
+  → pdf-parse backend (extração CNJ, 7 padrões regex)
+  → extrairTribunalDoCNJ() — J=4→TRF1-6, J=8+TT→27 TJs estaduais
+  → consultarTribunal() / fetchEstoqueFromDataJud()
+  → CNJ DataJud API (api-publica.datajud.cnj.jus.br)
+  → enriquecimento PDF (valor_precatorio_pdf.ts) — só trf1-trf6 + tjsp
+  → fetchDotacaoFromSIOP()
+  → evidence_pack.ts (UUID + SHA-256)
+  → Saída: landing (público, 3 grátis) / dashboard (autenticado)
+```
+
+### Status por tribunal (DataJud)
+
+| Tribunal | Status | Observação |
+|---|---|---|
+| TRF4 | ✅ OK | Retorna dados reais |
+| TRF6 | ✅ OK | Retorna dados reais |
+| TRF3 | ✅ OK | 0 pendentes (esperado) |
+| TRF1 | ❌ INDISPONÍVEL | DataJud não indexa classes 1265/1266 para este TRF (confirmado 29/03/2026) |
+| TRF2 | ❌ INDISPONÍVEL | DataJud não indexa classes 1265/1266 para este TRF (confirmado 29/03/2026) |
+| TRF5 | ❌ INDISPONÍVEL | DataJud não indexa classes 1265/1266 para este TRF (confirmado 29/03/2026) |
+| TJSP | ✅ OK | Conectado e funcionando |
+| TJRJ | ❌ BLOQUEIO | Numeração interna (ex: 2024.09516-4), não CNJ padrão. DataJud retorna 0. Fallback: URL do documento |
+| TJMG, TJRS, TJPR, TJSC, TJBA, TJAM | ⚠️ A validar | Declarados no código, não testados |
+
+### Gaps pendentes — fila de evolução
+
+1. ❌ DOU / Diários Oficiais estaduais — não implementados (cessão, LOA, publicações)
+2. ❌ TJRJ — DataJud retorna 0; fallback = URL do documento + portal manual; solução futura: scraping por número interno
+3. ❌ TRF1/2/5 — LIMITAÇÃO DE FONTE: DataJud HTTP 200 com total=0 para classes 1265/1266. Problema no CNJ, não no código. Monitorar.
+4. ✅ pdfParse — RESOLVIDO: createRequire + fileURLToPath implementado em analise_documento.ts
+5. ⚠️ Providers alternativos — CSV/scraping declarados no código, não implementados
+6. ⚠️ Stripe — webhook configurado, integração de assinatura e liberação PRO incompleta
+7. ✅ Rate limit/cache — RESOLVIDO: implementado em validador.ts (10 req/min por IP, TTL 5min por CNJ)
+
+---
+
 ## 8. MOTOR DE ANÁLISE (analysis-engine-br.ts)
 
 - APROVADO >= 80 pontos
@@ -150,8 +213,11 @@ NUNCA alterar sem revisar:
 1. extrairCNJ() e runBRAnalysis() — normalização de espaços é crítica
 2. db_init.ts — sempre IF NOT EXISTS
 3. aura_users — chave primária é email, não id
-4. pdf-parse — sempre usar createRequire, nunca import direto
+4. pdf-parse — sempre usar createRequire + fileURLToPath(import.meta.url), nunca import direto
 5. CLASSE_PRECATORIO=1265 e CLASSE_RPV=1266
+6. DATAJUD_API_KEY — não usar fallback hardcoded; variável obrigatória no .env
+7. SSL banco Hetzner: rejectUnauthorized: false (certificado autoassinado — CN=ubuntu-4gb-nbg1-3)
+8. hashPassword() é async (bcrypt) — sempre usar await nas chamadas
 
 SEMPRE executar após qualquer alteração:
 ```
@@ -169,6 +235,7 @@ npx tsc --noEmit
 - STRIPE_PUBLISHABLE_KEY — pk_test_... ou pk_live_...
 - STRIPE_WEBHOOK_SECRET — preencher após configurar webhook
 - BASE_URL — URL base (localhost em dev, domínio em produção)
+- JWT_SECRET — chave de assinatura JWT
 
 ---
 
@@ -197,3 +264,51 @@ npx tsc --noEmit
 - shared/plans.ts criado
 - Colunas Stripe em aura_users
 - MASTER.md criado
+
+### 28-29/03/2026 — Sessão de segurança e pipeline
+**Segurança:**
+- auth.ts: SHA256 → bcrypt (12 rounds) + JWT 7 dias (jsonwebtoken) com migração automática de hashes legados
+- estoque_datajud.ts: removida API key hardcoded — obrigatória via DATAJUD_API_KEY no .env
+- evidence_pack.ts: path traversal corrigido — filename sanitizado antes de writeFile
+- estoque_datajud.ts: JSON.parse protegido com try-catch local
+- analise_documento.ts: createRequire corrigido para fileURLToPath(import.meta.url)
+
+**Performance:**
+- fetchPrecatorioByNumero(): consultas aos tribunais paralelas (Promise.all) — de até 112s para ~8s
+
+**Rate limiting & cache (validador.ts):**
+- Rate limit por IP: 10 req/min, resposta 429 com Retry-After
+- Cache de resultados por CNJ: TTL 5 minutos
+- Frontend lê X-RateLimit-Remaining do servidor (não mais só sessionStorage)
+
+**Geração de PDF:**
+- Novo serviço: server/services/laudo_pdf.ts (pdfkit)
+- Novo endpoint: POST /api/loa/uniao/estoque/pdf
+- Laudo técnico formal: cabeçalho, resumo, tabelas, SHA-256, fontes, rodapé paginado
+
+**Infraestrutura:**
+- DATAJUD_API_KEY adicionada ao .env
+- Dependências adicionadas: bcrypt, jsonwebtoken, pdfkit (+ @types)
+
+### 29/03/2026 — Mapeamento de pipeline e documentação
+- Leitura completa de estoque_datajud.ts (549 linhas) e estoque_tribunais.ts (200 linhas)
+- Mapeado pipeline completo: DataJud → enriquecimento PDF → SIOP → EvidencePack
+- Confirmado: extrairTribunalDoCNJ() cobre J=4 (TRF) e J=8 (27 TJs estaduais via tabela TT)
+- Confirmado: TJRJ usa numeração interna — DataJud retorna 0 para classes 1265/1266
+- Status detalhado por tribunal registrado na seção 7-A
+- Relatório de due diligence HTML gerado (aura-loa-relatorio-due-diligence.html)
+- MASTER.md atualizado com merge das duas versões
+
+---
+
+## 13. PRINCÍPIOS DE DESENVOLVIMENTO
+
+- Trabalhar sempre via VSCode + Claude Code extension (nunca PowerShell separado)
+- Servidor local: `npm run dev` (porta 5000) no terminal integrado VSCode
+- TypeScript: `npx tsc --noEmit` sem erros antes de qualquer commit
+- Nunca commitar `Saida/` (evidências runtime) — já no .gitignore via `git rm --cached`
+- Atualizar MASTER.md ao final de cada sessão
+- Diagnose antes de iterar: solicitar dados brutos primeiro
+- Sem alterações de layout não autorizadas
+- Uma etapa por vez
+
