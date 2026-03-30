@@ -168,6 +168,97 @@ router.post("/api/auth/logout", (_req: Request, res: Response) => {
   return res.json({ ok: true });
 });
 
+// ── Auto-cadastro ────────────────────────────────────────────────────────────
+
+router.post("/api/auth/register", async (req: Request, res: Response) => {
+  const { email, name, password } = req.body;
+  if (!email || !name || !password) {
+    return res.status(400).json({ message: "Nome, email e senha são obrigatórios" });
+  }
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Senha deve ter no mínimo 6 caracteres" });
+  }
+  try {
+    const existing = await findUser(email);
+    if (existing) {
+      return res.status(409).json({ message: "Este email já está cadastrado" });
+    }
+    await query(
+      `INSERT INTO aura_users (email, password_hash, role, name, created_at, active)
+       VALUES ($1, $2, 'user', $3, NOW(), TRUE)`,
+      [email.toLowerCase().trim(), await hashPassword(password), name.trim()],
+    );
+    const user = await findUser(email);
+    if (!user) return res.status(500).json({ message: "Erro ao criar conta" });
+    const token = generateToken(user.email, user.role);
+    return res.status(201).json({ token, email: user.email, role: user.role, name: user.name });
+  } catch (err: any) {
+    return res.status(500).json({ message: "Erro interno", error: err.message });
+  }
+});
+
+// ── Recuperação de senha ─────────────────────────────────────────────────────
+
+router.post("/api/auth/forgot-password", async (req: Request, res: Response) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ message: "Email obrigatorio" });
+  }
+  // Sempre retorna 200 para não revelar se o email existe (anti-enumeração)
+  try {
+    const user = await findUser(email);
+    if (user && user.active) {
+      const token = crypto.randomBytes(32).toString("hex");
+      const expires = new Date(Date.now() + 60 * 60 * 1000); // 1 hora
+      await query(
+        `UPDATE aura_users
+         SET password_reset_token = $1, password_reset_expires = $2
+         WHERE LOWER(email) = LOWER($3)`,
+        [token, expires.toISOString(), email],
+      );
+      // TODO: substituir pelo envio de email real (SMTP/SendGrid/Resend)
+      const BASE_URL = process.env.BASE_URL || "http://localhost:5000";
+      console.log(`[RESET SENHA] Link para ${email}: ${BASE_URL}/login?token=${token}`);
+    }
+    return res.json({ ok: true });
+  } catch (err: any) {
+    return res.status(500).json({ message: "Erro interno", error: err.message });
+  }
+});
+
+router.post("/api/auth/reset-password", async (req: Request, res: Response) => {
+  const { token, password } = req.body;
+  if (!token || !password || password.length < 6) {
+    return res.status(400).json({ message: "Token e senha (min. 6 caracteres) obrigatorios" });
+  }
+  try {
+    const rows = await query<{ email: string; password_reset_expires: string | null }>(
+      `SELECT email, password_reset_expires
+       FROM aura_users
+       WHERE password_reset_token = $1 AND active = TRUE
+       LIMIT 1`,
+      [token],
+    );
+    const row = rows[0];
+    if (!row) {
+      return res.status(400).json({ message: "Token invalido ou expirado" });
+    }
+    if (!row.password_reset_expires || new Date(row.password_reset_expires) < new Date()) {
+      return res.status(400).json({ message: "Token expirado. Solicite um novo link." });
+    }
+    const newHash = await hashPassword(password);
+    await query(
+      `UPDATE aura_users
+       SET password_hash = $1, password_reset_token = NULL, password_reset_expires = NULL
+       WHERE LOWER(email) = LOWER($2)`,
+      [newHash, row.email],
+    );
+    return res.json({ ok: true });
+  } catch (err: any) {
+    return res.status(500).json({ message: "Erro interno", error: err.message });
+  }
+});
+
 // ── Admin endpoints ──────────────────────────────────────────────────────────
 
 router.get("/api/admin/users", requireAdmin, async (_req: Request, res: Response) => {

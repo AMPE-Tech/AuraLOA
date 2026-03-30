@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AuraLOA — Relatório de Due Diligence | Montichiari D1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="auratech-report.css" />
+  <style>
+    /* Estilos específicos deste relatório */
+    .section-title {
+      font-size: .875rem;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: .25rem;
+    }
+    .section-sub {
+      font-size: .6875rem;
+      color: #6b7280;
+      margin-bottom: 1rem;
+    }
+    .info-row {
+      display: flex;
+      gap: .5rem;
+      align-items: baseline;
+      margin-bottom: .35rem;
+      font-size: .75rem;
+    }
+    .info-label {
+      font-weight: 600;
+      color: #374151;
+      min-width: 160px;
+      flex-shrink: 0;
+    }
+    .info-value { color: #6b7280; }
+    .highlight { color: var(--at-primary); font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <!-- TOPBAR -->
+  <header class="at-topbar">
+    <div class="at-topbar-inner">
+      <div class="at-logo">
+        <div class="at-logo-icon">
+          <!-- Scale icon inline SVG (lucide-react fiel) -->
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               style="width:20px;height:20px;color:#fff">
+            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+            <path d="M7 21h10"/>
+            <path d="M12 3v18"/>
+            <path d="M3 7h2c2 0 4-1 6-2 2 1 4 2 6 2h2"/>
+          </svg>
+        </div>
+        <div>
+          <div class="at-logo-name">AuraLOA</div>
+          <div class="at-logo-tag">Análise Inteligente de Precatórios</div>
+        </div>
+      </div>
+      <span style="font-size:.6875rem;color:#9ca3af;font-weight:500;text-transform:uppercase;letter-spacing:.06em">
+        Relatório Técnico de Due Diligence
+      </span>
+    </div>
+  </header>
+
+  <!-- CORPO -->
+  <div class="at-container" style="padding-top:2rem;padding-bottom:4rem;">
+
+    <!-- HEADER GRADIENTE -->
+    <div class="at-report-header">
+      <h1>Relatório de Due Diligence — Montichiari D1</h1>
+      <p>Análise de autenticidade, situação jurídica e orçamentária do precatório</p>
+      <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-top:1rem;font-size:.6875rem;opacity:.75;">
+        <span>Data: 30/03/2026</span>
+        <span>Ref.: AURALOA-2026-D1-001</span>
+        <span>Analista: Sistema Automatizado AuraLOA</span>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <section>
+      <div class="section-title">Painel de Status</div>
+      <div class="section-sub">Resumo dos indicadores da análise</div>
+      <div class="at-kpi-grid">
+
+        <div class="at-kpi-card">
+          <div class="at-kpi-header">
+            <div>
+              <div class="at-kpi-label">Status da Análise</div>
+              <div class="at-kpi-value" style="font-size:1.1rem;margin-top:.5rem;">
+                <span class="at-badge at-badge-approved">APROVADO</span>
+              </div>
+              <div class="at-kpi-sub">Score: 84/100</div>
+            </div>
+            <div class="at-kpi-icon at-kpi-approved">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   style="width:18px;height:18px">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+                <polyline points="22 4 12 14.01 9 11.01"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="at-kpi-card">
+          <div class="at-kpi-header">
+            <div>
+              <div class="at-kpi-label">Tribunal</div>
+              <div class="at-kpi-value" style="font-size:1.1rem;">TRF4</div>
+              <div class="at-kpi-sub">4ª Região Federal</div>
+            </div>
+            <div class="at-kpi-icon at-kpi-info">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   style="width:18px;height:18px">
+                <circle cx="11" cy="11" r="8"/>
+                <line x1="21" x2="16.65" y1="21" y2="16.65"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="at-kpi-card">
+          <div class="at-kpi-header">
+            <div>
+              <div class="at-kpi-label">Valor de Face</div>
+              <div class="at-kpi-value">R$ —</div>
+              <div class="at-kpi-sub">Informar valor do precatório</div>
+            </div>
+            <div class="at-kpi-icon at-kpi-purple">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   style="width:18px;height:18px">
+                <line x1="12" x2="12" y1="1" y2="23"/>
+                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <div class="at-kpi-card">
+          <div class="at-kpi-header">
+            <div>
+              <div class="at-kpi-label">Dotação LOA</div>
+              <div class="at-kpi-value">R$ —</div>
+              <div class="at-kpi-sub">Ação 0005 — SIOP</div>
+            </div>
+            <div class="at-kpi-icon at-kpi-emerald">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+                   stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                   style="width:18px;height:18px">
+                <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
+                <polyline points="16 7 22 7 22 13"/>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <hr class="at-divider" />
+
+    <!-- DADOS DO PRECATÓRIO -->
+    <section>
+      <div class="section-title">1. Identificação do Precatório</div>
+      <div class="section-sub">Dados extraídos do documento e confirmados via DataJud CNJ</div>
+      <div class="at-card">
+        <div class="info-row"><span class="info-label">Número CNJ:</span>       <span class="info-value at-font-mono highlight">Informar número CNJ</span></div>
+        <div class="info-row"><span class="info-label">Tipo:</span>              <span class="info-value">Precatório (Classe 1265)</span></div>
+        <div class="info-row"><span class="info-label">Tribunal:</span>          <span class="info-value">TRF4 — 4ª Região Federal</span></div>
+        <div class="info-row"><span class="info-label">Credor:</span>            <span class="info-value">Informar nome do credor</span></div>
+        <div class="info-row"><span class="info-label">CPF/CNPJ:</span>          <span class="info-value at-font-mono">Informar documento</span></div>
+        <div class="info-row"><span class="info-label">Devedor:</span>           <span class="info-value">União Federal / Ente Público</span></div>
+        <div class="info-row"><span class="info-label">Ano de exercício:</span>  <span class="info-value">2024</span></div>
+        <div class="info-row"><span class="info-label">Status no DataJud:</span> <span class="info-value"><span class="at-badge at-badge-approved">Encontrado</span></span></div>
+      </div>
+    </section>
+
+    <hr class="at-divider" />
+
+    <!-- ANÁLISE HEURÍSTICA -->
+    <section>
+      <div class="section-title">2. Análise Heurística de Autenticidade</div>
+      <div class="section-sub">10 regras verificadas — R-BR001 a R-BR010</div>
+      <div class="at-table-wrap">
+        <table class="at-table">
+          <thead>
+            <tr>
+              <th>Regra</th>
+              <th>Descrição</th>
+              <th>Resultado</th>
+              <th style="text-align:right">Pontuação</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td class="at-font-mono">R-BR001</td><td>Número CNJ válido (padrão NNNNNNN-DD.AAAA.J.TT.OOOO)</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+12</td></tr>
+            <tr><td class="at-font-mono">R-BR002</td><td>Tribunal identificado e compatível com CNJ</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+10</td></tr>
+            <tr><td class="at-font-mono">R-BR003</td><td>Nome do juiz / autoridade presente</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+10</td></tr>
+            <tr><td class="at-font-mono">R-BR004</td><td>Nome do credor presente</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+10</td></tr>
+            <tr><td class="at-font-mono">R-BR005</td><td>CPF/CNPJ com dígitos verificadores válidos</td><td><span class="at-badge at-badge-warning">Verificar</span></td><td style="text-align:right">+6</td></tr>
+            <tr><td class="at-font-mono">R-BR006</td><td>Devedor/ente público identificado</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+10</td></tr>
+            <tr><td class="at-font-mono">R-BR007</td><td>Valor em extenso coerente com algarismos</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+10</td></tr>
+            <tr><td class="at-font-mono">R-BR008</td><td>URL do tribunal presente e acessível</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+8</td></tr>
+            <tr><td class="at-font-mono">R-BR009</td><td>Assinatura digital / rodapé de autenticidade</td><td><span class="at-badge at-badge-warning">Verificar</span></td><td style="text-align:right">+4</td></tr>
+            <tr><td class="at-font-mono">R-BR010</td><td>QR Code presente e válido</td><td><span class="at-badge at-badge-approved">Passou</span></td><td style="text-align:right">+4</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;align-items:center;gap:.5rem;margin-top:1rem;font-size:.75rem;">
+        <span class="info-label">Score final:</span>
+        <span class="highlight" style="font-size:1.25rem;">84 / 100</span>
+        <span class="at-badge at-badge-approved" style="margin-left:.5rem;">APROVADO ≥ 80</span>
+      </div>
+    </section>
+
+    <hr class="at-divider" />
+
+    <!-- CONSULTA DATAJUD -->
+    <section>
+      <div class="section-title">3. Consulta DataJud CNJ</div>
+      <div class="section-sub">Dados retornados pela API pública do CNJ — api-publica.datajud.cnj.jus.br</div>
+      <div class="at-card">
+        <div class="info-row"><span class="info-label">Tribunal consultado:</span>  <span class="info-value">TRF4</span></div>
+        <div class="info-row"><span class="info-label">Classes buscadas:</span>     <span class="info-value at-font-mono">1265 (Precatório) / 1266 (RPV)</span></div>
+        <div class="info-row"><span class="info-label">Status da consulta:</span>   <span class="info-value"><span class="at-badge at-badge-approved">HTTP 200 — Dados retornados</span></span></div>
+        <div class="info-row"><span class="info-label">Total processos:</span>      <span class="info-value highlight">Informar total encontrado</span></div>
+        <div class="info-row"><span class="info-label">Processo localizado:</span>  <span class="info-value"><span class="at-badge at-badge-approved">Sim</span></span></div>
+        <div class="info-row"><span class="info-label">Fase processual:</span>      <span class="info-value">Informar fase</span></div>
+        <div class="info-row"><span class="info-label">Última movimentação:</span>  <span class="info-value at-font-mono">Informar data</span></div>
+      </div>
+    </section>
+
+    <hr class="at-divider" />
+
+    <!-- SITUAÇÃO ORÇAMENTÁRIA -->
+    <section>
+      <div class="section-title">4. Situação Orçamentária — LOA / SIOP</div>
+      <div class="section-sub">Dotação para precatórios — Ação 0005 — Portal da Transparência</div>
+      <div class="at-card" style="background:#fefce8;border-color:#fde68a;">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.75rem;">
+          <span class="at-badge at-badge-warning">ATENÇÃO</span>
+          <span style="font-size:.75rem;color:#92400e;font-weight:500;">Portal da Transparência retornando zeros para ação 0005 — monitorar</span>
+        </div>
+        <div class="info-row"><span class="info-label">Fonte:</span>              <span class="info-value">SIOP / Portal da Transparência</span></div>
+        <div class="info-row"><span class="info-label">Ação orçamentária:</span>  <span class="info-value at-font-mono">0005 — Pagamento de Precatórios</span></div>
+        <div class="info-row"><span class="info-label">Dotação disponível:</span> <span class="info-value">Indisponível — consultar SIOP diretamente</span></div>
+        <div class="info-row"><span class="info-label">Observação:</span>         <span class="info-value">Precatórios registrados por empenho individual; não consolidados na ação 0005</span></div>
+      </div>
+    </section>
+
+    <hr class="at-divider" />
+
+    <!-- CONCLUSÃO -->
+    <section>
+      <div class="section-title">5. Conclusão e Recomendação</div>
+      <div class="at-card" style="background:var(--at-status-approved-bg);border-color:#bbf7d0;">
+        <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.75rem;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+               style="width:20px;height:20px;color:#16a34a;flex-shrink:0">
+            <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+            <polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <span style="font-size:.875rem;font-weight:600;color:#15803d;">Precatório aprovado para prosseguimento</span>
+        </div>
+        <p style="font-size:.75rem;color:#166534;line-height:1.6;">
+          A análise heurística identificou score de 84/100 (≥80 = APROVADO). O processo foi localizado no DataJud TRF4
+          com retorno de dados reais. Recomenda-se verificação manual dos itens R-BR005 e R-BR009 antes da formalização
+          de proposta. A situação orçamentária deve ser confirmada diretamente no SIOP pela indisponibilidade temporária
+          da integração via API.
+        </p>
+      </div>
+    </section>
+
+    <!-- SHA-256 / EVIDÊNCIA -->
+    <div class="at-evidence" style="margin-top:2rem;">
+      <p style="font-size:.6875rem;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af;margin-bottom:.25rem;">
+        Cadeia de Custódia — SHA-256
+      </p>
+      <p style="word-break:break-all;">
+        [hash sha-256 gerado em runtime pelo evidence_pack.ts — substituir ao gerar via sistema]
+      </p>
+      <p style="margin-top:.5rem;font-size:.625rem;color:#d1d5db;">
+        UUID do laudo: [uuid gerado em runtime] · Gerado em: 2026-03-30T00:00:00.000Z
+      </p>
+    </div>
+
+    <!-- RODAPÉ -->
+    <footer style="border-top:1px solid #f3f4f6;padding-top:1.5rem;margin-top:2rem;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.75rem;">
+      <div style="display:flex;align-items:center;gap:.5rem;">
+        <div style="width:24px;height:24px;border-radius:4px;background:linear-gradient(135deg,#06b6d4,#7c3aed);display:flex;align-items:center;justify-content:center;">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+               stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+               style="width:14px;height:14px">
+            <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+            <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+            <path d="M7 21h10"/><path d="M12 3v18"/>
+            <path d="M3 7h2c2 0 4-1 6-2 2 1 4 2 6 2h2"/>
+          </svg>
+        </div>
+        <span style="font-size:.6875rem;font-weight:600;color:#374151;">AuraLOA</span>
+        <span style="font-size:.6875rem;color:#9ca3af;">— Plataforma AuraTECH · loa.auradue.com</span>
+      </div>
+      <span style="font-size:.625rem;color:#d1d5db;">
+        Documento gerado automaticamente. Todas as informações são baseadas em fontes públicas verificadas.
+        Este relatório não constitui assessoria jurídica ou financeira.
+      </span>
+    </footer>
+
+  </div><!-- /at-container -->
+
+</body>
+</html>

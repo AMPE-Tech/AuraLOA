@@ -1,0 +1,131 @@
+{
+  "$schema": "https://design-tokens.github.io/community-group/format/",
+  "$metadata": {
+    "project": "AuraTECH / AuraLOA",
+    "extracted": "2026-03-30",
+    "sources": ["client/src/index.css", "tailwind.config.ts", "client/src/components/public-topbar.tsx"]
+  },
+
+  "color": {
+    "brand": {
+      "gradient-start": { "$value": "#06b6d4", "$type": "color", "$description": "Logo gradient from — cyan-500" },
+      "gradient-end":   { "$value": "#7c3aed", "$type": "color", "$description": "Logo gradient to — violet-600" }
+    },
+    "light": {
+      "background":          { "$value": "hsl(0 0% 100%)",     "$type": "color" },
+      "foreground":          { "$value": "hsl(220 15% 15%)",   "$type": "color" },
+      "border":              { "$value": "hsl(220 8% 88%)",    "$type": "color" },
+      "card":                { "$value": "hsl(0 0% 98%)",      "$type": "color" },
+      "card-foreground":     { "$value": "hsl(220 15% 15%)",   "$type": "color" },
+      "card-border":         { "$value": "hsl(220 8% 94%)",    "$type": "color" },
+      "sidebar":             { "$value": "hsl(220 5% 96%)",    "$type": "color" },
+      "sidebar-border":      { "$value": "hsl(220 8% 90%)",    "$type": "color" },
+      "primary":             { "$value": "hsl(217 91% 45%)",   "$type": "color", "$description": "Blue 600 — CTA principal" },
+      "primary-foreground":  { "$value": "hsl(210 40% 98%)",   "$type": "color" },
+      "secondary":           { "$value": "hsl(220 10% 90%)",   "$type": "color" },
+      "muted":               { "$value": "hsl(220 12% 93%)",   "$type": "color" },
+      "muted-foreground":    { "$value": "hsl(220 10% 35%)",   "$type": "color" },
+      "accent":              { "$value": "hsl(220 15% 94%)",   "$type": "color" },
+      "destructive":         { "$value": "hsl(0 84% 42%)",     "$type": "color" },
+      "input":               { "$value": "hsl(220 13% 70%)",   "$type": "color" },
+      "ring":                { "$value": "hsl(217 91% 45%)",   "$type": "color" }
+    },
+    "dark": {
+      "background":          { "$value": "hsl(225 10% 6%)",    "$type": "color" },
+      "foreground":          { "$value": "hsl(220 10% 93%)",   "$type": "color" },
+      "border":              { "$value": "hsl(220 8% 15%)",    "$type": "color" },
+      "card":                { "$value": "hsl(225 10% 8%)",    "$type": "color" },
+      "sidebar":             { "$value": "hsl(225 10% 7%)",    "$type": "color" },
+      "primary":             { "$value": "hsl(217 91% 50%)",   "$type": "color" },
+      "muted":               { "$value": "hsl(220 10% 12%)",   "$type": "color" },
+      "muted-foreground":    { "$value": "hsl(220 8% 55%)",    "$type": "color" }
+    },
+    "dashboard-dark": {
+      "bg":                  { "$value": "#112240", "$type": "color", "$description": "Dashboard dark mode — fundo topbar/cards" },
+      "border":              { "$value": "#1e3a5f", "$type": "color" },
+      "card-bg":             { "$value": "#1a2f4a", "$type": "color" },
+      "text-primary":        { "$value": "#e2e8f0", "$type": "color" },
+      "text-muted":          { "$value": "#64748b", "$type": "color" },
+      "text-subtle":         { "$value": "#94a3b8", "$type": "color" }
+    },
+    "chart": {
+      "1": { "$value": "hsl(217 91% 35%)", "$type": "color", "$description": "Blue — principal" },
+      "2": { "$value": "hsl(142 76% 32%)", "$type": "color", "$description": "Green — aprovados" },
+      "3": { "$value": "hsl(24 90% 45%)",  "$type": "color", "$description": "Orange — atenção" },
+      "4": { "$value": "hsl(280 75% 42%)", "$type": "color", "$description": "Purple" },
+      "5": { "$value": "hsl(340 82% 40%)", "$type": "color", "$description": "Red — suspeitos" }
+    },
+    "status": {
+      "online":  { "$value": "rgb(34 197 94)",   "$type": "color" },
+      "away":    { "$value": "rgb(245 158 11)",  "$type": "color" },
+      "busy":    { "$value": "rgb(239 68 68)",   "$type": "color" },
+      "offline": { "$value": "rgb(156 163 175)", "$type": "color" }
+    },
+    "kpi": {
+      "aprovado-bg":   { "$value": "#f0fdf4", "$type": "color", "$description": "bg-green-50" },
+      "aprovado-icon": { "$value": "#16a34a", "$type": "color", "$description": "text-green-600" },
+      "verificar-bg":  { "$value": "#fefce8", "$type": "color", "$description": "bg-yellow-50" },
+      "verificar-icon":{ "$value": "#ca8a04", "$type": "color", "$description": "text-yellow-600" },
+      "suspeito-bg":   { "$value": "#fef2f2", "$type": "color", "$description": "bg-red-50" },
+      "suspeito-icon": { "$value": "#dc2626", "$type": "color", "$description": "text-red-600" },
+      "valor-bg":      { "$value": "#eff6ff", "$type": "color", "$description": "bg-blue-50" },
+      "valor-icon":    { "$value": "#2563eb", "$type": "color", "$description": "text-blue-600" },
+      "negociacao-bg": { "$value": "#faf5ff", "$type": "color", "$description": "bg-purple-50" },
+      "negociacao-icon":{ "$value": "#9333ea", "$type": "color", "$description": "text-purple-600" },
+      "fechado-bg":    { "$value": "#ecfdf5", "$type": "color", "$description": "bg-emerald-50" },
+      "fechado-icon":  { "$value": "#059669", "$type": "color", "$description": "text-emerald-600" }
+    }
+  },
+
+  "typography": {
+    "font-sans":  { "$value": "\"DM Sans\", Inter, sans-serif", "$type": "fontFamily", "$description": "Fonte principal — UI" },
+    "font-serif": { "$value": "Georgia, serif",                 "$type": "fontFamily" },
+    "font-mono":  { "$value": "JetBrains Mono, monospace",      "$type": "fontFamily" },
+    "base-size":  { "$value": "14px",                           "$type": "dimension",  "$description": "html font-size global" }
+  },
+
+  "border-radius": {
+    "sm":  { "$value": "0.1875rem", "$type": "dimension", "$description": "3px" },
+    "md":  { "$value": "0.375rem",  "$type": "dimension", "$description": "6px" },
+    "lg":  { "$value": "0.5625rem", "$type": "dimension", "$description": "9px — tailwind lg" },
+    "base":{ "$value": "0.5rem",    "$type": "dimension", "$description": "8px — CSS --radius" },
+    "full":{ "$value": "9999px",    "$type": "dimension", "$description": "pills / badges / topbar buttons" }
+  },
+
+  "spacing": {
+    "base": { "$value": "0.25rem", "$type": "dimension", "$description": "--spacing = 4px" },
+    "topbar-px":    { "$value": "1.75rem", "$type": "dimension", "$description": "px-7 — padding horizontal topbar" },
+    "topbar-py":    { "$value": "1rem",    "$type": "dimension", "$description": "py-4 — padding vertical topbar" },
+    "topbar-height":{ "$value": "auto",    "$type": "dimension", "$description": "sticky, sem altura fixa — py-4 + conteúdo" },
+    "max-width":    { "$value": "1400px",  "$type": "dimension", "$description": "max-w-[1400px] — container" },
+    "card-padding": { "$value": "1.25rem", "$type": "dimension", "$description": "p-5 — KPI cards" }
+  },
+
+  "elevation": {
+    "shadow-sm": { "$value": "0 1px 2px 0 rgba(0,0,0,.05)", "$type": "shadow", "$description": "KPI card default" },
+    "shadow-md": { "$value": "0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05)", "$type": "shadow", "$description": "KPI card hover" },
+    "elevate-1-light": { "$value": "rgba(0,0,0,.03)",   "$type": "color", "$description": "--elevate-1 light" },
+    "elevate-2-light": { "$value": "rgba(0,0,0,.08)",   "$type": "color", "$description": "--elevate-2 light" },
+    "elevate-1-dark":  { "$value": "rgba(255,255,255,.03)", "$type": "color" },
+    "elevate-2-dark":  { "$value": "rgba(255,255,255,.07)", "$type": "color" }
+  },
+
+  "logo": {
+    "icon":       { "$value": "Scale (lucide-react)", "$type": "other" },
+    "icon-size":  { "$value": "w-10 h-10 (40px)", "$type": "dimension" },
+    "icon-inner": { "$value": "w-5 h-5 (20px)", "$type": "dimension" },
+    "gradient":   { "$value": "linear-gradient(135deg, #06b6d4, #7c3aed)", "$type": "other" },
+    "brand-name": { "$value": "AuraLOA", "$type": "other" },
+    "tagline-pt": { "$value": "Análise Inteligente de Precatórios", "$type": "other" }
+  },
+
+  "dependencies": {
+    "tailwindcss": "^3.4.17",
+    "recharts":    "^2.15.2",
+    "lucide-react":"^0.453.0",
+    "radix-ui":    "todas as primitivas ^1.x / ^2.x",
+    "tailwind-merge": "^2.6.0",
+    "tailwindcss-animate": "^1.0.7",
+    "@tailwindcss/typography": "^0.5.15"
+  }
+}

@@ -1,0 +1,300 @@
+/**
+ * AuraTECH — Report CSS Variables
+ * Extraído de: index.css + tailwind.config.ts + public-topbar.tsx + KPICards.tsx
+ * Gerado em: 30/03/2026
+ *
+ * Uso: <link rel="stylesheet" href="auratech-report.css"> no HTML do relatório
+ * As variáveis replicam fielmente o design system do AuraLOA.
+ */
+
+/* ─── FONTES ─────────────────────────────────────────────────────────────── */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+/* ─── TOKENS GLOBAIS ─────────────────────────────────────────────────────── */
+:root {
+  /* Cores — modo claro (padrão para relatórios impressos/PDF) */
+  --at-bg:              hsl(0 0% 100%);
+  --at-fg:              hsl(220 15% 15%);
+  --at-border:          hsl(220 8% 88%);
+  --at-card:            hsl(0 0% 98%);
+  --at-card-fg:         hsl(220 15% 15%);
+  --at-card-border:     hsl(220 8% 94%);
+  --at-muted:           hsl(220 12% 93%);
+  --at-muted-fg:        hsl(220 10% 35%);
+  --at-primary:         hsl(217 91% 45%);    /* Azul CTA — #1d5fcc aprox */
+  --at-primary-fg:      hsl(210 40% 98%);
+  --at-destructive:     hsl(0 84% 42%);
+
+  /* Gradiente da marca */
+  --at-brand-gradient:  linear-gradient(135deg, #06b6d4, #7c3aed);
+  --at-brand-cyan:      #06b6d4;
+  --at-brand-violet:    #7c3aed;
+
+  /* Dashboard dark palette (para seções escuras no relatório) */
+  --at-dark-bg:         #112240;
+  --at-dark-border:     #1e3a5f;
+  --at-dark-card:       #1a2f4a;
+  --at-dark-fg:         #e2e8f0;
+  --at-dark-muted:      #64748b;
+  --at-dark-subtle:     #94a3b8;
+
+  /* Status KPI */
+  --at-status-approved-bg:   #f0fdf4;
+  --at-status-approved:      #16a34a;
+  --at-status-warning-bg:    #fefce8;
+  --at-status-warning:       #ca8a04;
+  --at-status-danger-bg:     #fef2f2;
+  --at-status-danger:        #dc2626;
+  --at-status-info-bg:       #eff6ff;
+  --at-status-info:          #2563eb;
+  --at-status-purple-bg:     #faf5ff;
+  --at-status-purple:        #9333ea;
+  --at-status-emerald-bg:    #ecfdf5;
+  --at-status-emerald:       #059669;
+
+  /* Charts */
+  --at-chart-1:  hsl(217 91% 35%);   /* Blue */
+  --at-chart-2:  hsl(142 76% 32%);   /* Green */
+  --at-chart-3:  hsl(24  90% 45%);   /* Orange */
+  --at-chart-4:  hsl(280 75% 42%);   /* Purple */
+  --at-chart-5:  hsl(340 82% 40%);   /* Red */
+
+  /* Tipografia */
+  --at-font:      "DM Sans", Inter, sans-serif;
+  --at-font-mono: "JetBrains Mono", monospace;
+  --at-base-size: 14px;
+
+  /* Border-radius */
+  --at-radius-sm:   3px;
+  --at-radius-md:   6px;
+  --at-radius-lg:   9px;
+  --at-radius:      8px;
+  --at-radius-full: 9999px;
+
+  /* Sombras */
+  --at-shadow-sm: 0 1px 2px 0 rgba(0,0,0,.05);
+  --at-shadow-md: 0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+
+  /* Espaçamento — container e topbar */
+  --at-max-width:     1400px;
+  --at-topbar-px:     1.75rem;    /* 28px */
+  --at-topbar-py:     1rem;       /* 16px */
+  --at-card-padding:  1.25rem;    /* 20px */
+}
+
+/* ─── BASE ────────────────────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { font-size: var(--at-base-size); }
+
+body {
+  font-family: var(--at-font);
+  background-color: var(--at-bg);
+  color: var(--at-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.5;
+}
+
+/* ─── TOPBAR (fiel ao PublicTopbar) ─────────────────────────────────────── */
+.at-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  border-bottom: 1px solid var(--at-border);
+  background: rgba(255,255,255,.95);
+  backdrop-filter: blur(8px);
+  transition: background .3s, border-color .3s;
+}
+.at-topbar-inner {
+  max-width: var(--at-max-width);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--at-topbar-py) var(--at-topbar-px);
+}
+.at-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: default;
+}
+.at-logo-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--at-radius-lg);
+  background: var(--at-brand-gradient);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.at-logo-icon svg { width: 20px; height: 20px; color: #fff; }
+.at-logo-name {
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: -.01em;
+  line-height: 1.2;
+}
+.at-logo-tag {
+  font-size: 0.6875rem;   /* 11px */
+  font-weight: 400;
+  color: var(--at-muted-fg);
+  line-height: 1.2;
+}
+
+/* ─── CONTAINER ──────────────────────────────────────────────────────────── */
+.at-container {
+  max-width: var(--at-max-width);
+  margin: 0 auto;
+  padding: 2rem var(--at-topbar-px);
+}
+
+/* ─── CARDS ──────────────────────────────────────────────────────────────── */
+.at-card {
+  background: var(--at-card);
+  border: 1px solid var(--at-card-border);
+  border-radius: var(--at-radius-lg);
+  padding: var(--at-card-padding);
+  box-shadow: var(--at-shadow-sm);
+  transition: box-shadow .2s;
+}
+.at-card:hover { box-shadow: var(--at-shadow-md); }
+
+/* ─── KPI CARDS ──────────────────────────────────────────────────────────── */
+.at-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+}
+.at-kpi-card {
+  background: #fff;
+  border: 1px solid #f3f4f6;
+  border-radius: var(--at-radius-lg);
+  padding: var(--at-card-padding);
+  box-shadow: var(--at-shadow-sm);
+}
+.at-kpi-card:hover { box-shadow: var(--at-shadow-md); }
+.at-kpi-header { display: flex; align-items: flex-start; justify-content: space-between; }
+.at-kpi-label {
+  font-size: 0.625rem; /* 10px aprox text-xs uppercase tracking-wider */
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: #6b7280;
+}
+.at-kpi-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111827;
+  margin-top: 0.25rem;
+}
+.at-kpi-sub {
+  font-size: 0.625rem;
+  color: #9ca3af;
+  margin-top: 0.25rem;
+}
+.at-kpi-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--at-radius-lg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* KPI icon variant colors */
+.at-kpi-approved   { background: var(--at-status-approved-bg); color: var(--at-status-approved); }
+.at-kpi-warning    { background: var(--at-status-warning-bg);  color: var(--at-status-warning); }
+.at-kpi-danger     { background: var(--at-status-danger-bg);   color: var(--at-status-danger); }
+.at-kpi-info       { background: var(--at-status-info-bg);     color: var(--at-status-info); }
+.at-kpi-purple     { background: var(--at-status-purple-bg);   color: var(--at-status-purple); }
+.at-kpi-emerald    { background: var(--at-status-emerald-bg);  color: var(--at-status-emerald); }
+.at-kpi-neutral    { background: #f8fafc; color: #475569; }
+
+/* ─── BADGES ─────────────────────────────────────────────────────────────── */
+.at-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.75rem;
+  border-radius: var(--at-radius-full);
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+.at-badge-approved  { background: var(--at-status-approved-bg); color: var(--at-status-approved); }
+.at-badge-warning   { background: var(--at-status-warning-bg);  color: var(--at-status-warning); }
+.at-badge-danger    { background: var(--at-status-danger-bg);   color: var(--at-status-danger); }
+.at-badge-info      { background: var(--at-status-info-bg);     color: var(--at-status-info); }
+.at-badge-muted     { background: var(--at-muted);              color: var(--at-muted-fg); }
+
+/* ─── TABELAS ────────────────────────────────────────────────────────────── */
+.at-table-wrap { overflow-x: auto; border-radius: var(--at-radius-lg); border: 1px solid var(--at-border); }
+.at-table { width: 100%; border-collapse: collapse; font-size: 0.75rem; }
+.at-table thead tr { background: var(--at-muted); }
+.at-table th {
+  padding: 0.625rem 1rem;
+  text-align: left;
+  font-size: 0.625rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: var(--at-muted-fg);
+  border-bottom: 1px solid var(--at-border);
+}
+.at-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--at-card-border);
+  color: var(--at-fg);
+}
+.at-table tbody tr:last-child td { border-bottom: none; }
+.at-table tbody tr:hover td { background: var(--at-muted); }
+
+/* ─── SEÇÃO DE CABEÇALHO (relatório) ─────────────────────────────────────── */
+.at-report-header {
+  background: var(--at-brand-gradient);
+  color: #fff;
+  padding: 2.5rem var(--at-topbar-px);
+  border-radius: var(--at-radius-lg);
+  margin-bottom: 2rem;
+}
+.at-report-header h1 { font-size: 1.5rem; font-weight: 700; }
+.at-report-header p  { font-size: 0.875rem; opacity: .85; margin-top: .25rem; }
+
+/* ─── SEÇÃO DE EVIDÊNCIA / SHA ───────────────────────────────────────────── */
+.at-evidence {
+  background: var(--at-muted);
+  border: 1px solid var(--at-border);
+  border-radius: var(--at-radius-lg);
+  padding: 1rem var(--at-card-padding);
+  font-family: var(--at-font-mono);
+  font-size: 0.6875rem;
+  color: var(--at-muted-fg);
+  word-break: break-all;
+}
+
+/* ─── UTILITÁRIOS ────────────────────────────────────────────────────────── */
+.at-divider { border: none; border-top: 1px solid var(--at-border); margin: 1.5rem 0; }
+.at-text-primary  { color: var(--at-primary); }
+.at-text-muted    { color: var(--at-muted-fg); }
+.at-text-danger   { color: var(--at-status-danger); }
+.at-text-approved { color: var(--at-status-approved); }
+.at-text-warning  { color: var(--at-status-warning); }
+.at-font-mono     { font-family: var(--at-font-mono); }
+.at-gap-4         { gap: 1rem; }
+.at-grid-2        { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.at-grid-3        { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+.at-grid-4        { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+@media (max-width: 768px) {
+  .at-grid-2, .at-grid-3, .at-grid-4 { grid-template-columns: 1fr; }
+  .at-kpi-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── PRINT ──────────────────────────────────────────────────────────────── */
+@media print {
+  .at-topbar { position: static; }
+  .at-card, .at-kpi-card { break-inside: avoid; }
+  body { font-size: 12px; }
+}

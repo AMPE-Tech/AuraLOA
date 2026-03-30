@@ -105,6 +105,10 @@ STRIPE_WEBHOOK_SECRET=...
 - [x] Performance: consultas DataJud paralelas (Promise.all) — de ~112s para ~8s
 - [x] Geração de Laudo PDF técnico (POST /api/loa/uniao/estoque/pdf)
 - [x] Pipeline validador landing page verificado e corrigido
+- [x] Skills globais instaladas — 25 skills em ~/.claude/skills/ (30/03/2026)
+- [x] Skill customizada auratech-workflow criada com 7 agentes especializados
+- [ ] Desenvolver modelo de relatório de due diligence AuraLOA usando /auratech-workflow
+- [ ] Testar skills financeiras no contexto de precatórios (financial-analysis + private-equity)
 - [ ] Corrigir integração Stripe (webhook secret vazio no .env)
 - [ ] Testar pipeline end-to-end com TJSP/2024 (volume real de processos)
 - [ ] Reorganizar UX do dashboard

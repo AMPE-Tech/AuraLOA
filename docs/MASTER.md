@@ -318,6 +318,13 @@ PM2 não carrega .env automaticamente — usar export $(grep -v '^#' .env | xarg
 - DATAJUD_API_KEY adicionada ao .env
 - Dependências adicionadas: bcrypt, jsonwebtoken, pdfkit (+ @types)
 
+### 30/03/2026 — Instalação massiva de skills globais
+- 25 skills instaladas em C:\Users\MarcosCosta\.claude\skills\
+- Fontes: Anthropic oficial, obra/superpowers, remotion-dev, nextlevelbuilder, zubair-trabzada, coreyhaines31, JoelLewis, alirezarezvani
+- Skill customizada auratech-workflow criada com 7 agentes especializados
+- Cobertura: desenvolvimento, design UI/UX, marketing digital, vídeo, finanças, compliance, due diligence
+- Próximo passo: desenvolver modelo de relatório de due diligence no AuraLOA usando skills financial-analysis + private-equity
+
 ### 30/03/2026 — Incident de produção e correção de deploy
 - Site estava fora do ar (causa: import.meta.url vazio no bundle CJS)
 - Tentativa de migrar para ESM quebrou produção (Dynamic require incompatível)
@@ -334,6 +341,75 @@ PM2 não carrega .env automaticamente — usar export $(grep -v '^#' .env | xarg
 - Status detalhado por tribunal registrado na seção 7-A
 - Relatório de due diligence HTML gerado (aura-loa-relatorio-due-diligence.html)
 - MASTER.md atualizado com merge das duas versões
+
+---
+
+## 14. SKILLS GLOBAIS INSTALADAS (30/03/2026)
+
+Skills instaladas em C:\Users\MarcosCosta\.claude\skills\ — disponíveis em TODOS os projetos AuraTECH.
+**Total: 25 skills globais.**
+
+### Desenvolvimento
+| Skill | Fonte | Uso |
+|---|---|---|
+| docx | Anthropic oficial | Criar/editar Word profissional |
+| pdf | Anthropic oficial | Análise de PDFs, precatórios, laudos |
+| pptx | Anthropic oficial | Apresentações institucionais |
+| xlsx | Anthropic oficial | Planilhas e análise de dados |
+| frontend-design | Anthropic oficial | UI premium, evita design genérico |
+| webapp-testing | Anthropic oficial | Testes automatizados com Playwright |
+| skill-creator | Anthropic oficial | Criar skills customizadas |
+| systematic-debugging | obra/superpowers | Debug estruturado — nunca pular para solução sem diagnóstico |
+| test-driven-development | obra/superpowers | Testes antes do código |
+| verification-before-completion | obra/superpowers | Verificar evidências antes de declarar tarefa concluída |
+| requesting-code-review | obra/superpowers | Code review estruturado |
+
+### Design UI/UX
+| Skill | Fonte | Uso |
+|---|---|---|
+| ui-ux-pro-max | nextlevelbuilder | 50 estilos, 97 paletas, 57 font pairings, 9 stacks (React, Next.js, Tailwind, shadcn) |
+
+### Marketing
+| Skill | Fonte | Uso |
+|---|---|---|
+| market | zubair-trabzada | Orquestrador agência — /market audit, /market social, /market ads, /market report |
+| market-skills | zubair-trabzada | 14 sub-skills: copy, emails, funil, SEO, proposta cliente, relatório PDF |
+| marketingskills | coreyhaines31 | 34 skills — social-content (Instagram/TikTok/LinkedIn), paid-ads, copywriting, email-sequence, launch-strategy |
+
+### Vídeo
+| Skill | Fonte | Uso |
+|---|---|---|
+| remotion | remotion-dev | Criação de vídeos programáticos com React — /remotion |
+
+### Finanças e Compliance
+| Skill | Fonte | Uso |
+|---|---|---|
+| financial-analysis | Anthropic oficial | DCF models, análise de ativos, due diligence checklists |
+| private-equity | Anthropic oficial | Due diligence PE, IC memos, análise de retorno |
+| investment-banking | Anthropic oficial | CIMs, valuation, M&A workflows |
+| wealth-management | Anthropic oficial | Gestão de portfólio, análise de risco, relatórios |
+| finance-skills | JoelLewis | 84 skills: compliance SEC/FINRA, trading, operações, análise quantitativa |
+| ra-qm-compliance | alirezarezvani | 13 skills de compliance regulatório e quality management |
+| finance-analyst | alirezarezvani | Análise financeira com Python scripts |
+
+### Customizada AuraTECH
+| Skill | Fonte | Uso |
+|---|---|---|
+| auratech-workflow | AuraTECH customizada | Workflow 7 agentes: Brainstorm→GitWorktree→Plano→Execução→TDD→Review→Finalização |
+
+### Repositórios fonte
+- https://github.com/anthropics/skills
+- https://github.com/obra/superpowers
+- https://github.com/remotion-dev/remotion
+- https://github.com/nextlevelbuilder/ui-ux-pro-max
+- https://github.com/zubair-trabzada/market
+- https://github.com/coreyhaines31/marketingskills
+- https://github.com/JoelLewis/finance-skills
+- https://github.com/alirezarezvani/ra-qm-compliance
+
+Para adicionar novas skills: copiar pasta com SKILL.md para C:\Users\MarcosCosta\.claude\skills\
+Para atualizar: git pull nos repositórios em C:\temp\ e copiar novamente.
+Reiniciar VSCode após qualquer alteração nas skills.
 
 ---
 

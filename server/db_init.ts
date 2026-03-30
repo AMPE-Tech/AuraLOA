@@ -15,6 +15,10 @@ export async function initDb(): Promise<void> {
     )
   `);
 
+  // ── Colunas reset de senha em aura_users (idempotente) ──────────────────
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS password_reset_token TEXT`);
+  await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMPTZ`);
+
   // ── Colunas Stripe em aura_users (idempotente) ───────────────────────────
   await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS stripe_customer_id TEXT UNIQUE`);
   await query(`ALTER TABLE aura_users ADD COLUMN IF NOT EXISTS stripe_subscription_id TEXT`);
