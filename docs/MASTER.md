@@ -241,16 +241,17 @@ ANTES de qualquer alteração em script/build.ts ou package.json:
 
 DEPLOY CORRETO (única sequência válida):
 ```
-ssh root@178.104.66.47  (senha: tv3Jbrrd3eus)
-cd /var/www/auraloa
+ssh root@178.104.66.47
+cd /var/www/auraloa          ← DIRETÓRIO CORRETO (não /opt/auraloa)
 git pull origin main
 npm run build
-cd /var/www/auraloa && export $(grep -v '^#' .env | xargs) && pm2 start dist/index.cjs --name auraloa
-pm2 save
+pm2 restart auraloa
 ```
 
-Se pm2 restart falhar: sempre usar pm2 delete + pm2 start.
+Se pm2 restart falhar: usar pm2 delete auraloa + export $(grep -v '^#' .env | xargs) + pm2 start dist/index.cjs --name auraloa + pm2 save
 PM2 não carrega .env automaticamente — usar export $(grep -v '^#' .env | xargs) antes do pm2 start.
+
+ATENÇÃO: /opt/auraloa NÃO é o projeto — contém apenas node_modules de teste. Projeto real está em /var/www/auraloa.
 
 ---
 
@@ -317,6 +318,38 @@ PM2 não carrega .env automaticamente — usar export $(grep -v '^#' .env | xarg
 **Infraestrutura:**
 - DATAJUD_API_KEY adicionada ao .env
 - Dependências adicionadas: bcrypt, jsonwebtoken, pdfkit (+ @types)
+
+### 30/03/2026 — Padronização visual completa + AppTopbar unificado
+
+**Dark theme — tokens fixos aplicados em todas as páginas:**
+- CSS variables .dark{}: background #0d1117 (215 28% 7%), card #161b22, primary cyan #06b6d4, secondary violet #7c3aed
+- KPICards.tsx: reescrito com 7 variantes de cor, borda superior 2px por variante, ícone badge
+- GraficosDashboard.tsx: reescrito — LineChart → AreaChart com gradiente, grid sutil, tooltip dark customizado
+- not-found.tsx: 404 dark com texto gradiente cyan→violet
+
+**Logo padrão AuraLOA:** Scale icon + linear-gradient(135deg, #06b6d4, #7c3aed) + "AuraLOA" — aplicado em login, dashboard, admin, not-found
+
+**Footer AuraTECH (imutável):** Shield + bg-primary (azul) + "AuraTECH" — nunca alterar, pertence ao ecossistema, não ao módulo
+
+**AppTopbar** (`client/src/components/app-topbar.tsx`):
+- Componente unificado para TODAS as páginas internas (loa, sp, admin, pendentes, contrato)
+- Sticky glassmorphism: rgba(13,20,32,0.97) + backdrop-filter blur(10px) + border rgba(255,255,255,0.06)
+- Tabs navegáveis com active state cyan (underline 2px + text #22d3ee)
+- Admin tab visível apenas para role=admin
+- Substituiu 5 headers inline díspares
+
+**Autenticação expandida:**
+- POST /api/auth/register — auto-cadastro público (role='user', plan='free')
+- POST /api/auth/forgot-password — token 32-byte hex, 1h expiry, link no console (SMTP TODO)
+- POST /api/auth/reset-password — valida token, atualiza bcrypt hash
+- login.tsx: 4 views (login | register | forgot | reset), inicializado via ?token= na URL
+- Senha admin resetada para AuraLOA@2026 (marcos@auradue.com)
+
+**Relatório de due diligence:**
+- docs/auratech-tokens.json — design tokens completos
+- docs/auratech-report.css — variáveis CSS para relatórios HTML
+- client/src/components/ReportTemplate.tsx — componente React tipado
+- docs/auraLOA_dark_report_FINAL.html — relatório Montichiari D1 (dark, 7 seções, Chart.js)
 
 ### 30/03/2026 — Instalação massiva de skills globais
 - 25 skills instaladas em C:\Users\MarcosCosta\.claude\skills\

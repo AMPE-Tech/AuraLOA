@@ -107,14 +107,17 @@ STRIPE_WEBHOOK_SECRET=...
 - [x] Pipeline validador landing page verificado e corrigido
 - [x] Skills globais instaladas — 25 skills em ~/.claude/skills/ (30/03/2026)
 - [x] Skill customizada auratech-workflow criada com 7 agentes especializados
-- [ ] Desenvolver modelo de relatório de due diligence AuraLOA usando /auratech-workflow
-- [ ] Testar skills financeiras no contexto de precatórios (financial-analysis + private-equity)
+- [x] Dark theme padronizado — todos os tokens CSS, KPICards, GraficosDashboard, not-found (30/03/2026)
+- [x] Logo AuraLOA padronizado — Scale + gradiente em todas as páginas internas (30/03/2026)
+- [x] AppTopbar unificado — componente único para loa, sp, admin, pendentes, contrato (30/03/2026)
+- [x] Fluxo "Esqueci senha" + "Cadastre-se" implementados no login (30/03/2026)
+- [x] Relatório de due diligence dark HTML gerado (auraLOA_dark_report_FINAL.html) (30/03/2026)
+- [x] Deploy path confirmado: /var/www/auraloa (não /opt/auraloa) — git pull funciona (30/03/2026)
+- [ ] Configurar ecosystem.config.js no PM2 para carregar .env automaticamente no reboot do servidor
 - [ ] Corrigir integração Stripe (webhook secret vazio no .env)
 - [ ] Testar pipeline end-to-end com TJSP/2024 (volume real de processos)
-- [ ] Reorganizar UX do dashboard
 - [ ] Busca em lote pós-assinatura (até 10 processos)
-- [x] Deploy no servidor Hetzner — ONLINE em https://loa.auradue.com porta 3000 (PM2 + Nginx configurados)
-- [ ] Configurar ecosystem.config.js no PM2 para carregar .env automaticamente no reboot do servidor
+- [ ] Adicionar SMTP para envio real do link de reset de senha (usar SendGrid ou Resend)
 
 ## Sessão 24/03/2026 — O que foi feito
 
@@ -179,4 +182,11 @@ STRIPE_WEBHOOK_SECRET=...
 
 ### Credenciais (usuário admin)
 - Email: marcos@auradue.com
-- Senha: Kore#2823# (bcrypt no banco)
+- Senha: AuraLOA@2026 (resetada em 30/03/2026 via bcrypt direto no banco Hetzner)
+
+### Componentes novos (30/03/2026)
+- `client/src/components/app-topbar.tsx` — topbar unificado para páginas internas
+- `client/src/components/ReportTemplate.tsx` — template React de relatório de due diligence
+- `docs/auraLOA_dark_report_FINAL.html` — relatório Montichiari D1 (dark, 7 seções, Chart.js)
+- `docs/auratech-tokens.json` — design tokens do sistema AuraTECH
+- `docs/auratech-report.css` — variáveis CSS para relatórios HTML (.at-* prefix)
