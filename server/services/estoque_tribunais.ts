@@ -1,6 +1,6 @@
 import type { EstoqueProcesso, EstoqueSummaryByTribunal, EstoqueProvider, SourceInfo, DotacaoItem } from "../../shared/loa_types";
 import { EvidencePack } from "./evidence_pack";
-import { fetchEstoqueFromDataJud, TRIBUNAIS_FEDERAIS, TRIBUNAIS_SP, CLASSE_PRECATORIO, CLASSE_RPV } from "./estoque_datajud";
+import { fetchEstoqueFromDataJud, TRIBUNAIS_FEDERAIS, TRIBUNAIS_SP, TRIBUNAIS_ESTADUAIS, CLASSE_PRECATORIO, CLASSE_RPV } from "./estoque_datajud";
 import { downloadAndParseTribunalPDF, enrichProcessosWithValores, computePDFSummary } from "./valor_precatorio_pdf";
 import { fetchDotacaoFromSIOP } from "./siop_dotacao";
 
@@ -47,7 +47,7 @@ export async function fetchEstoque(options: EstoqueOrchestratorOptions): Promise
     evidencePack,
   } = options;
 
-  const TODOS_TRIBUNAIS = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP];
+  const TODOS_TRIBUNAIS = [...TRIBUNAIS_FEDERAIS, ...TRIBUNAIS_SP, ...TRIBUNAIS_ESTADUAIS];
 
   const targetTribunais = tribunais && tribunais.length > 0
     ? TODOS_TRIBUNAIS.filter((t) => tribunais.includes(t.alias))

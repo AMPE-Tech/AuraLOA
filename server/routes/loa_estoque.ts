@@ -14,6 +14,7 @@ import type {
 } from "../../shared/loa_types";
 import { EvidencePack, computeSHA256 } from "../services/evidence_pack";
 import { fetchEstoque } from "../services/estoque_tribunais";
+import { gerarLaudoPDF } from "../services/laudo_pdf";
 import { computeGapAnalysis } from "../services/gap_analysis";
 import { fetchExecucaoFromTransparencia } from "../services/transparencia_execucao";
 import { fetchDotacaoFromSIOP } from "../services/siop_dotacao";
@@ -100,6 +101,80 @@ router.post("/api/loa/uniao/estoque", async (req: Request, res: Response) => {
     evidencePack.saveLog();
     return res.status(500).json({
       error: "Erro interno no processamento de estoque",
+      message: error.message,
+      process_id_uuid: processId,
+    });
+  }
+});
+
+router.post("/api/loa/uniao/estoque/pdf", async (req: Request, res: Response) => {
+  const processId = randomUUID();
+  const evidencePack = new EvidencePack(processId);
+
+  try {
+    const parsed = estoqueRequestSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return res.status(400).json({ error: "Input invalido", details: parsed.error.issues });
+    }
+
+    const { ano_exercicio, tribunais, classes, max_por_tribunal } = parsed.data;
+    evidencePack.log(`start estoque/pdf process_id=${processId} year=${ano_exercicio}`);
+    evidencePack.saveRequest(req.body);
+
+    const estoqueResult = await fetchEstoque({
+      ano_exercicio,
+      tribunais,
+      classes,
+      max_por_tribunal: max_por_tribunal || 10000,
+      evidencePack,
+    });
+
+    const tribunaisConsultados = estoqueResult.por_tribunal.map((t) => t.tribunal_alias);
+    const allErro = estoqueResult.por_tribunal.every((t) => t.status === "ERRO");
+    const allOk = estoqueResult.por_tribunal.every((t) => t.status === "OK");
+    const statusGeral = allErro ? "NAO_LOCALIZADO" as const : allOk ? "OK" as const : "PARCIAL" as const;
+
+    const responseObj: import("../../shared/loa_types").EstoqueResult = {
+      schema_version: SCHEMA_VERSION,
+      process_id_uuid: processId,
+      ano_exercicio,
+      generated_at_iso: new Date().toISOString(),
+      status_geral: statusGeral,
+      providers_used: estoqueResult.providers_used,
+      tribunais_consultados: tribunaisConsultados,
+      summary: {
+        total_processos: estoqueResult.total_processos,
+        total_precatorios: estoqueResult.total_precatorios,
+        total_rpvs: estoqueResult.total_rpvs,
+        por_tribunal: estoqueResult.por_tribunal,
+      },
+      processos: estoqueResult.processos,
+      sources: estoqueResult.sources,
+      evidencias_count: estoqueResult.evidences.length,
+      hashes: { output_sha256: "PLACEHOLDER" },
+      evidence_pack_path: evidencePack.getBasePath(),
+      pdf_orcamento_summaries: estoqueResult.pdf_orcamento_summaries,
+      dotacao_orcamentaria: estoqueResult.dotacao_orcamentaria ?? [],
+    };
+
+    const preHash = JSON.stringify(responseObj, null, 2);
+    responseObj.hashes.output_sha256 = computeSHA256(preHash);
+    evidencePack.saveResponse(responseObj);
+    evidencePack.log(`end estoque/pdf status=${statusGeral}`);
+    evidencePack.saveLog();
+
+    const pdfBuffer = await gerarLaudoPDF(responseObj);
+    const filename = `laudo_precatorios_${ano_exercicio}_${processId.slice(0, 8)}.pdf`;
+
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("Content-Length", pdfBuffer.length);
+    return res.end(pdfBuffer);
+  } catch (error: any) {
+    evidencePack.log(`fatal error: ${error.message}`);
+    evidencePack.saveLog();
+    return res.status(500).json({
+      error: "Erro ao gerar PDF",
       message: error.message,
       process_id_uuid: processId,
     });

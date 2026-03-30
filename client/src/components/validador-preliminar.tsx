@@ -169,7 +169,10 @@ export function ValidadorPreliminarLOA() {
   const [extractedText, setExtractedText] = useState("");
   const [analiseResult, setAnaliseResult] = useState<BRAnaliseResult | null>(null);
 
-  const canSubmitUpload = uploadedFile !== null;
+  const canSubmitUpload =
+    uploadedFile !== null &&
+    (parseStatus === "ready" || parseStatus === "partial") &&
+    (processoCNJ.length > 0 || oficio.length > 0);
 
   const handleStartScan = async () => {
     if (consultasUsadas >= 3) {
@@ -217,22 +220,44 @@ export function ValidadorPreliminarLOA() {
         }
       }
 
+      // Usa a URL extraída do próprio documento como fonte prioritária de consulta
+      const urlDocumento =
+        analiseResult?.extracted?.url_verificacao as string | undefined;
+
       const res = await fetch("/api/validador/verificar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           numero_oficio: oficio.trim(),
           numero_processo: processoCNJ.trim(),
+          ...(urlDocumento ? { url_verificacao_documento: urlDocumento } : {}),
         }),
       });
 
       clearInterval(interval);
+
+      if (res.status === 429) {
+        const err = await res.json().catch(() => ({}));
+        setShowLimiteModal(true);
+        setErrorMsg(err.error || "Limite de consultas atingido. Tente novamente em breve.");
+        setScanStatus("error");
+        return;
+      }
 
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         setErrorMsg(err.error || "Não foi possível completar a consulta nas bases oficiais.");
         setScanStatus("error");
         return;
+      }
+
+      // Atualiza contador de consultas a partir do header do servidor
+      const remaining = res.headers.get("X-RateLimit-Remaining");
+      const limit = res.headers.get("X-RateLimit-Limit");
+      if (remaining !== null && limit !== null) {
+        const usado = parseInt(limit, 10) - parseInt(remaining, 10);
+        setConsultasUsadas(usado);
+        sessionStorage.setItem("auraloa_consultas_gratuitas", String(usado));
       }
 
       const data: ValidacaoResult = await res.json();
@@ -427,13 +452,13 @@ export function ValidadorPreliminarLOA() {
                           <p className="text-white text-sm font-medium truncate">{uploadedFile.name}</p>
                           <p className="text-slate-500 text-xs font-mono mt-0.5">
                             {parseStatus === "parsing" && "Lendo PDF..."}
-                            {parseStatus === "ready" && <span className="text-emerald-400">✓ Campos detectados automaticamente</span>}
-                            {parseStatus === "partial" && <span className="text-amber-400">⚠ Detecção parcial — revise os campos</span>}
+                            {parseStatus === "ready" && <span className="text-emerald-400">✓ Dados do processo detectados</span>}
+                            {parseStatus === "partial" && <span className="text-amber-400">⚠ Detecção parcial — alguns dados foram identificados</span>}
                             {parseStatus === "failed" && (
                               <span className="text-red-400">
                                 {uploadedFile && uploadedFile.type !== "application/pdf"
                                   ? "❌ Formato inválido — apenas arquivos PDF são aceitos"
-                                  : "Não foi possível detectar automaticamente — preencha manualmente"}
+                                  : "❌ Não foi possível identificar os dados do processo neste PDF"}
                               </span>
                             )}
                           </p>
@@ -456,7 +481,9 @@ export function ValidadorPreliminarLOA() {
                     >
                       <ShieldCheck className="w-5 h-5" />
                       {!uploadedFile && "Selecione um arquivo PDF"}
-                      {uploadedFile && "Verificar Ofício Agora"}
+                      {uploadedFile && parseStatus === "parsing" && "Lendo documento..."}
+                      {uploadedFile && parseStatus === "failed" && "PDF sem dados reconhecíveis — tente outro"}
+                      {uploadedFile && (parseStatus === "ready" || parseStatus === "partial") && "Verificar Documento Agora"}
                     </button>
                     {consultasUsadas > 0 && (
                       <p className="text-xs text-slate-500 text-center mt-2">
@@ -575,10 +602,18 @@ export function ValidadorPreliminarLOA() {
                   )}
                   {resultado.url_consulta && (
                     <div className="flex justify-between items-center px-5 py-3">
-                      <span className="text-xs text-slate-500 uppercase tracking-wider">Consulta Tribunal</span>
+                      <span className="text-xs text-slate-500 uppercase tracking-wider">
+                        {(resultado as any).url_origem === "documento"
+                          ? "Portal Oficial (indicado no documento)"
+                          : "Consulta Tribunal"}
+                      </span>
                       <a href={resultado.url_consulta} target="_blank" rel="noopener noreferrer"
-                        className="text-xs text-blue-400 hover:text-blue-300 flex items-center gap-1 transition-colors">
-                        Acessar <ExternalLink className="w-3 h-3" />
+                        className={`text-xs flex items-center gap-1 transition-colors ${
+                          (resultado as any).url_origem === "documento"
+                            ? "text-emerald-400 hover:text-emerald-300 font-medium"
+                            : "text-blue-400 hover:text-blue-300"
+                        }`}>
+                        Acessar portal <ExternalLink className="w-3 h-3" />
                       </a>
                     </div>
                   )}
@@ -637,6 +672,28 @@ export function ValidadorPreliminarLOA() {
                     O processo <span className="font-mono text-slate-300">{processoCNJ}</span> não foi localizado nas bases consultadas. Verifique se os números estão corretos. Isso não descarta a existência do processo — recomendamos ampliar a busca.
                   </p>
                 </div>
+
+                {/* Link do portal indicado no próprio documento — prioridade máxima */}
+                {resultado?.url_consulta && (resultado as any).url_origem === "documento" && (
+                  <div className="bg-emerald-500/[0.06] border border-emerald-500/25 rounded-xl px-5 py-4 mb-4 text-left">
+                    <p className="text-xs font-bold text-emerald-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Portal indicado no documento
+                    </p>
+                    <p className="text-xs text-slate-400 mb-3">
+                      O próprio documento indica onde consultar o andamento do precatório:
+                    </p>
+                    <a
+                      href={resultado.url_consulta}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 text-sm text-emerald-400 hover:text-emerald-300 font-medium transition-colors break-all"
+                    >
+                      {resultado.url_consulta} <ExternalLink className="w-3.5 h-3.5 shrink-0" />
+                    </a>
+                  </div>
+                )}
+
                 <div className="bg-slate-900/60 border border-slate-700/40 rounded-xl px-5 py-3 mb-5 text-left">
                   <p className="text-xs text-slate-500 leading-relaxed">
                     <span className="text-slate-400 font-medium">Recomendação:</span> Esta verificação preliminar não esgota as fontes disponíveis. Para confirmação definitiva, acesse a plataforma completa com busca estendida em múltiplas bases.

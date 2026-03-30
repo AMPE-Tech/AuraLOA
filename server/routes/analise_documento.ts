@@ -1,7 +1,8 @@
 import type { Express } from "express";
 import multer from "multer";
 import { createRequire } from "module";
-const require = createRequire(__filename);
+import { fileURLToPath } from "url";
+const require = createRequire(fileURLToPath(import.meta.url));
 const _pdfParseModule = require("pdf-parse");
 const pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number }> =
   typeof _pdfParseModule === "function" ? _pdfParseModule : _pdfParseModule.default ?? _pdfParseModule;

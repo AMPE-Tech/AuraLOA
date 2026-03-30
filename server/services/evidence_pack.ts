@@ -50,11 +50,12 @@ export class EvidencePack {
     path: string;
     sha256: string;
   } {
-    const filePath = path.join(this.basePath, "raw", filename);
+    const safeFilename = filename.replace(/[^a-zA-Z0-9._-]/g, "_");
+    const filePath = path.join(this.basePath, "raw", safeFilename);
     fs.writeFileSync(filePath, data);
     const sha256 = computeSHA256(data);
-    this.log(`saved raw/${filename} bytes=${typeof data === 'string' ? data.length : data.length} sha256=${sha256}`);
-    return { path: `raw/${filename}`, sha256 };
+    this.log(`saved raw/${safeFilename} bytes=${data.length} sha256=${sha256}`);
+    return { path: `raw/${safeFilename}`, sha256 };
   }
 
   saveHashes(hashes: Record<string, string>) {

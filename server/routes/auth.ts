@@ -1,10 +1,15 @@
 import { Router, Request, Response, NextFunction } from "express";
 import crypto from "crypto";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { query } from "../db";
 
 const router = Router();
 
 const SESSION_SECRET = process.env.SESSION_SECRET || "aura-loa-default-secret-key";
+const BCRYPT_ROUNDS = 12;
+// Expiração do JWT: altere este valor conforme necessário (ex: "24h", "7d", "30d")
+const JWT_EXPIRATION = "7d";
 
 export interface ManagedUser {
   email: string;
@@ -17,31 +22,33 @@ export interface ManagedUser {
   lastLoginAt?: string;
 }
 
-export function hashPassword(password: string): string {
-  return crypto.createHash("sha256").update(password).digest("hex");
+export async function hashPassword(password: string): Promise<string> {
+  return bcrypt.hash(password, BCRYPT_ROUNDS);
+}
+
+// Verifica senha contra hash bcrypt ou SHA256 legado.
+// Retorna true se válida, e indica se precisa migrar para bcrypt.
+async function verifyPassword(
+  password: string,
+  storedHash: string,
+): Promise<{ valid: boolean; needsMigration: boolean }> {
+  const isSHA256Legacy = /^[a-f0-9]{64}$/.test(storedHash);
+  if (isSHA256Legacy) {
+    const legacyHash = crypto.createHash("sha256").update(password).digest("hex");
+    return { valid: legacyHash === storedHash, needsMigration: true };
+  }
+  const valid = await bcrypt.compare(password, storedHash);
+  return { valid, needsMigration: false };
 }
 
 function generateToken(email: string, role: string): string {
-  const payload = `${email}:${role}:${Date.now()}`;
-  const hmac = crypto.createHmac("sha256", SESSION_SECRET);
-  hmac.update(payload);
-  return Buffer.from(`${payload}:${hmac.digest("hex")}`).toString("base64");
+  return jwt.sign({ email, role }, SESSION_SECRET, { expiresIn: JWT_EXPIRATION });
 }
 
 export function validateToken(token: string): { valid: boolean; email?: string; role?: string } {
   try {
-    const decoded = Buffer.from(token, "base64").toString("utf-8");
-    const parts = decoded.split(":");
-    if (parts.length < 4) return { valid: false };
-    const hash = parts.pop()!;
-    const payload = parts.join(":");
-    const hmac = crypto.createHmac("sha256", SESSION_SECRET);
-    hmac.update(payload);
-    const expected = hmac.digest("hex");
-    if (hash === expected) {
-      return { valid: true, email: parts[0], role: parts[1] };
-    }
-    return { valid: false };
+    const payload = jwt.verify(token, SESSION_SECRET) as { email: string; role: string };
+    return { valid: true, email: payload.email, role: payload.role };
   } catch {
     return { valid: false };
   }
@@ -115,11 +122,20 @@ router.post("/api/auth/login", async (req: Request, res: Response) => {
     if (!user || !user.active) {
       return res.status(401).json({ message: "Credenciais invalidas" });
     }
-    if (hashPassword(password) !== user.passwordHash) {
+    const { valid, needsMigration } = await verifyPassword(password, user.passwordHash);
+    if (!valid) {
       return res.status(401).json({ message: "Credenciais invalidas" });
     }
     if (user.expiresAt && new Date(user.expiresAt) < new Date()) {
       return res.status(403).json({ message: "Acesso expirado. Entre em contato com o administrador." });
+    }
+    // Migra hash SHA256 legado para bcrypt automaticamente no primeiro login bem-sucedido
+    if (needsMigration) {
+      const newHash = await hashPassword(password);
+      await query(
+        "UPDATE aura_users SET password_hash = $1 WHERE LOWER(email) = LOWER($2)",
+        [newHash, email],
+      );
     }
     await query(
       "UPDATE aura_users SET last_login_at = NOW() WHERE LOWER(email) = LOWER($1)",
@@ -189,7 +205,7 @@ router.post("/api/admin/users", requireAdmin, async (req: Request, res: Response
        VALUES ($1, $2, $3, $4, NOW(), TRUE, $5)`,
       [
         email.toLowerCase().trim(),
-        hashPassword(password),
+        await hashPassword(password),
         role === "admin" ? "admin" : "user",
         name.trim(),
         expiresAt || null,
@@ -219,7 +235,7 @@ router.put("/api/admin/users/:email", requireAdmin, async (req: Request, res: Re
     if (name !== undefined)   { updates.push(`name = $${idx++}`);          values.push(name.trim()); }
     if (role !== undefined)   { updates.push(`role = $${idx++}`);          values.push(role === "admin" ? "admin" : "user"); }
     if (active !== undefined) { updates.push(`active = $${idx++}`);        values.push(Boolean(active)); }
-    if (password && password.length >= 6) { updates.push(`password_hash = $${idx++}`); values.push(hashPassword(password)); }
+    if (password && password.length >= 6) { updates.push(`password_hash = $${idx++}`); values.push(await hashPassword(password)); }
     if (expiresAt !== undefined) { updates.push(`expires_at = $${idx++}`); values.push(expiresAt || null); }
 
     if (updates.length > 0) {
