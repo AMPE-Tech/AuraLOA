@@ -224,6 +224,34 @@ SEMPRE executar após qualquer alteração:
 npx tsc --noEmit
 ```
 
+### POLÍTICA DE SEGURANÇA DE DEPLOY — OBRIGATÓRIA
+
+PROIBIDO sem aprovação explícita de Marcos:
+- Alterar format do build (cjs/esm)
+- Alterar outfile/outdir do esbuild
+- Alterar script "start" do package.json
+- Alterar qualquer linha de createRequire/import.meta.url
+- Alterar configuração do PM2 no servidor
+
+ANTES de qualquer alteração em script/build.ts ou package.json:
+1. Perguntar: "isso pode afetar o deploy em produção?"
+2. Mostrar exatamente o que será alterado
+3. Aguardar OK explícito de Marcos
+4. Nunca executar npm run build no servidor sem confirmar que o processo PM2 está configurado
+
+DEPLOY CORRETO (única sequência válida):
+```
+ssh root@178.104.66.47  (senha: tv3Jbrrd3eus)
+cd /var/www/auraloa
+git pull origin main
+npm run build
+cd /var/www/auraloa && export $(grep -v '^#' .env | xargs) && pm2 start dist/index.cjs --name auraloa
+pm2 save
+```
+
+Se pm2 restart falhar: sempre usar pm2 delete + pm2 start.
+PM2 não carrega .env automaticamente — usar export $(grep -v '^#' .env | xargs) antes do pm2 start.
+
 ---
 
 ## 10. VARIÁVEIS DE AMBIENTE
@@ -289,6 +317,14 @@ npx tsc --noEmit
 **Infraestrutura:**
 - DATAJUD_API_KEY adicionada ao .env
 - Dependências adicionadas: bcrypt, jsonwebtoken, pdfkit (+ @types)
+
+### 30/03/2026 — Incident de produção e correção de deploy
+- Site estava fora do ar (causa: import.meta.url vazio no bundle CJS)
+- Tentativa de migrar para ESM quebrou produção (Dynamic require incompatível)
+- Revertido para CJS com fallback `__filename` no createRequire (analise_documento.ts)
+- PM2 não carrega .env automaticamente — resolvido com `export $(grep -v '^#' .env | xargs)`
+- Sequência de deploy correta documentada e bloqueada contra regressão (seção 9)
+- Lição: nunca alterar build/deploy sem testar localmente e confirmar com Marcos
 
 ### 29/03/2026 — Mapeamento de pipeline e documentação
 - Leitura completa de estoque_datajud.ts (549 linhas) e estoque_tribunais.ts (200 linhas)

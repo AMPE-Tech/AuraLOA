@@ -109,7 +109,8 @@ STRIPE_WEBHOOK_SECRET=...
 - [ ] Testar pipeline end-to-end com TJSP/2024 (volume real de processos)
 - [ ] Reorganizar UX do dashboard
 - [ ] Busca em lote pós-assinatura (até 10 processos)
-- [ ] Deploy no servidor Hetzner (clonar repo + PM2 + Nginx)
+- [x] Deploy no servidor Hetzner — ONLINE em https://loa.auradue.com porta 3000 (PM2 + Nginx configurados)
+- [ ] Configurar ecosystem.config.js no PM2 para carregar .env automaticamente no reboot do servidor
 
 ## Sessão 24/03/2026 — O que foi feito
 
