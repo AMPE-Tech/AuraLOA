@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { PublicTopbar } from "@/components/public-topbar";
 import { PublicFooter } from "@/components/public-footer";
-import { Zap, LogIn, Loader2, KeyRound, ArrowLeft, CheckCircle, UserPlus } from "lucide-react";
+import { Scale, LogIn, Loader2, KeyRound, ArrowLeft, CheckCircle, UserPlus } from "lucide-react";
 
 type View = "login" | "register" | "forgot" | "reset";
 
@@ -174,18 +174,22 @@ export default function LoginPage() {
       <div className="flex-1 flex items-center justify-center p-4">
         <div className="w-full max-w-sm">
 
-          {/* Ícone + título */}
+          {/* Logo + título */}
           <div className="flex flex-col items-center mb-5">
-            <div className="p-2 rounded-md bg-primary/15 mb-3">
-              {view === "login"    && <Zap      className="w-5 h-5 text-primary" />}
-              {view === "register" && <UserPlus className="w-5 h-5 text-primary" />}
-              {(view === "forgot" || view === "reset") && <KeyRound className="w-5 h-5 text-primary" />}
+            <div className="flex items-center gap-3 mb-3">
+              <div
+                className="flex items-center justify-center w-10 h-10 rounded-xl"
+                style={{ background: "linear-gradient(135deg, #06b6d4, #7c3aed)" }}
+              >
+                <Scale className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-lg font-bold tracking-tight">AuraLOA</span>
             </div>
-            <h1 className="text-lg font-semibold tracking-tight" data-testid="text-login-title">
-              {view === "login"    && "AuraLOA"}
-              {view === "register" && "Criar conta"}
+            <h1 className="text-sm font-semibold tracking-tight" data-testid="text-login-title">
+              {view === "login"    && "Entre na sua conta"}
+              {view === "register" && "Criar nova conta"}
               {view === "forgot"   && "Recuperar acesso"}
-              {view === "reset"    && "Nova senha"}
+              {view === "reset"    && "Redefinir senha"}
             </h1>
             <p className="text-xs text-muted-foreground mt-0.5">
               {view === "login"    && "Acesse a plataforma de pesquisa"}

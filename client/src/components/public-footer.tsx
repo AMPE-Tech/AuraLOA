@@ -99,10 +99,10 @@ export function PublicFooter() {
       <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-6 border-t border-border/40">
         <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
           <Shield className="w-3 h-3" />
-          <span>Cadeia de Custódia Digital - Lei 13.964/2019</span>
+          <span>Cadeia de Custódia Digital — Lei 13.964/2019</span>
         </div>
         <p className="text-[10px] text-muted-foreground">
-          © 2025 AuraTECH. Todos os direitos reservados.
+          © 2026 AuraTECH. Todos os direitos reservados.
         </p>
       </div>
     </footer>

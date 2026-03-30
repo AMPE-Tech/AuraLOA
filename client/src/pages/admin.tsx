@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Shield, Users, UserPlus, Trash2, KeyRound, LogOut,
-  ChevronRight, Check, X, Pencil, RefreshCw, Zap,
+  ChevronRight, Check, X, Pencil, RefreshCw, Scale,
   Lock, Unlock, AlertCircle, Info, Clock, CalendarDays,
   TrendingUp, Activity,
 } from "lucide-react";
@@ -53,7 +53,7 @@ function expiryStatus(expiresAt?: string): "never" | "expired" | "soon" | "ok" {
 
 function ExpiryBadge({ expiresAt }: { expiresAt?: string }) {
   const status = expiryStatus(expiresAt);
-  if (status === "never") return <span className="text-xs text-slate-600">Sem validade</span>;
+  if (status === "never") return <span className="text-xs text-white/30">Sem validade</span>;
   if (status === "expired") return (
     <span className="inline-flex items-center gap-1 text-xs text-red-400 font-medium">
       <X className="w-3 h-3" /> Expirado {formatDate(expiresAt)}
@@ -197,8 +197,11 @@ export default function AdminPage() {
       <header className="border-b border-white/[0.07] bg-[hsl(225_10%_6%)/80] backdrop-blur-sm sticky top-0 z-40">
         <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-1.5 rounded-lg bg-violet-500/15 border border-violet-500/20">
-              <Zap className="w-4 h-4 text-violet-400" />
+            <div
+              className="flex items-center justify-center w-7 h-7 rounded-lg"
+              style={{ background: "linear-gradient(135deg, #06b6d4, #7c3aed)" }}
+            >
+              <Scale className="w-3.5 h-3.5 text-white" />
             </div>
             <span className="font-semibold text-sm tracking-tight">AuraLOA</span>
             <ChevronRight className="w-3.5 h-3.5 text-slate-600" />

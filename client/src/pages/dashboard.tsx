@@ -12,7 +12,7 @@ import {
 import {
   FileSearch, TrendingUp, CheckCircle,
   Briefcase, LayoutDashboard,
-  FileText, Settings, LogOut
+  FileText, Settings, LogOut, Scale
 } from "lucide-react";
 import { useLocation } from "wouter";
 
@@ -172,7 +172,7 @@ export default function DashboardPage() {
         <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${border}` }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #06b6d4, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <span style={{ color: "white", fontWeight: 700, fontSize: 15 }}>A</span>
+              <Scale size={17} color="white" />
             </div>
             <div>
               <div style={{ color: text, fontWeight: 700, fontSize: 13, letterSpacing: "-0.01em" }}>AuraLOA</div>

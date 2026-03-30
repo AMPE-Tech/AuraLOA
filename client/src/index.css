@@ -93,40 +93,43 @@
   --opaque-button-border-intensity: 9;
   --elevate-1: rgba(255,255,255, .03);
   --elevate-2: rgba(255,255,255, .07);
-  --background: 225 10% 6%;
-  --foreground: 220 10% 93%;
-  --border: 220 8% 15%;
-  --card: 225 10% 8%;
-  --card-foreground: 220 10% 93%;
-  --card-border: 220 8% 12%;
-  --sidebar: 225 10% 7%;
-  --sidebar-foreground: 220 10% 93%;
-  --sidebar-border: 220 8% 13%;
-  --sidebar-primary: 217 91% 50%;
-  --sidebar-primary-foreground: 210 40% 98%;
-  --sidebar-accent: 220 8% 14%;
-  --sidebar-accent-foreground: 220 5% 90%;
-  --sidebar-ring: 217 91% 50%;
-  --popover: 225 10% 10%;
-  --popover-foreground: 220 10% 93%;
-  --popover-border: 220 8% 14%;
-  --primary: 217 91% 50%;
-  --primary-foreground: 210 40% 98%;
-  --secondary: 220 8% 14%;
-  --secondary-foreground: 220 5% 90%;
-  --muted: 220 10% 12%;
-  --muted-foreground: 220 8% 55%;
-  --accent: 220 12% 12%;
-  --accent-foreground: 220 5% 90%;
-  --destructive: 0 84% 40%;
-  --destructive-foreground: 0 20% 98%;
-  --input: 220 10% 22%;
-  --ring: 217 91% 50%;
-  --chart-1: 217 91% 60%;
-  --chart-2: 142 72% 48%;
-  --chart-3: 24 90% 55%;
-  --chart-4: 280 75% 60%;
-  --chart-5: 340 82% 58%;
+
+  /* ── AuraTECH Brand Dark Palette ────────────────────────────── */
+  --background: 215 28% 7%;         /* #0d1117 — fundo geral */
+  --foreground: 0 0% 97%;           /* branco suave */
+  --border: 220 20% 14%;            /* rgba(255,255,255,0.08) equiv */
+  --card: 218 25% 11%;              /* #161b22 — card padrão */
+  --card-foreground: 0 0% 97%;
+  --card-border: 220 22% 14%;       /* borda sutil */
+  --sidebar: 215 30% 8%;            /* #0f1320 */
+  --sidebar-foreground: 0 0% 90%;
+  --sidebar-border: 220 20% 13%;
+  --sidebar-primary: 189 94% 43%;   /* #06b6d4 — ciano brand */
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 220 22% 15%;
+  --sidebar-accent-foreground: 0 0% 88%;
+  --sidebar-ring: 189 94% 43%;
+  --popover: 218 28% 10%;
+  --popover-foreground: 0 0% 97%;
+  --popover-border: 220 20% 14%;
+  --primary: 189 94% 43%;           /* #06b6d4 — ciano */
+  --primary-foreground: 0 0% 100%;
+  --secondary: 263 82% 58%;         /* #7c3aed — violeta */
+  --secondary-foreground: 0 0% 100%;
+  --muted: 220 22% 13%;
+  --muted-foreground: 220 12% 50%;  /* cinza médio */
+  --accent: 220 25% 14%;
+  --accent-foreground: 0 0% 90%;
+  --destructive: 0 72% 48%;
+  --destructive-foreground: 0 0% 100%;
+  --input: 220 20% 18%;
+  --ring: 189 94% 43%;
+  /* Charts — paleta brand */
+  --chart-1: 189 84% 53%;           /* #22d3ee — ciano claro */
+  --chart-2: 160 64% 52%;           /* #34d399 — verde esmeralda */
+  --chart-3: 258 90% 76%;           /* #a78bfa — violeta claro */
+  --chart-4: 38 96% 56%;            /* #fbbf24 — âmbar */
+  --chart-5: 0 72% 60%;             /* vermelho alerta */
   --shadow-2xs: 0px 2px 0px 0px hsl(220 5% 5% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(220 5% 5% / 0.00);
   --shadow-sm: 0px 2px 0px 0px hsl(220 5% 5% / 0.00), 0px 1px 2px -1px hsl(220 5% 5% / 0.00);

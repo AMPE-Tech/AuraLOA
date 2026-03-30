@@ -467,7 +467,7 @@ export default function ContratoTecnico() {
                   {regressionMutation.data.violations?.length > 0 && (
                     <div className="space-y-2 mt-3">
                       {regressionMutation.data.violations.map((v: any, i: number) => (
-                        <div key={i} className="p-2 bg-white dark:bg-background rounded border text-xs">
+                        <div key={i} className="p-2 bg-background rounded border text-xs">
                           <div className="flex items-center gap-2">
                             <Badge variant="destructive" className="text-[9px]">{v.severity}</Badge>
                             <span className="font-medium">{v.metric}</span>
