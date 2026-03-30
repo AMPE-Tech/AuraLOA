@@ -113,11 +113,34 @@ STRIPE_WEBHOOK_SECRET=...
 - [x] Fluxo "Esqueci senha" + "Cadastre-se" implementados no login (30/03/2026)
 - [x] Relatório de due diligence dark HTML gerado (auraLOA_dark_report_FINAL.html) (30/03/2026)
 - [x] Deploy path confirmado: /var/www/auraloa (não /opt/auraloa) — git pull funciona (30/03/2026)
+- [x] dashboard.tsx: 5 bugs corrigidos — usuarioInfo dinâmico, logout funcional, STATUS_COLOR_MAP inline, KPICards removido (import morto), busca adicionada (30/03/2026)
+- [x] dashboard.tsx: KPICards + GraficosDashboard restaurados — 7 KPIs visíveis (Verificar + Suspeitos recuperados), 4 gráficos com CustomTooltip e tokens canônicos (30/03/2026)
+- [x] dashboard.tsx: dark mode toggle removido, tokens alinhados (#0d1117/#162032), coluna Tipo (RPV/PRECATORIO) adicionada na tabela (30/03/2026)
 - [ ] Configurar ecosystem.config.js no PM2 para carregar .env automaticamente no reboot do servidor
 - [ ] Corrigir integração Stripe (webhook secret vazio no .env)
 - [ ] Testar pipeline end-to-end com TJSP/2024 (volume real de processos)
 - [ ] Busca em lote pós-assinatura (até 10 processos)
 - [ ] Adicionar SMTP para envio real do link de reset de senha (usar SendGrid ou Resend)
+- [ ] Criar endpoint real /api/dashboard/precatorios para substituir gerarDadosExemplo() no dashboard
+
+## Sessão 30/03/2026 (continuação) — Dashboard corrigido e restaurado
+
+### Bugs corrigidos (dashboard.tsx)
+1. `usuarioInfo` hardcoded (nome/email/plano fixos) → lê `localStorage` + fetch `/api/auth/me`
+2. Logout sem funcionalidade → limpa todas as chaves `aura_*` + `navigate("/")`
+3. `STATUS_CORES` (Tailwind classes) em contexto inline → `STATUS_COLOR_MAP` com hex reais
+4. `KPICards` importado sem uso no JSX → removido import morto (era para ter sido reativado)
+5. `dark` toggle quebrava componentes filhos (tokens hardcoded) → `dark` state removido; tokens canônicos fixos
+
+### Restauração de componentes suprimidos
+- `KPICards` reativado — 7 KPIs em 2 linhas: Verificar (amber) + Suspeitos (red) estavam sumidos desde a reescrita inline do dark theme
+- `GraficosDashboard` reativado — CustomTooltip com formatação monetária, background nas barras, `formatarValorAbrev` no eixo X
+- Tokens alinhados: `#0d1117 / #162032 / rgba(255,255,255,0.07)` — idênticos aos dos componentes
+
+### Melhorias de dados e apresentação
+- Coluna **Tipo** adicionada na tabela (badge RPV violet / PRECATORIO cyan)
+- Campo de **busca** adicionado (CNJ, credor, tribunal) com filtro em tempo real
+- Dark mode toggle removido do topbar (era cosmético, quebrava o layout)
 
 ## Sessão 24/03/2026 — O que foi feito
 

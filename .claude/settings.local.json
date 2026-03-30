@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(py --version)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:5000/)",
+      "Bash(python3 \"C:/Users/MarcosCosta/.claude/skills/ui-ux-pro-max/scripts/search.py\" \"legal due diligence dashboard juridica SaaS premium dark futuristic minimalist\" --design-system -p \"AuraLOA Due Diligence\" -f markdown)"
+    ],
+    "additionalDirectories": [
+      "c:\\Users\\MarcosCosta\\OneDrive - CTS Brasil\\Área de Trabalho\\ClaudeCode\\AuraLOA\\server"
+    ]
+  }
+}

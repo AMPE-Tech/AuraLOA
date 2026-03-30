@@ -106,6 +106,7 @@ AuraLOA/
 ### Outras tabelas
 - document_validations — análise heurística de PDF
 - document_suspects — documentos bloqueados (score < 50)
+- pesquisas_validador — histórico de todas as pesquisas por CNJ (criada em 30/03/2026)
 - loa_history — histórico de consultas
 - source_snapshots — snapshots com SHA-256
 - job_runs — controle de jobs
@@ -160,7 +161,7 @@ AuraLOA/
 
 ### Fluxo completo
 ```
-Entrada (PDF upload ou CNJ manual)
+Entrada (PDF upload — ofício requisitório ou documento do processo)
   → pdf-parse backend (extração CNJ, 7 padrões regex)
   → extrairTribunalDoCNJ() — J=4→TRF1-6, J=8+TT→27 TJs estaduais
   → consultarTribunal() / fetchEstoqueFromDataJud()
@@ -357,6 +358,27 @@ ATENÇÃO: /opt/auraloa NÃO é o projeto — contém apenas node_modules de tes
 - Skill customizada auratech-workflow criada com 7 agentes especializados
 - Cobertura: desenvolvimento, design UI/UX, marketing digital, vídeo, finanças, compliance, due diligence
 - Próximo passo: desenvolver modelo de relatório de due diligence no AuraLOA usando skills financial-analysis + private-equity
+
+### 30/03/2026 — Dashboard: correção de bugs + restauração de componentes
+
+**5 bugs corrigidos em dashboard.tsx:**
+- `usuarioInfo` hardcoded (marcos@cstbrasil.com, plano fixo) → dinâmico via `localStorage` + fetch `/api/auth/me` na montagem
+- Botão "Sair" sem onClick → limpa chaves `aura_*` do localStorage + navigate("/")
+- `STATUS_CORES` (Tailwind classes) usadas como `className` em componente inline-style → substituídas por `STATUS_COLOR_MAP` com valores hex reais
+- `KPICards` importado mas nunca usado no JSX → causa raiz identificada: reescrita inline do dark theme suprimiu o componente; removido import morto e depois restaurado corretamente
+- `dark` state + toggle: componentes filhos têm tokens hardcoded — toggle era cosmético e quebrava visual → removido; tokens fixos canônicos aplicados
+
+**Restauração de componentes suprimidos:**
+- `KPICards` reativado → 7 KPIs (4 volume + 3 valor); Verificar + Suspeitos estavam invisíveis desde a reescrita inline
+- `GraficosDashboard` reativado → CustomTooltip formatado, background nas barras do tribunal, `formatarValorAbrev`
+- Tokens alinhados ao design system: `bg=#0d1117`, `surface=#162032`, `border=rgba(255,255,255,0.07)`
+
+**Melhorias de dados:**
+- Coluna Tipo (RPV/PRECATORIO) adicionada na tabela com badges coloridos
+- Campo de busca em tempo real (CNJ, credor, tribunal)
+- Dark mode toggle removido do topbar
+
+**Pendente crítico:** endpoint real `/api/dashboard/precatorios` — dashboard ainda usa `gerarDadosExemplo()` (mock)
 
 ### 30/03/2026 — Incident de produção e correção de deploy
 - Site estava fora do ar (causa: import.meta.url vazio no bundle CJS)

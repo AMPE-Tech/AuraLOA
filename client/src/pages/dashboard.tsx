@@ -1,20 +1,31 @@
 import { useState, useEffect } from "react";
-import { KPICards } from "../components/dashboard/KPICards";
 import {
   PrecatorioDashboard, FunilEtapa, GraficoMensal,
   GraficoTribunal, GraficoStatus, FUNIL_ETAPAS, STATUS_LABELS,
-  STATUS_CORES, StatusPrecatorio, calcularKPIs, formatarValor
+  StatusPrecatorio, calcularKPIs, formatarValor
 } from "../types/dashboard";
+import { KPICards } from "../components/dashboard/KPICards";
+import { GraficosDashboard } from "../components/dashboard/GraficosDashboard";
 import {
-  AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid,
-  Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend
-} from "recharts";
-import {
-  FileSearch, TrendingUp, CheckCircle,
-  Briefcase, LayoutDashboard,
-  FileText, Settings, LogOut, Scale
+  FileSearch, TrendingUp, LayoutDashboard,
+  FileText, Settings, LogOut, Scale,
+  User, Camera, Zap, CreditCard, ChevronUp, X,
+  Bell, RefreshCw
 } from "lucide-react";
 import { useLocation } from "wouter";
+
+const STATUS_COLOR_MAP: Record<StatusPrecatorio, string> = {
+  pesquisado:           "#cbd5e1",
+  aprovado:             "#34d399",
+  verificar:            "#fbbf24",
+  suspeito:             "#f87171",
+  proposta_enviada:     "#22d3ee",
+  aguardando_vendedor:  "#fb923c",
+  aguardando_comprador: "#fdba74",
+  analise_interna:      "#a78bfa",
+  fechado:              "#2dd4bf",
+  cancelado:            "#6b7280",
+};
 
 function gerarDadosExemplo(): PrecatorioDashboard[] {
   const tribunais = ["TRF1", "TRF2", "TRF3", "TRF4", "TRF5", "TRF6", "TJSP"];
@@ -99,43 +110,70 @@ export default function DashboardPage() {
   const [precatorios, setPrecatorios] = useState<PrecatorioDashboard[]>([]);
   const [filtroStatus, setFiltroStatus] = useState<StatusPrecatorio | "todos">("todos");
   const [carregando, setCarregando] = useState(true);
-  const [dark, setDark] = useState(true);
+  const [busca, setBusca] = useState("");
   const [precatorioSelecionado, setPrecatorioSelecionado] = useState<PrecatorioDashboard | null>(null);
   const [menuUsuarioAberto, setMenuUsuarioAberto] = useState(false);
   const [sidebarRecolhido, setSidebarRecolhido] = useState(false);
-
-  const usuarioInfo = {
-    nome: "Marcos Costa",
-    email: "marcos@cstbrasil.com",
-    plano: "Professional",
-    consultasUsadas: 4,
-    consultasTotal: 6,
-    avatarLetra: "M",
-  };
+  const [refreshing, setRefreshing] = useState(false);
+  const [usuarioInfo, setUsuarioInfo] = useState({
+    nome: localStorage.getItem("aura_name") ?? "Usuário",
+    email: localStorage.getItem("aura_email") ?? "",
+    plano: localStorage.getItem("aura_plan") ?? "Free",
+    consultasUsadas: parseInt(localStorage.getItem("aura_consultas_usadas") ?? "0"),
+    consultasTotal: parseInt(localStorage.getItem("aura_consultas_total") ?? "10"),
+    avatarLetra: (localStorage.getItem("aura_name") ?? "U").charAt(0).toUpperCase(),
+  });
 
   const pctUso = Math.round((usuarioInfo.consultasUsadas / usuarioInfo.consultasTotal) * 100);
   const corUso = pctUso >= 90 ? "#ef4444" : pctUso >= 70 ? "#f59e0b" : "#10b981";
 
   useEffect(() => {
+    // Fetch user info from API to get updated name/email
+    const token = localStorage.getItem("aura_token");
+    if (token) {
+      fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data) {
+            setUsuarioInfo(prev => ({
+              ...prev,
+              nome: data.name ?? prev.nome,
+              email: data.email ?? prev.email,
+              avatarLetra: (data.name ?? prev.nome).charAt(0).toUpperCase(),
+            }));
+          }
+        })
+        .catch(() => {/* mantém valores do localStorage */});
+    }
+
+    // TODO: substituir por chamada real à API quando endpoint /api/dashboard/precatorios estiver disponível
     setTimeout(() => {
       setPrecatorios(gerarDadosExemplo());
       setCarregando(false);
     }, 600);
   }, []);
 
-  const filtrados = filtroStatus === "todos" ? precatorios : precatorios.filter(p => p.status === filtroStatus);
+  const filtrados = precatorios.filter(p => {
+    const statusOk = filtroStatus === "todos" || p.status === filtroStatus;
+    const buscaOk = busca === "" ||
+      p.numero_cnj.toLowerCase().includes(busca.toLowerCase()) ||
+      (p.credor_nome ?? "").toLowerCase().includes(busca.toLowerCase()) ||
+      p.tribunal.toLowerCase().includes(busca.toLowerCase());
+    return statusOk && buscaOk;
+  });
   const kpis = calcularKPIs(precatorios);
   const graficoMensal = prepararGraficoMensal(precatorios);
   const graficoTribunal = prepararGraficoTribunal(precatorios);
   const graficoStatus = prepararGraficoStatus(precatorios);
   const funil = prepararFunil(precatorios);
 
-  const bg = dark ? "#0d1b2a" : "#f8fafc";
-  const surface = dark ? "#112240" : "#ffffff";
-  const surface2 = dark ? "#1a2f4a" : "#f1f5f9";
-  const border = dark ? "#1e3a5f" : "#e2e8f0";
-  const text = dark ? "#e2e8f0" : "#1e293b";
-  const textMuted = dark ? "#64748b" : "#94a3b8";
+  // Design tokens canônicos do AuraLOA (sempre dark)
+  const bg       = "#0d1117";
+  const surface  = "#162032";
+  const surface2 = "#1a2840";
+  const border   = "rgba(255,255,255,0.07)";
+  const text     = "#e2e8f0";
+  const textMuted = "rgba(255,255,255,0.38)";
 
   const statusFiltros: { id: StatusPrecatorio | "todos"; label: string }[] = [
     { id: "todos", label: "Todos" },
@@ -150,12 +188,12 @@ export default function DashboardPage() {
 
   if (carregando) {
     return (
-      <div style={{ background: "#0d1b2a", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ textAlign: "center" }}>
-          <div style={{ width: 40, height: 40, border: "3px solid #06b6d4", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
-          <p style={{ color: "#64748b", fontSize: 14 }}>Carregando dashboard...</p>
-        </div>
+      <div style={{ background: "#0d1117", minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+        <div style={{ textAlign: "center" }}>
+          <div style={{ width: 40, height: 40, border: "3px solid #22d3ee", borderTopColor: "transparent", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 12px" }} />
+          <p style={{ color: "rgba(255,255,255,0.38)", fontSize: 13 }}>Carregando dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -163,40 +201,54 @@ export default function DashboardPage() {
   const paginaAtiva = SIDEBAR_ITEMS.find(i => i.active)?.label ?? "Dashboard";
 
   return (
-    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: bg, fontFamily: "'DM Sans', system-ui, sans-serif", transition: "all 0.3s" }}>
+    <div style={{ display: "flex", height: "100vh", overflow: "hidden", background: bg, fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } } *:focus-visible { outline: 2px solid #22d3ee; outline-offset: 2px; border-radius: 4px; }`}</style>
 
       {/* Sidebar */}
-      <aside style={{ width: sidebarRecolhido ? 0 : 220, minWidth: sidebarRecolhido ? 0 : 220, background: surface, borderRight: sidebarRecolhido ? "none" : `1px solid ${border}`, display: "flex", flexDirection: "column", flexShrink: 0, position: "relative", overflow: "hidden", transition: "width 0.3s ease, min-width 0.3s ease" }}>
+      <aside style={{
+        width: sidebarRecolhido ? 56 : 220,
+        minWidth: sidebarRecolhido ? 56 : 220,
+        background: surface, borderRight: `1px solid ${border}`,
+        display: "flex", flexDirection: "column", flexShrink: 0,
+        position: "relative", overflow: "hidden",
+        transition: "width 0.25s ease, min-width 0.25s ease"
+      }}>
 
         {/* Topo — Logo */}
-        <div style={{ padding: "18px 16px 14px", borderBottom: `1px solid ${border}` }}>
+        <div style={{ padding: sidebarRecolhido ? "18px 11px 14px" : "18px 16px 14px", borderBottom: `1px solid ${border}`, overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #06b6d4, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 34, height: 34, borderRadius: 9, background: "linear-gradient(135deg, #22d3ee, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <Scale size={17} color="white" />
             </div>
-            <div>
-              <div style={{ color: text, fontWeight: 700, fontSize: 13, letterSpacing: "-0.01em" }}>AuraLOA</div>
-              <div style={{ color: textMuted, fontSize: 10 }}>Análise Inteligente de Precatórios</div>
-            </div>
+            {!sidebarRecolhido && (
+              <div>
+                <div style={{ color: text, fontWeight: 700, fontSize: 13, letterSpacing: "-0.01em" }}>AuraLOA</div>
+                <div style={{ color: textMuted, fontSize: 11 }}>Análise de Precatórios</div>
+              </div>
+            )}
           </div>
         </div>
 
         {/* Navegação */}
-        <nav style={{ flex: 1, padding: "12px 12px 0" }}>
+        <nav aria-label="Menu principal" style={{ flex: 1, padding: sidebarRecolhido ? "12px 8px 0" : "12px 12px 0" }}>
           {SIDEBAR_ITEMS.map(item => (
-            <div key={item.label} style={{
-              display: "flex", alignItems: "center", gap: 10, padding: "9px 12px",
+            <div key={item.label} title={sidebarRecolhido ? item.label : undefined} style={{
+              display: "flex", alignItems: "center", gap: 10,
+              padding: sidebarRecolhido ? "10px 11px" : "9px 12px",
               borderRadius: 8, marginBottom: 2, cursor: "pointer",
-              background: item.active ? "linear-gradient(135deg, rgba(6,182,212,0.15), rgba(124,58,237,0.15))" : "transparent",
-              borderLeft: item.active ? "2px solid #06b6d4" : "2px solid transparent",
+              justifyContent: sidebarRecolhido ? "center" : "flex-start",
+              background: item.active ? "linear-gradient(135deg, rgba(34,211,238,0.12), rgba(124,58,237,0.12))" : "transparent",
+              borderLeft: item.active && !sidebarRecolhido ? "2px solid #22d3ee" : "2px solid transparent",
               transition: "all 0.2s"
             }}
               onClick={() => navigate(item.rota)}
               onMouseEnter={e => { if (!item.active) e.currentTarget.style.background = surface2; }}
               onMouseLeave={e => { if (!item.active) e.currentTarget.style.background = "transparent"; }}
             >
-              <item.icon size={15} color={item.active ? "#06b6d4" : textMuted} />
-              <span style={{ color: item.active ? text : textMuted, fontSize: 13, fontWeight: item.active ? 600 : 400 }}>{item.label}</span>
+              <item.icon size={15} color={item.active ? "#22d3ee" : textMuted} style={{ flexShrink: 0 }} />
+              {!sidebarRecolhido && (
+                <span style={{ color: item.active ? text : textMuted, fontSize: 13, fontWeight: item.active ? 600 : 400 }}>{item.label}</span>
+              )}
             </div>
           ))}
         </nav>
@@ -204,39 +256,51 @@ export default function DashboardPage() {
         {/* Perfil do usuário */}
         <div style={{ borderTop: `1px solid ${border}`, margin: "8px 0 0" }}>
           <div
-            onClick={() => setMenuUsuarioAberto(!menuUsuarioAberto)}
-            style={{ padding: "12px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, transition: "background 0.2s" }}
+            onClick={() => !sidebarRecolhido && setMenuUsuarioAberto(!menuUsuarioAberto)}
+            title={sidebarRecolhido ? `${usuarioInfo.nome} — ${usuarioInfo.plano}` : undefined}
+            aria-expanded={menuUsuarioAberto}
+            aria-label="Menu do usuário"
+            style={{
+              padding: sidebarRecolhido ? "12px 11px" : "12px 16px",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 10,
+              justifyContent: sidebarRecolhido ? "center" : "flex-start",
+              transition: "background 0.2s"
+            }}
             onMouseEnter={e => { e.currentTarget.style.background = surface2; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
           >
-            <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #06b6d4, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 9, background: "linear-gradient(135deg, #22d3ee, #7c3aed)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <span style={{ color: "white", fontWeight: 700, fontSize: 13 }}>{usuarioInfo.avatarLetra}</span>
             </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: text, fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{usuarioInfo.nome}</div>
-              <div style={{ color: "#06b6d4", fontSize: 10, fontWeight: 500 }}>{usuarioInfo.plano}</div>
-            </div>
-            <span style={{ color: textMuted, fontSize: 10, display: "inline-block", transform: menuUsuarioAberto ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.2s" }}>▲</span>
+            {!sidebarRecolhido && (
+              <>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ color: text, fontWeight: 600, fontSize: 12, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{usuarioInfo.nome}</div>
+                  <div style={{ color: "#22d3ee", fontSize: 11, fontWeight: 500 }}>{usuarioInfo.plano}</div>
+                </div>
+                <ChevronUp size={12} color={textMuted} style={{ transform: menuUsuarioAberto ? "rotate(0deg)" : "rotate(180deg)", transition: "transform 0.2s ease" }} />
+              </>
+            )}
           </div>
 
           {/* Dropdown */}
           {menuUsuarioAberto && (
             <div style={{ background: surface2, borderTop: `1px solid ${border}`, overflow: "hidden" }}>
               {[
-                { label: "Meu Perfil", emoji: "👤" },
-                { label: "Alterar Foto", emoji: "📷" },
-                { label: "Fazer Upgrade", emoji: "⚡", destaque: true },
-                { label: "Assinatura", emoji: "💳" },
+                { label: "Meu Perfil",    icon: User,       destaque: false },
+                { label: "Alterar Foto",  icon: Camera,     destaque: false },
+                { label: "Fazer Upgrade", icon: Zap,        destaque: true  },
+                { label: "Assinatura",    icon: CreditCard, destaque: false },
               ].map(item => (
                 <div key={item.label} style={{
                   padding: "8px 16px", cursor: "pointer", display: "flex", alignItems: "center", gap: 8,
-                  color: item.destaque ? "#06b6d4" : text, fontSize: 12, fontWeight: item.destaque ? 600 : 400,
+                  color: item.destaque ? "#22d3ee" : text, fontSize: 12, fontWeight: item.destaque ? 600 : 400,
                   transition: "background 0.15s"
                 }}
-                  onMouseEnter={e => { e.currentTarget.style.background = border; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = surface2; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                 >
-                  <span style={{ fontSize: 12 }}>{item.emoji}</span>
+                  <item.icon size={13} />
                   {item.label}
                 </div>
               ))}
@@ -247,6 +311,14 @@ export default function DashboardPage() {
                 }}
                   onMouseEnter={e => { e.currentTarget.style.background = "rgba(239,68,68,0.08)"; }}
                   onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
+                  onClick={() => {
+                    localStorage.removeItem("aura_token");
+                    localStorage.removeItem("aura_email");
+                    localStorage.removeItem("aura_name");
+                    localStorage.removeItem("aura_role");
+                    localStorage.removeItem("aura_plan");
+                    navigate("/");
+                  }}
                 >
                   <LogOut size={12} />
                   Sair
@@ -256,20 +328,20 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Rodapé — Consultas */}
-        <div style={{ padding: "12px 16px 16px", borderTop: `1px solid ${border}` }}>
+        {/* Rodapé — Consultas (oculto quando recolhido) */}
+        {!sidebarRecolhido && <div style={{ padding: "12px 16px 16px", borderTop: `1px solid ${border}` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5 }}>
             <span style={{ color: textMuted, fontSize: 11, fontWeight: 600 }}>Consultas do mês</span>
-            <span style={{ color: corUso, fontSize: 11, fontWeight: 700 }}>{usuarioInfo.consultasUsadas}/{usuarioInfo.consultasTotal}</span>
+            <span style={{ color: corUso, fontSize: 11, fontWeight: 700, fontVariant: "tabular-nums" }}>{usuarioInfo.consultasUsadas}/{usuarioInfo.consultasTotal}</span>
           </div>
           <div style={{ background: surface2, borderRadius: 6, height: 5, overflow: "hidden", marginBottom: 7 }}>
             <div style={{ width: `${pctUso}%`, height: "100%", background: `linear-gradient(90deg, ${corUso}, ${corUso}99)`, borderRadius: 6, transition: "width 0.5s" }} />
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ color: textMuted, fontSize: 10 }}>{pctUso}% utilizado</span>
-            <span style={{ background: "rgba(6,182,212,0.1)", color: "#06b6d4", fontSize: 10, fontWeight: 600, padding: "2px 8px", borderRadius: 20, border: "1px solid rgba(6,182,212,0.2)", cursor: "pointer" }}>Upgrade</span>
+            <span style={{ color: textMuted, fontSize: 11 }}>{pctUso}% utilizado</span>
+            <span style={{ background: "rgba(34,211,238,0.1)", color: "#22d3ee", fontSize: 11, fontWeight: 600, padding: "3px 10px", borderRadius: 20, border: "1px solid rgba(34,211,238,0.2)", cursor: "pointer", minHeight: 28, display: "inline-flex", alignItems: "center" }}>Upgrade</span>
           </div>
-        </div>
+        </div>}
 
       </aside>
 
@@ -305,75 +377,39 @@ export default function DashboardPage() {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
 
             {/* Sino notificações */}
-            <button style={{
-              background: "transparent", border: `1px solid ${border}`, borderRadius: 8,
-              padding: "6px 10px", cursor: "pointer", color: textMuted, display: "flex", alignItems: "center",
-              transition: "all 0.2s"
-            }}
-              onMouseEnter={e => { e.currentTarget.style.background = surface2; (e.currentTarget as HTMLButtonElement).style.color = text; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = textMuted; }}
+            <button
+              aria-label="Notificações"
               title="Notificações"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
-                <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
-              </svg>
-            </button>
-
-            {/* Toggle idioma */}
-            <button
-              onClick={() => {}}
               style={{
                 background: "transparent", border: `1px solid ${border}`, borderRadius: 8,
-                padding: "6px 10px", cursor: "pointer", color: textMuted, fontSize: 12,
-                display: "flex", alignItems: "center", gap: 5, transition: "all 0.2s"
+                padding: "7px 10px", cursor: "pointer", color: textMuted, display: "flex", alignItems: "center",
+                transition: "all 0.2s", minHeight: 34
               }}
               onMouseEnter={e => { e.currentTarget.style.background = surface2; (e.currentTarget as HTMLButtonElement).style.color = text; }}
               onMouseLeave={e => { e.currentTarget.style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = textMuted; }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="10"/>
-                <line x1="2" y1="12" x2="22" y2="12"/>
-                <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-              </svg>
-              EN
-            </button>
-
-            {/* Dark mode */}
-            <button
-              onClick={() => setDark(!dark)}
-              style={{
-                background: "transparent", border: `1px solid ${border}`, borderRadius: 8,
-                padding: "6px 10px", cursor: "pointer", color: textMuted, fontSize: 12,
-                display: "flex", alignItems: "center", gap: 5, transition: "all 0.2s"
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = surface2; (e.currentTarget as HTMLButtonElement).style.color = text; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = textMuted; }}
-            >
-              {dark
-                ? <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                : <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-              }
-              {dark ? "Claro" : "Escuro"}
+              <Bell size={15} />
             </button>
 
             {/* Refresh */}
             <button
-              onClick={() => setPrecatorios(gerarDadosExemplo())}
+              aria-label="Atualizar dados"
+              title="Atualizar dados"
+              onClick={() => {
+                setRefreshing(true);
+                setTimeout(() => { setPrecatorios(gerarDadosExemplo()); setRefreshing(false); }, 800);
+              }}
+              disabled={refreshing}
               style={{
                 background: "transparent", border: `1px solid ${border}`, borderRadius: 8,
-                padding: "6px 10px", cursor: "pointer", color: textMuted,
-                display: "flex", alignItems: "center", transition: "all 0.2s"
+                padding: "7px 10px", cursor: refreshing ? "default" : "pointer", color: refreshing ? "#22d3ee" : textMuted,
+                display: "flex", alignItems: "center", transition: "all 0.2s", minHeight: 34,
+                opacity: refreshing ? 0.7 : 1,
               }}
-              onMouseEnter={e => { e.currentTarget.style.background = surface2; (e.currentTarget as HTMLButtonElement).style.color = text; }}
-              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = textMuted; }}
-              title="Atualizar dados"
+              onMouseEnter={e => { if (!refreshing) { e.currentTarget.style.background = surface2; (e.currentTarget as HTMLButtonElement).style.color = text; } }}
+              onMouseLeave={e => { e.currentTarget.style.background = "transparent"; (e.currentTarget as HTMLButtonElement).style.color = refreshing ? "#22d3ee" : textMuted; }}
             >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="23 4 23 10 17 10"/>
-                <polyline points="1 20 1 14 7 14"/>
-                <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-              </svg>
+              <RefreshCw size={13} style={{ animation: refreshing ? "spin 0.8s linear infinite" : "none" }} />
             </button>
 
           </div>
@@ -382,136 +418,53 @@ export default function DashboardPage() {
         {/* Conteúdo principal */}
         <main style={{ padding: 28, display: "flex", flexDirection: "column", gap: 24, overflowY: "auto", flex: 1 }}>
 
-          {/* KPI Cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 16 }}>
-            {[
-              { label: "Total Pesquisado", value: kpis.total_pesquisado, sub: "precatórios", color: "#06b6d4", icon: FileSearch },
-              { label: "Aprovados", value: kpis.total_aprovado, sub: `${kpis.taxa_aprovacao}% do total`, color: "#10b981", icon: CheckCircle },
-              { label: "Em Negociação", value: kpis.total_proposta, sub: "com proposta ativa", color: "#7c3aed", icon: Briefcase },
-              { label: "Fechados", value: kpis.total_fechado, sub: `${kpis.taxa_conversao}% conversão`, color: "#f59e0b", icon: TrendingUp },
-            ].map(card => (
-              <div key={card.label} style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: "20px", position: "relative", overflow: "hidden" }}>
-                <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${card.color}, transparent)` }} />
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                  <div>
-                    <p style={{ color: textMuted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 8px" }}>{card.label}</p>
-                    <p style={{ color: text, fontSize: 28, fontWeight: 700, margin: "0 0 4px" }}>{card.value}</p>
-                    <p style={{ color: textMuted, fontSize: 12, margin: 0 }}>{card.sub}</p>
-                  </div>
-                  <div style={{ background: `${card.color}20`, borderRadius: 10, padding: 10 }}>
-                    <card.icon size={18} color={card.color} />
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+          {/* KPI Cards — 7 métricas (4 volume + 3 valor) */}
+          <KPICards kpis={kpis} />
 
-          {/* Valor cards */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16 }}>
-            {[
-              { label: "Valor Total Pesquisado", value: formatarValor(kpis.valor_total_pesquisado), color: "#06b6d4" },
-              { label: "Valor em Negociação", value: formatarValor(kpis.valor_total_negociacao), color: "#7c3aed" },
-              { label: "Valor Fechado", value: formatarValor(kpis.valor_total_fechado), color: "#10b981" },
-            ].map(card => (
-              <div key={card.label} style={{ background: `linear-gradient(135deg, ${card.color}18, ${card.color}08)`, border: `1px solid ${card.color}30`, borderRadius: 12, padding: "18px 20px" }}>
-                <p style={{ color: textMuted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 6px" }}>{card.label}</p>
-                <p style={{ color: card.color, fontSize: 22, fontWeight: 700, margin: 0 }}>{card.value}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Gráficos linha + donut */}
-          <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr", gap: 16 }}>
-            <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ color: text, fontWeight: 600, fontSize: 14, margin: "0 0 16px" }}>Evolução de Consultas</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <AreaChart data={graficoMensal}>
-                  <defs>
-                    <linearGradient id="gradCiano" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0} />
-                    </linearGradient>
-                    <linearGradient id="gradVerde" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.3} />
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke={border} />
-                  <XAxis dataKey="mes" tick={{ fill: textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: textMuted, fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: surface2, border: `1px solid ${border}`, borderRadius: 8, color: text }} />
-                  <Area type="monotone" dataKey="pesquisado" stroke="#06b6d4" strokeWidth={2} fill="url(#gradCiano)" name="Pesquisado" />
-                  <Area type="monotone" dataKey="aprovado" stroke="#10b981" strokeWidth={2} fill="url(#gradVerde)" name="Aprovado" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ color: text, fontWeight: 600, fontSize: 14, margin: "0 0 16px" }}>Status</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <PieChart>
-                  <Pie data={graficoStatus} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={4} dataKey="value">
-                    {graficoStatus.map((entry, i) => <Cell key={i} fill={entry.color} />)}
-                  </Pie>
-                  <Tooltip contentStyle={{ background: surface2, border: `1px solid ${border}`, borderRadius: 8, color: text }} />
-                  <Legend wrapperStyle={{ fontSize: 12, color: textMuted }} />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          {/* Tribunal + Funil */}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-            <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ color: text, fontWeight: 600, fontSize: 14, margin: "0 0 16px" }}>Valor por Tribunal</h3>
-              <ResponsiveContainer width="100%" height={200}>
-                <BarChart data={graficoTribunal} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" stroke={border} />
-                  <XAxis type="number" tick={{ fill: textMuted, fontSize: 10 }} axisLine={false} tickLine={false}
-                    tickFormatter={v => v >= 1e6 ? `R$${(v/1e6).toFixed(1)}M` : `R$${(v/1e3).toFixed(0)}K`} />
-                  <YAxis type="category" dataKey="tribunal" tick={{ fill: textMuted, fontSize: 11 }} width={45} axisLine={false} tickLine={false} />
-                  <Tooltip contentStyle={{ background: surface2, border: `1px solid ${border}`, borderRadius: 8, color: text }} formatter={(v: number) => [formatarValor(v), "Valor"]} />
-                  <Bar dataKey="valor_total" radius={[0, 4, 4, 0]}>
-                    {graficoTribunal.map((_, i) => <Cell key={i} fill={`rgba(6,182,212,${1 - i * 0.12})`} />)}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, padding: 20 }}>
-              <h3 style={{ color: text, fontWeight: 600, fontSize: 14, margin: "0 0 16px" }}>Funil de Conversão</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                {funil.map(etapa => {
-                  const maxQtd = funil[0]?.quantidade || 1;
-                  const pct = maxQtd > 0 ? Math.max(Math.round((etapa.quantidade / maxQtd) * 100), 4) : 4;
-                  return (
-                    <div key={etapa.id} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                      <div style={{ width: 100, textAlign: "right", color: textMuted, fontSize: 11, flexShrink: 0 }}>{etapa.label}</div>
-                      <div style={{ flex: 1, background: surface2, borderRadius: 6, height: 22, overflow: "hidden" }}>
-                        <div style={{ width: `${pct}%`, height: "100%", background: etapa.cor, borderRadius: 6, display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: 6, transition: "width 0.5s" }}>
-                          <span style={{ color: "white", fontSize: 11, fontWeight: 600 }}>{etapa.quantidade}</span>
-                        </div>
-                      </div>
-                      <div style={{ width: 80, color: textMuted, fontSize: 11, flexShrink: 0 }}>{formatarValor(etapa.valor_total)}</div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          {/* Gráficos — 4 painéis (evolução, donut, tribunal, funil) */}
+          <GraficosDashboard
+            graficoMensal={graficoMensal}
+            graficoTribunal={graficoTribunal}
+            graficoStatus={graficoStatus}
+            funil={funil}
+          />
 
           {/* Tabela */}
           <div style={{ background: surface, border: `1px solid ${border}`, borderRadius: 12, overflow: "hidden" }}>
-            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <h3 style={{ color: text, fontWeight: 600, fontSize: 14, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
-                <FileSearch size={15} color="#06b6d4" />
-                Precatórios ({filtrados.length})
-              </h3>
+            {/* Cabeçalho da tabela com busca + filtros */}
+            <div style={{ padding: "16px 20px", borderBottom: `1px solid ${border}`, display: "flex", flexDirection: "column", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <h3 style={{ color: text, fontWeight: 600, fontSize: 14, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                  <FileSearch size={15} color="#22d3ee" />
+                  Precatórios
+                  <span style={{ background: "rgba(34,211,238,0.12)", color: "#22d3ee", fontSize: 11, fontWeight: 700, padding: "1px 8px", borderRadius: 20 }}>{filtrados.length}</span>
+                </h3>
+                <div style={{ position: "relative" }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: textMuted }}>
+                    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                  </svg>
+                  <input
+                    type="text"
+                    aria-label="Buscar precatórios por CNJ, credor ou tribunal"
+                    placeholder="Buscar CNJ, credor, tribunal..."
+                    value={busca}
+                    onChange={e => setBusca(e.target.value)}
+                    style={{
+                      background: surface2, border: `1px solid ${border}`, borderRadius: 8,
+                      padding: "7px 12px 7px 32px", color: text, fontSize: 12, outline: "none",
+                      width: 240, minHeight: 34,
+                    }}
+                  />
+                </div>
+              </div>
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
                 {statusFiltros.map(f => (
                   <button key={f.id} onClick={() => setFiltroStatus(f.id)} style={{
-                    padding: "4px 12px", borderRadius: 20, fontSize: 11, fontWeight: 500, cursor: "pointer",
-                    border: filtroStatus === f.id ? "1px solid #06b6d4" : `1px solid ${border}`,
-                    background: filtroStatus === f.id ? "rgba(6,182,212,0.15)" : "transparent",
-                    color: filtroStatus === f.id ? "#06b6d4" : textMuted,
+                    padding: "6px 14px", borderRadius: 20, fontSize: 11, fontWeight: 500, cursor: "pointer",
+                    minHeight: 32,
+                    border: filtroStatus === f.id ? "1px solid #22d3ee" : `1px solid ${border}`,
+                    background: filtroStatus === f.id ? "rgba(34,211,238,0.12)" : "transparent",
+                    color: filtroStatus === f.id ? "#22d3ee" : textMuted,
                     transition: "all 0.2s"
                   }}>{f.label}</button>
                 ))}
@@ -521,33 +474,44 @@ export default function DashboardPage() {
               <table style={{ width: "100%", borderCollapse: "collapse" }}>
                 <thead>
                   <tr style={{ borderBottom: `1px solid ${border}` }}>
-                    {["CNJ", "Tribunal", "Credor", "Valor Face", "Score", "Status", "Data"].map(h => (
+                    {["Tipo", "CNJ", "Tribunal", "Credor", "Valor Face", "Score", "Status", "Data"].map(h => (
                       <th key={h} style={{ padding: "10px 16px", textAlign: h === "Valor Face" ? "right" : h === "Score" || h === "Status" ? "center" : "left", color: textMuted, fontSize: 11, fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.04em" }}>{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filtrados.length === 0 ? (
-                    <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: textMuted, fontSize: 13 }}>Nenhum precatório encontrado</td></tr>
+                    <tr><td colSpan={8} style={{ textAlign: "center", padding: 40, color: textMuted, fontSize: 13 }}>
+                      {busca ? `Nenhum resultado para "${busca}"` : "Nenhum precatório encontrado"}
+                    </td></tr>
                   ) : filtrados.map((p, i) => (
                     <tr key={p.id} onClick={() => setPrecatorioSelecionado(p)}
                       style={{ borderBottom: `1px solid ${border}`, background: i % 2 === 0 ? "transparent" : `${surface2}50`, cursor: "pointer", transition: "background 0.15s" }}
                       onMouseEnter={e => { e.currentTarget.style.background = surface2; }}
                       onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? "transparent" : `${surface2}50`; }}
                     >
+                      <td style={{ padding: "11px 16px" }}>
+                        <span style={{
+                          fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 5, letterSpacing: "0.04em",
+                          background: p.tipo === "RPV" ? "rgba(167,139,250,0.15)" : "rgba(34,211,238,0.1)",
+                          color: p.tipo === "RPV" ? "#a78bfa" : "#22d3ee",
+                          border: `1px solid ${p.tipo === "RPV" ? "rgba(167,139,250,0.3)" : "rgba(34,211,238,0.2)"}`,
+                        }}>{p.tipo}</span>
+                      </td>
                       <td style={{ padding: "11px 16px", fontFamily: "monospace", fontSize: 11, color: textMuted }}>{p.numero_cnj}</td>
                       <td style={{ padding: "11px 16px", color: text, fontSize: 13 }}>{p.tribunal}</td>
                       <td style={{ padding: "11px 16px", color: textMuted, fontSize: 13 }}>{p.credor_nome ?? "—"}</td>
-                      <td style={{ padding: "11px 16px", textAlign: "right", color: text, fontWeight: 600, fontSize: 13 }}>{formatarValor(p.valor_face)}</td>
+                      <td style={{ padding: "11px 16px", textAlign: "right", color: text, fontWeight: 600, fontSize: 13, fontVariant: "tabular-nums" }}>{formatarValor(p.valor_face)}</td>
                       <td style={{ padding: "11px 16px", textAlign: "center" }}>
                         <span style={{
                           display: "inline-block", minWidth: 36, padding: "2px 6px", borderRadius: 6, fontSize: 11, fontWeight: 700,
-                          background: (p.score_autenticidade ?? 0) >= 80 ? "rgba(16,185,129,0.15)" : (p.score_autenticidade ?? 0) >= 50 ? "rgba(245,158,11,0.15)" : "rgba(239,68,68,0.15)",
-                          color: (p.score_autenticidade ?? 0) >= 80 ? "#10b981" : (p.score_autenticidade ?? 0) >= 50 ? "#f59e0b" : "#ef4444",
+                          fontVariant: "tabular-nums",
+                          background: (p.score_autenticidade ?? 0) >= 80 ? "rgba(52,211,153,0.15)" : (p.score_autenticidade ?? 0) >= 50 ? "rgba(251,191,36,0.15)" : "rgba(248,113,113,0.15)",
+                          color: (p.score_autenticidade ?? 0) >= 80 ? "#34d399" : (p.score_autenticidade ?? 0) >= 50 ? "#fbbf24" : "#f87171",
                         }}>{p.score_autenticidade ?? "—"}</span>
                       </td>
                       <td style={{ padding: "11px 16px", textAlign: "center" }}>
-                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid currentColor", opacity: 0.9 }} className={STATUS_CORES[p.status]}>
+                        <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.05)", border: `1px solid ${STATUS_COLOR_MAP[p.status]}`, color: STATUS_COLOR_MAP[p.status], opacity: 0.9 }}>
                           {STATUS_LABELS[p.status]}
                         </span>
                       </td>
@@ -575,7 +539,7 @@ export default function DashboardPage() {
                 <h2 style={{ color: text, fontWeight: 700, fontSize: 16, margin: 0 }}>Detalhes do Precatório</h2>
                 <p style={{ color: textMuted, fontSize: 12, margin: "4px 0 0" }}>{precatorioSelecionado.tipo}</p>
               </div>
-              <button onClick={() => setPrecatorioSelecionado(null)} style={{ background: "transparent", border: "none", color: textMuted, cursor: "pointer", fontSize: 20, lineHeight: 1 }}>✕</button>
+              <button onClick={() => setPrecatorioSelecionado(null)} aria-label="Fechar detalhes" style={{ background: "transparent", border: `1px solid ${border}`, borderRadius: 7, color: textMuted, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 6 }}><X size={14} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: 24 }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
@@ -615,7 +579,7 @@ export default function DashboardPage() {
                 </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <span style={{ color: textMuted, fontSize: 13 }}>Status</span>
-                  <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.05)", border: "1px solid currentColor", opacity: 0.9 }} className={STATUS_CORES[precatorioSelecionado.status]}>
+                  <span style={{ display: "inline-block", padding: "3px 10px", borderRadius: 20, fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.05)", border: `1px solid ${STATUS_COLOR_MAP[precatorioSelecionado.status]}`, color: STATUS_COLOR_MAP[precatorioSelecionado.status], opacity: 0.9 }}>
                     {STATUS_LABELS[precatorioSelecionado.status]}
                   </span>
                 </div>

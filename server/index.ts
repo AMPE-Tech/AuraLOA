@@ -62,8 +62,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  await testConnection();
-  await initDb();
+  try {
+    await testConnection();
+    await initDb();
+  } catch (err: any) {
+    console.warn("[DB] Aviso: banco indisponível no startup —", err.message);
+    console.warn("[DB] Servidor subindo sem conexão confirmada. Funcionalidades de banco podem falhar.");
+  }
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, next: NextFunction) => {

@@ -1,0 +1,920 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA · Due Diligence · Montichiari · D1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── TOKENS – extraídos das telas reais do AuraLOA ── */
+:root {
+  --bg:        #0f1623;
+  --bg2:       #162032;
+  --bg3:       #1a2840;
+  --bg4:       #0d1420;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --text:      #f1f5f9;
+  --text2:     #94a3b8;
+  --text3:     #64748b;
+  --cyan:      #22d3ee;
+  --cyan2:     #06b6d4;
+  --violet:    #a78bfa;
+  --violet2:   #7c3aed;
+  --green:     #34d399;
+  --green2:    #10b981;
+  --amber:     #fbbf24;
+  --red:       #f87171;
+  --red2:      #ef4444;
+  --brand:     linear-gradient(135deg,#06b6d4,#7c3aed);
+  --radius:    12px;
+  --radius-sm: 7px;
+  --radius-pill: 999px;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html { font-size: 14px; }
+body {
+  font-family: 'Open Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 100;
+  background: rgba(15,22,35,0.95);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 0 32px;
+  display: flex; align-items: center; justify-content: space-between;
+  height: 52px;
+}
+.logo { display: flex; align-items: center; gap: 8px; }
+.logo-icon {
+  width: 28px; height: 28px; border-radius: 6px;
+  background: hsl(210,85%,42%);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.logo-icon svg { width: 14px; height: 14px; color: white; }
+.logo-name { font-size: 12px; font-weight: 600; color: var(--text); letter-spacing: -.01em; line-height: 1.2; }
+.logo-tag { font-size: 9.5px; color: var(--text3); line-height: 1.2; }
+.topbar-right { display: flex; align-items: center; gap: 10px; }
+.topbar-label { font-size: 10px; color: var(--text3); font-weight: 400; letter-spacing: .05em; }
+.btn-export{
+  display:flex;align-items:center;gap:6px;
+  font-size: 10px; font-weight: 500;
+  padding: 5px 12px;
+  border-radius:var(--radius-pill);
+  border:1px solid var(--border2);
+  background:transparent;color:var(--text);
+  cursor:pointer;font-family:'Open Sans',system-ui,sans-serif;
+  transition:all .15s;
+}
+.btn-export:hover{background:var(--bg3);border-color:var(--cyan2);}
+
+/* ── NAV ── */
+.nav{
+  background:var(--bg4);
+  border-bottom:1px solid var(--border);
+  padding: 0 32px;
+  display: flex; overflow-x: auto; scrollbar-width: none;
+  position: sticky; top: 52px; z-index: 99;
+}
+.nav::-webkit-scrollbar{display:none;}
+.nav-btn { padding: 10px 14px; font-size: 11px; font-weight: 400; color: var(--text3); background: transparent; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: 'Open Sans', system-ui, sans-serif; white-space: nowrap; transition: color .12s; }
+.nav-btn:hover{color:var(--text2);}
+.nav-btn.on{color:var(--cyan);font-weight:600;border-bottom-color:var(--cyan);}
+
+/* ── PAGE ── */
+.page{
+  max-width:1100px;margin:0 auto;
+  padding: 28px 32px 60px;
+}
+.sec{display:none;}
+.sec.on{display:block;animation:fadeIn .25s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── COVER ── */
+.cover{
+  padding: 36px 0 32px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 32px;
+}
+.cover-eye{
+  display:flex;align-items:center;gap:8px;
+  font-size:11px;font-weight:500;
+  letter-spacing:.1em;
+  color:var(--text3);margin-bottom:20px;
+}
+.cover-eye-line{
+  width:24px;height:2px;border-radius:1px;
+  background:var(--brand);
+}
+.cover-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #F8F9FF;
+  line-height: 1.2;
+  letter-spacing: -.02em;
+  margin-bottom: 8px;
+}
+.cover-title .line1 {
+  display: block;
+  color: #F8F9FF;
+}
+.cover-title .line2 {
+  display: block;
+  color: #94A3B8;
+  font-weight: 300;
+  font-size: 22px;
+  letter-spacing: -.01em;
+  margin-top: 4px;
+}
+.cover-sub { font-size: 11px; color: var(--text2); margin-bottom: 28px; line-height: 1.6; }
+.cover-meta{
+  display: flex; flex-wrap: wrap; gap: 20px;
+  padding-top: 18px; border-top: 1px solid var(--border);
+  align-items:center;
+}
+.cmi-label { font-size: 10px; letter-spacing: .08em; color: var(--text3); margin-bottom: 4px; }
+.cmi-value { font-size: 11px; font-weight: 500; color: var(--text); line-height: 1.4; }
+.cmi-value.mono { font-family: Menlo, 'Courier New', monospace; font-size: 10px; color: var(--cyan); }
+.cover-badges{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;}
+
+/* ── PILLS ── */
+.pill{
+  display:inline-flex;align-items:center;
+  padding:3px 10px;border-radius:var(--radius-pill);
+  font-size:10px;font-weight:600;
+  letter-spacing:.04em;
+  white-space:nowrap;
+}
+.pill-ok    {background:rgba(52,211,153,.15);color:var(--green);border:1px solid rgba(52,211,153,.25);}
+.pill-warn  {background:rgba(251,191,36,.12);color:var(--amber);border:1px solid rgba(251,191,36,.22);}
+.pill-risk  {background:rgba(248,113,113,.12);color:var(--red);border:1px solid rgba(248,113,113,.22);}
+.pill-info  {background:rgba(34,211,238,.12);color:var(--cyan);border:1px solid rgba(34,211,238,.22);}
+.pill-purp  {background:rgba(167,139,250,.12);color:var(--violet);border:1px solid rgba(167,139,250,.22);}
+.pill-muted {background:rgba(255,255,255,.06);color:var(--text3);border:1px solid var(--border);}
+.pill-dark  {background:rgba(255,255,255,.1);color:var(--text);border:1px solid var(--border2);}
+
+/* ── KPI STRIP – fiel ao dashboard ── */
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:12px;margin-bottom:12px;
+}
+.kpi-grid-3{grid-template-columns:repeat(3,1fr);}
+.kpi-card{
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px 18px;
+  position: relative; overflow: hidden;
+  transition: border-color .15s;
+}
+.kpi-card:hover{border-color:var(--border2);}
+.kpi-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;
+  height:2px;
+}
+.kpi-card.cyan::before{background:var(--cyan);}
+.kpi-card.green::before{background:var(--green);}
+.kpi-card.violet::before{background:var(--violet);}
+.kpi-card.amber::before{background:var(--amber);}
+.kpi-card.red::before{background:var(--red);}
+.kc-label { font-size: 10px; font-weight: 500; letter-spacing: .09em; color: var(--text3); margin-bottom: 8px; display: flex; align-items: center; justify-content: space-between; }
+.kc-icon{width:28px;height:28px;border-radius:7px;display:flex;align-items:center;justify-content:center;opacity:.8;}
+.kc-icon svg{width:14px;height:14px;}
+.ki-cyan  {background:rgba(34,211,238,.15);color:var(--cyan);}
+.ki-green {background:rgba(52,211,153,.15);color:var(--green);}
+.ki-violet{background:rgba(167,139,250,.15);color:var(--violet);}
+.ki-amber {background:rgba(251,191,36,.15);color:var(--amber);}
+.ki-red   {background:rgba(248,113,113,.15);color:var(--red);}
+.kc-value { font-size: 22px; font-weight: 700; color: var(--text); line-height: 1; margin-bottom: 4px; }
+.kc-value.cyan  {color:var(--cyan);}
+.kc-value.green {color:var(--green);}
+.kc-value.violet{color:var(--violet);}
+.kc-value.amber {color:var(--amber);}
+.kc-value.red   {color:var(--red);}
+.kc-sub { font-size: 10px; color: var(--text3); line-height: 1.4; }
+
+/* ── SECTION HEADING ── */
+.sh { margin-bottom: 16px; }
+.sh-eye { font-size: 9px; font-weight: 400; letter-spacing: .12em; color: rgba(255,255,255,.35); margin-bottom: 6px; }
+.sh-title { font-size: 16px; font-weight: 600; color: #FFFFFF; letter-spacing: -.02em; line-height: 1.3; margin-bottom: 5px; }
+.sh-body { font-size: 11px; color: rgba(255,255,255,.42); line-height: 1.6; max-width: 680px; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 36px 0; }
+
+/* ── CARDS ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+}
+.card+.card{margin-top:12px;}
+.card.flush{padding:0;overflow:hidden;}
+
+/* ── GAUGES ── */
+.gauges{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:32px;}
+.gauge-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius: var(--radius); padding: 16px;
+}
+.gc-label { font-size: 10px; font-weight: 500; letter-spacing: .07em; color: var(--text3); margin-bottom: 10px; }
+.gc-scale{display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:5px;}
+.gc-track{height:5px;border-radius:3px;background:rgba(255,255,255,.08);position:relative;margin-bottom:12px;}
+.gc-fill{height:100%;border-radius:3px;}
+.gc-needle{
+  width:11px;height:11px;border-radius:50%;
+  border:2px solid var(--bg);
+  position:absolute;top:-3px;
+  transform:translateX(-50%);
+}
+.gc-value { font-size: 15px; font-weight: 700; margin-bottom: 4px; line-height: 1.2; }
+.gc-sub { font-size: 10px; color: var(--text2); line-height: 1.5; }
+
+/* ── PIPELINE ── */
+.pipeline{
+  display:flex;border-radius:var(--radius);
+  border:1px solid var(--border);overflow:hidden;
+  margin-bottom:32px;
+}
+.pipe-step{
+  flex: 1; padding: 11px 6px; text-align: center;
+  background:var(--bg2);border-right:1px solid var(--border);
+  transition:background .15s;
+}
+.pipe-step:last-child{border-right:none;}
+.pipe-step.done{background:rgba(34,211,238,.08);}
+.pipe-num{
+  width:28px;height:28px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:10px;font-weight:700;
+  margin:0 auto 6px;
+  background:rgba(255,255,255,.06);color:var(--text3);
+}
+.pipe-step.done .pipe-num{background:rgba(34,211,238,.2);color:var(--cyan);}
+.pipe-lbl{font-size:10px;color:var(--text3);line-height:1.3;}
+.pipe-step.done .pipe-lbl{color:var(--text2);}
+
+/* ── PARTES ── */
+.partes{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;}
+.parte{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius: var(--radius); padding: 13px 16px;
+}
+.parte-role{font-size:10px;letter-spacing:.08em;color:var(--text3);font-weight:500;margin-bottom:5px;}
+.parte-name { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.35; }
+.parte-doc { font-size: 11px; font-family: Menlo, 'Courier New', monospace; color: var(--text3); margin-top: 4px; line-height: 1.5; }
+
+/* ── INFO TABLE ── */
+.info-tbl{width:100%;border-collapse:collapse;}
+.info-tbl td { padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 11px; vertical-align: top; line-height: 1.6; }
+.info-tbl tr:last-child td{border-bottom:none;}
+.info-tbl .lbl { color: var(--text3); font-size: 10px; width: 34%; padding-right: 16px; line-height: 1.5; letter-spacing: .04em; }
+.info-tbl .mono{font-family:Menlo,'Courier New',monospace;font-size:11px;color:var(--cyan);}
+
+/* ── TIMELINE ── */
+.tl-row{
+  display:grid;grid-template-columns:88px 16px 1fr;
+  gap: 0 12px; padding: 10px 0;
+  border-bottom:1px solid var(--border);
+}
+.tl-row:last-child{border-bottom:none;}
+.tl-date{font-family:Menlo,'Courier New',monospace;font-size:11px;color:var(--text3);padding-top:3px;}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center;}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.15);flex-shrink:0;margin-top:4px;}
+.tl-dot.done{background:var(--cyan2);border-color:var(--cyan2);}
+.tl-dot.warn{background:var(--amber);border-color:var(--amber);}
+.tl-line{flex:1;width:1px;background:var(--border);margin-top:3px;}
+.tl-evt { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.35; }
+.tl-sub { font-size: 11px; color: var(--text3); margin-top: 3px; line-height: 1.45; }
+
+/* ── FINDINGS ── */
+.finding { display: flex; gap: 12px; padding: 14px 0; border-bottom: 1px solid var(--border); }
+.finding:last-child{border-bottom:none;}
+.f-icon{
+  width:28px;height:28px;border-radius:7px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px;
+}
+.fi-c{background:rgba(248,113,113,.15);color:var(--red);}
+.fi-a{background:rgba(251,191,36,.12);color:var(--amber);}
+.fi-ao{background:rgba(52,211,153,.12);color:var(--green);}
+.fi-m{background:rgba(34,211,238,.12);color:var(--cyan);}
+.f-title { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; line-height: 1.35; }
+.f-body { font-size: 11px; color: var(--text2); line-height: 1.6; }
+
+/* ── RISK GRID ── */
+.risk-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 24px; }
+.risk-card{
+  background:var(--bg2);border:1px solid var(--border);
+  border-radius: var(--radius); padding: 14px 16px;
+}
+.risk-card.critical{border-top:2px solid var(--red2);}
+.risk-card.high{border-top:2px solid var(--amber);}
+.rk-q { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 7px; line-height: 1.35; }
+.rk-body { font-size: 11px; color: var(--text2); line-height: 1.6; }
+
+/* ── ACTION TABLE ── */
+.action-tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.action-tbl th { text-align: left; padding: 8px 12px; font-size: 10px; letter-spacing: .07em; color: var(--text3); font-weight: 600; border-bottom: 1px solid var(--border); background: rgba(255,255,255,.03); }
+.action-tbl td { padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; color: var(--text2); line-height: 1.55; font-size: 11px; }
+.action-tbl tr:last-child td{border-bottom:none;}
+.action-tbl tbody tr:hover td{background:rgba(255,255,255,.02);}
+
+/* ── COC ── */
+.coc-row { display: flex; gap: 12px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.coc-row:last-child{border-bottom:none;}
+.coc-step{
+  width:28px;height:28px;border-radius:50%;
+  font-size:10px;font-weight:700;
+  display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;
+  background:rgba(34,211,238,.15);color:var(--cyan);
+}
+.coc-label { font-size: 12px; font-weight: 600; color: var(--text); margin-bottom: 3px; line-height: 1.3; }
+.coc-detail { font-size: 11px; font-family: Menlo, 'Courier New', monospace; color: var(--text3); line-height: 1.65; }
+.coc-ts{font-size:11px;color:var(--text3);margin-top:4px;}
+
+/* ── SHA BOX ── */
+.sha-box{
+  margin-top:28px;
+  background:rgba(34,211,238,.05);
+  border:1px solid rgba(34,211,238,.15);
+  border-radius:var(--radius);
+  padding: 14px 18px;
+  font-family: Menlo, 'Courier New', monospace;
+  font-size: 11px; color: var(--text3); line-height: 1.75;
+}
+.sha-label { font-size: 10px; font-weight: 500; letter-spacing: .07em; color: var(--cyan); margin-bottom: 7px; font-family: 'Open Sans', system-ui, sans-serif; }
+.sha-box strong{color:var(--green);}
+
+/* ── CHART WRAP ── */
+.cw{position:relative;width:100%;}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;}
+
+/* ── NARRATIVE ── */
+.narrative { font-size: 11px; color: rgba(255,255,255,.55); line-height: 1.7; margin-bottom: 14px; }
+.narrative strong { color: rgba(255,255,255,.85); font-weight: 600; }
+
+/* ── FOOTER – idêntico ao auratg.co ── */
+.site-footer {
+  margin-top: 40px;
+  padding: 26px 0 0;
+}
+.site-footer-inner {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 32px;
+  padding-bottom: 22px;
+}
+.sf-logo {
+  display: flex; align-items: center; gap: 8px;
+  margin-bottom: 10px;
+}
+.sf-logo-icon {
+  width: 24px; height: 24px; min-width: 24px;
+  border-radius: 6px;
+  background: hsl(210,85%,42%);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden;
+}
+.sf-logo-icon svg { width: 12px; height: 12px; flex-shrink: 0; }
+.sf-logo-name {
+  font-size: 11.5px; font-weight: 600;
+  color: var(--text); letter-spacing: -.01em;
+}
+.sf-tagline {
+  font-size: 10.5px; color: var(--text3);
+  line-height: 1.6; margin-bottom: 12px;
+  max-width: 260px;
+}
+.sf-social { display: flex; align-items: center; gap: 12px; }
+.sf-social-btn {
+  color: var(--text3); text-decoration: none;
+  transition: color .15s; display: flex; align-items: center;
+  background: none; border: none; padding: 0; cursor: pointer;
+}
+.sf-social-btn:hover { color: var(--text2); }
+.sf-social-btn svg { width: 15px; height: 15px; }
+.sf-col-title {
+  font-size: 10.5px; font-weight: 600;
+  color: var(--text); margin-bottom: 10px;
+  letter-spacing: .02em;
+}
+.sf-links { display: flex; flex-direction: column; gap: 7px; }
+.sf-link {
+  font-size: 10.5px; color: var(--text3);
+  text-decoration: none; transition: color .12s;
+  cursor: pointer; background: none; border: none;
+  text-align: left; padding: 0;
+  font-family: 'Open Sans', system-ui, sans-serif;
+}
+.sf-link:hover { color: var(--text2); }
+.sf-bottom-bar {
+  display: flex; align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap; gap: 8px;
+  padding: 12px 0 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+.sf-custody {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: rgba(255,255,255,0.3);
+}
+.sf-custody svg { width: 10px; height: 10px; min-width: 10px; flex-shrink: 0; }
+.sf-copyright { font-size: 10px; color: rgba(255,255,255,0.3); }
+@media (max-width: 700px) {
+  .site-footer-inner { grid-template-columns: 1fr; gap: 20px; }
+  .sf-bottom-bar { flex-direction: column; align-items: flex-start; gap: 6px; }
+}
+
+/* ── PRINT ── */
+@media print{
+  body{background:#fff;color:#000;}
+  .topbar,.nav,.btn-export{display:none;}
+  .sec{display:block!important;}
+  .divider{page-break-before:always;margin:0;border:none;}
+  .card,.kpi-card,.risk-card,.gauge-card,.parte{
+    background:#f8f8f8!important;border:1px solid #ddd!important;
+    break-inside:avoid;
+  }
+  .cover-title .line1 { color: #000 !important; }
+  .cover-title .line2 { color: #333 !important; }
+  .kc-value,.sh-title,.f-title,.parte-name,.tl-evt,.coc-label,.rk-q{color:#000!important;}
+  .kc-sub,.sh-body,.f-body,.tl-sub,.coc-detail,.rk-body,.narrative,.sh-eye,.gc-sub{color:#444!important;}
+  .kc-label,.gc-label,.sh-eye,.parte-role,.lbl,.tl-date,.coc-ts{color:#666!important;}
+  .kc-value.cyan,.kc-value.green,.kc-value.violet,.kc-value.amber{color:#1B3A8C!important;}
+  .cmi-value.mono,.info-tbl .mono{color:#1B3A8C!important;}
+  .pipeline{border:1px solid #ddd!important;}
+  .pipe-step{background:#f0f4f8!important;border-color:#ddd!important;}
+  .pipe-step.done{background:#e0f2fe!important;}
+  .pipe-num{background:#ddd!important;color:#333!important;}
+  .pipe-step.done .pipe-num{background:#bae6fd!important;color:#0369a1!important;}
+  .sha-box{background:#f0fdf4!important;border-color:#86efac!important;}
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:700px){
+  .page,.topbar,.nav{padding-left:16px;padding-right:16px;}
+  .cover-title{font-size:24px;}
+  .kpi-grid,.kpi-grid-3,.gauges,.partes,.risk-grid,.g2,.g3{grid-template-columns:1fr;}
+  .pipeline{flex-wrap:wrap;}
+  .pipe-step{min-width:80px;}
+  .tl-row{grid-template-columns:70px 14px 1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+        <path d="m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z"/>
+        <path d="M7 21h10"/><path d="M12 3v18"/>
+        <path d="M3 7h2c2 0 4-1 6-2 2 1 4 2 6 2h2"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-name">AuraLOA</div>
+      <div class="logo-tag">Análise Inteligente de Precatórios</div>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <span class="topbar-label">Relatório técnico D1</span>
+    <button class="btn-export" onclick="window.print()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      Exportar PDF
+    </button>
+  </div>
+</header>
+
+<!-- NAV -->
+<nav class="nav">
+  <button class="nav-btn on" data-s="s1">Visão geral</button>
+  <button class="nav-btn" data-s="s2">Verificações</button>
+  <button class="nav-btn" data-s="s3">Linha do tempo</button>
+  <button class="nav-btn" data-s="s4">Achados</button>
+  <button class="nav-btn" data-s="s5">Mapa de riscos</button>
+  <button class="nav-btn" data-s="s6">Plano de ação</button>
+  <button class="nav-btn" data-s="s7">Custódia digital</button>
+</nav>
+
+<div class="page">
+
+<!-- ── S1 · VISÃO GERAL ── -->
+<div class="sec on" id="s1">
+  <div class="cover">
+    <div class="cover-eye"><div class="cover-eye-line"></div>Due Diligence · Diagnóstico Inicial D1 · 09 mar 2026</div>
+    <h1 class="cover-title">
+  <span class="line1">Montichiari Empreendimentos</span>
+  <span class="line2">e Participações S.A.</span>
+</h1>
+    <p class="cover-sub">Processo 1148696-04.2025.4.01.3400 · TRF1 · 4ª Vara Federal Cível da SJDF</p>
+    <div class="cover-meta">
+      <div><div class="cmi-label">Trace ID</div><div class="cmi-value mono">RELATORIO-MMJHHHMO-PH0BHM</div></div>
+      <div><div class="cmi-label">SHA-256</div><div class="cmi-value mono">d338489fdb29230c...8e5c4</div></div>
+      <div><div class="cmi-label">Etapas</div><div class="cmi-value">7 / 7 concluídas</div></div>
+      <div><div class="cmi-label">Motores IA</div><div class="cmi-value">Gemini 2.5 Flash · GPT-4o</div></div>
+      <div class="cover-badges">
+        <span class="pill pill-dark">Confidencial</span>
+        <span class="pill pill-warn">Risco moderado</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh">
+    <div class="sh-eye">VISÃO GERAL</div>
+    <h2 class="sh-title">O que é este relatório e qual a situação do crédito</h2>
+    <p class="sh-body">Este relatório apresenta os resultados da due diligence sobre o crédito judicial da Montichiari. Analisamos 46 fontes oficiais e organizamos as informações em linguagem objetiva para apoiar sua decisão.</p>
+  </div>
+  <div class="narrative">A Montichiari ingressou na Justiça Federal para receber um crédito adquirido de um hospital que prestou serviços ao SUS e não recebeu os valores corretos entre 1999 e 2004. O valor atualizado do crédito é de <strong>R$ 64,3 milhões</strong>. O processo foi aceito pelo juiz em janeiro de 2026 — um sinal positivo — e o governo federal foi notificado e tem prazo para responder. O crédito ainda não tem data de pagamento definida: há etapas importantes a percorrer antes que qualquer valor seja efetivamente pago. Os principais riscos envolvem confirmar se a empresa tem direito ao crédito e se o prazo legal para cobrar ainda é válido. <strong>Ação imediata é necessária para não perder prazos processuais.</strong></div>
+
+  <div class="kpi-grid">
+    <div class="kpi-card cyan">
+      <div class="kc-label">Valor do crédito<div class="kc-icon ki-cyan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div></div>
+      <div class="kc-value">R$ 64,3 M</div>
+      <div class="kc-sub">Origem histórica: R$ 6,9 M</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kc-label">Liquidez<div class="kc-icon ki-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div></div>
+      <div class="kc-value amber">Baixa</div>
+      <div class="kc-sub">Pagamento sem data definida</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kc-label">Estágio atual<div class="kc-icon ki-amber"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div></div>
+      <div class="kc-value amber">Inicial</div>
+      <div class="kc-sub">Governo ainda não respondeu</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kc-label">Fontes verificadas<div class="kc-icon ki-green"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg></div></div>
+      <div class="kc-value green">46</div>
+      <div class="kc-sub">16 fontes oficiais consultadas</div>
+    </div>
+  </div>
+
+  <div class="sh" style="margin-top:28px;">
+    <div class="sh-eye">PANORAMA DE RISCO</div>
+    <h2 class="sh-title">Avaliação do risco, maturidade e cobertura da análise</h2>
+    <p class="sh-body">Os três painéis abaixo resumem as dimensões mais importantes para qualquer decisão de investimento neste crédito.</p>
+  </div>
+  <div class="gauges">
+    <div class="gauge-card">
+      <div class="gc-label">Risco global</div>
+      <div class="gc-scale"><span>Crítico</span><span>Baixo</span></div>
+      <div class="gc-track"><div class="gc-fill" style="width:72%;background:var(--red2);"></div><div class="gc-needle" style="left:72%;background:var(--red2);"></div></div>
+      <div class="gc-value" style="color:var(--amber);">Alto</div>
+      <div class="gc-sub">Legitimidade e liquidez elevam a exposição</div>
+    </div>
+    <div class="gauge-card">
+      <div class="gc-label">Maturidade do crédito</div>
+      <div class="gc-scale"><span>Imaturo</span><span>Maduro</span></div>
+      <div class="gc-track"><div class="gc-fill" style="width:15%;background:var(--amber);"></div><div class="gc-needle" style="left:15%;background:var(--amber);"></div></div>
+      <div class="gc-value" style="color:var(--amber);">Imaturo</div>
+      <div class="gc-sub">Sem homologação nem RPV — pagamento sem horizonte</div>
+    </div>
+    <div class="gauge-card">
+      <div class="gc-label">Cobertura das etapas</div>
+      <div class="gc-scale"><span>0 / 7</span><span>7 / 7</span></div>
+      <div class="gc-track"><div class="gc-fill" style="width:100%;background:var(--green);"></div><div class="gc-needle" style="left:98%;background:var(--green);"></div></div>
+      <div class="gc-value" style="color:var(--green);">7 / 7</div>
+      <div class="gc-sub">Todas as verificações concluídas com sucesso</div>
+    </div>
+  </div>
+
+  <div class="sh">
+    <div class="sh-eye">COMPOSIÇÃO DO CRÉDITO</div>
+    <h2 class="sh-title">Evolução de R$ 6,9 M para R$ 64,3 M</h2>
+    <p class="sh-body">Expansão de 9,3× pela correção monetária acumulada — aplicação de índices oficiais da Justiça Federal sobre o período 1999–2004.</p>
+  </div>
+  <div class="card"><div class="cw" style="height:200px;"><canvas id="cWaterfall"></canvas></div></div>
+</div>
+
+<!-- ── S2 · VERIFICAÇÕES ── -->
+<div class="sec" id="s2">
+  <div class="sh"><div class="sh-eye">VERIFICAÇÕES REALIZADAS</div><h2 class="sh-title">Todas as fontes oficiais consultadas nesta análise</h2><p class="sh-body">Realizamos verificações em sete frentes independentes — do sistema judicial federal ao cadastro da Receita Federal — para garantir a integridade desta análise.</p></div>
+  <div class="pipeline">
+    <div class="pipe-step done"><div class="pipe-num">E1</div><div class="pipe-lbl">Upload<br>OCR / IA</div></div>
+    <div class="pipe-step done"><div class="pipe-num">E2</div><div class="pipe-lbl">DataJud<br>CNJ</div></div>
+    <div class="pipe-step done"><div class="pipe-num">E3</div><div class="pipe-lbl">Portal<br>TRF1</div></div>
+    <div class="pipe-step done"><div class="pipe-num">E4</div><div class="pipe-lbl">DOU<br>Diários</div></div>
+    <div class="pipe-step done"><div class="pipe-num">E5</div><div class="pipe-lbl">Brasil<br>API</div></div>
+    <div class="pipe-step done"><div class="pipe-num">E6</div><div class="pipe-lbl">Diário<br>PJe</div></div>
+    <div class="pipe-step done"><div class="pipe-num">E7</div><div class="pipe-lbl">Rev.<br>Documental</div></div>
+  </div>
+  <div class="sh"><div class="sh-eye">PARTES E ORIGEM</div><h2 class="sh-title">Quem são os envolvidos e como o crédito chegou até aqui</h2></div>
+  <div class="partes">
+    <div class="parte"><div class="parte-role">Exequente — polo ativo</div><div class="parte-name">Montichiari Empreend. e Part. S.A.</div><div class="parte-doc">CNPJ 62.119.613/0001-08</div></div>
+    <div class="parte"><div class="parte-role">Executado — polo passivo</div><div class="parte-name">União Federal</div><div class="parte-doc">CNPJ 00.394.411/0001-09</div></div>
+    <div class="parte"><div class="parte-role">Cedente original</div><div class="parte-name">Casa de Saúde Santa Cecília Ltda</div><div class="parte-doc">CNPJ 30.807.069/0001-92 · Ativo · 150 leitos · Nova Iguaçu/RJ</div></div>
+    <div class="parte"><div class="parte-role">Juízo competente</div><div class="parte-name">4ª Vara Federal Cível da SJDF</div><div class="parte-doc">Juiz Itagiba Catta Preta Neto</div></div>
+  </div>
+  <div class="card">
+    <table class="info-tbl">
+      <tr><td class="lbl">Processo originário</td><td>Ação coletiva movida pela Federação Brasileira de Hospitais contra o governo federal em 2000, que reconheceu o direito ao reajuste de serviços prestados ao SUS.</td></tr>
+      <tr><td class="lbl">Origem do crédito</td><td>Hospital psiquiátrico (Casa de Saúde Santa Cecília) que prestou serviços ao SUS e não recebeu os valores corretos. O crédito foi comprado pela Montichiari via escritura pública.</td></tr>
+      <tr><td class="lbl">Período cobrado</td><td>Outubro de 1999 a janeiro de 2004 — valores corrigidos monetariamente até hoje.</td></tr>
+      <tr><td class="lbl">Formalização da compra</td><td>Escritura pública lavrada em cartório (Porto Alegre/RS), com base no Código Civil. Nível elevado de formalidade.</td></tr>
+      <tr><td class="lbl">Empresa vendedora</td><td>CNPJ ativo · 150 leitos · Nova Iguaçu/RJ — empresa ainda existe e é regular.</td></tr>
+      <tr><td class="lbl">Situação do crédito</td><td><strong style="color:var(--text);">Ainda sem valor homologado pelo juiz. Nenhum documento de pagamento (RPV ou Precatório) foi emitido.</strong></td></tr>
+      <tr><td class="lbl">Revisão da análise</td><td>A análise foi revisada por dois sistemas de inteligência artificial. Alguns pontos precisam de confirmação com documentos adicionais.</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- ── S3 · LINHA DO TEMPO ── -->
+<div class="sec" id="s3">
+  <div class="sh"><div class="sh-eye">LINHA DO TEMPO</div><h2 class="sh-title">O que aconteceu no processo desde o início até hoje</h2><p class="sh-body">O processo foi aberto em dezembro de 2025. Em janeiro de 2026 o juiz aceitou o pedido e notificou o governo federal. O que vem a seguir depende da resposta do governo, esperada nas próximas semanas.</p></div>
+  <div class="card">
+    <div class="tl-row"><div class="tl-date">18 dez 2025</div><div class="tl-dot-col"><div class="tl-dot done"></div><div class="tl-line"></div></div><div><div class="tl-evt">Distribuído por dependência</div><div class="tl-sub">Início</div></div></div>
+    <div class="tl-row"><div class="tl-date">18 dez 2025</div><div class="tl-dot-col"><div class="tl-dot done"></div><div class="tl-line"></div></div><div><div class="tl-evt">100% digital confirmado</div><div class="tl-sub">Eletrônico</div></div></div>
+    <div class="tl-row"><div class="tl-date">07 jan 2026</div><div class="tl-dot-col"><div class="tl-dot done"></div><div class="tl-line"></div></div><div><div class="tl-evt">Conclusos para despacho</div><div class="tl-sub">Em análise</div></div></div>
+    <div class="tl-row"><div class="tl-date">14 jan 2026</div><div class="tl-dot-col"><div class="tl-dot warn"></div><div class="tl-line"></div></div><div><div class="tl-evt">Decisão proferida</div><div class="tl-sub"><span class="pill pill-risk" style="margin-top:4px;display:inline-flex;">Atenção — conteúdo não acessado</span></div></div></div>
+    <div class="tl-row"><div class="tl-date">15 jan 2026</div><div class="tl-dot-col"><div class="tl-dot done"></div><div class="tl-line"></div></div><div><div class="tl-evt">União notificada · art. 535 CPC</div><div class="tl-sub">Prazo em curso</div></div></div>
+    <div class="tl-row"><div class="tl-date">A definir</div><div class="tl-dot-col"><div class="tl-dot"></div><div class="tl-line"></div></div><div><div class="tl-evt">Réplica + revisão dos cálculos</div><div class="tl-sub"><span class="pill pill-muted" style="margin-top:4px;display:inline-flex;">Pendente</span></div></div></div>
+    <div class="tl-row"><div class="tl-date">Longo prazo</div><div class="tl-dot-col"><div class="tl-dot"></div></div><div><div class="tl-evt">Homologação → RPV ou Precatório</div><div class="tl-sub"><span class="pill pill-muted" style="margin-top:4px;display:inline-flex;">Sem previsão</span></div></div></div>
+  </div>
+  <div class="sh" style="margin-top:24px;"><div class="sh-eye">PROGRESSO PROCESSUAL</div><h2 class="sh-title">Etapas concluídas vs. pendentes</h2></div>
+  <div class="card"><div class="cw" style="height:90px;"><canvas id="cProgress"></canvas></div></div>
+</div>
+
+<!-- ── S4 · ACHADOS ── -->
+<div class="sec" id="s4">
+  <div class="sh"><div class="sh-eye">O QUE ENCONTRAMOS</div><h2 class="sh-title">Pontos de atenção — ordenados por prioridade</h2><p class="sh-body">Identificamos 6 pontos que exigem atenção. Dois são críticos e requerem esclarecimento imediato. Os demais são relevantes mas não bloqueiam o processo.</p></div>
+  <div class="kpi-grid" style="margin-bottom:22px;">
+    <div class="kpi-card red"><div class="kc-label">Críticos</div><div class="kc-value red">2</div><div class="kc-sub">Esclarecimento imediato</div></div>
+    <div class="kpi-card amber"><div class="kc-label">Altos</div><div class="kc-value amber">3</div><div class="kc-sub">Relevantes, não bloqueantes</div></div>
+    <div class="kpi-card cyan"><div class="kc-label">Médios</div><div class="kc-value cyan">1</div><div class="kc-sub">Gerenciáveis</div></div>
+    <div class="kpi-card green"><div class="kc-label">Formalidade</div><div class="kc-value green">Ok</div><div class="kc-sub">Escritura pública</div></div>
+  </div>
+  <div class="g2" style="margin-bottom:22px;">
+    <div class="card" style="padding:20px;">
+      <div style="font-size:11px;font-weight:500;letter-spacing:.09em;color:var(--text3);margin-bottom:12px;">Radar de exposição</div>
+      <div class="cw" style="height:220px;"><canvas id="cRadar"></canvas></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;"><span class="pill pill-risk">Crítico</span><div><div style="font-size:12px;font-weight:600;color:var(--text);">Legitimidade</div><div style="font-size:11px;color:var(--text3);">Direito ao crédito a confirmar</div></div></div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;"><span class="pill pill-warn">Alto</span><div><div style="font-size:12px;font-weight:600;color:var(--text);">Prescrição</div><div style="font-size:11px;color:var(--text3);">Processo de 2000 — prazo em risco</div></div></div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;"><span class="pill pill-warn">Alto</span><div><div style="font-size:12px;font-weight:600;color:var(--text);">Liquidez</div><div style="font-size:11px;color:var(--text3);">Sem horizonte de pagamento</div></div></div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;"><span class="pill pill-warn">Alto</span><div><div style="font-size:12px;font-weight:600;color:var(--text);">Prazo</div><div style="font-size:11px;color:var(--text3);">Decisão de 15/01 sem conteúdo</div></div></div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;"><span class="pill pill-info">Médio</span><div><div style="font-size:12px;font-weight:600;color:var(--text);">Cálculo</div><div style="font-size:11px;color:var(--text3);">Conferência pelo tribunal — normal</div></div></div>
+      <div class="card" style="padding:12px 16px;display:flex;align-items:center;gap:12px;"><span class="pill pill-ok">Ok</span><div><div style="font-size:12px;font-weight:600;color:var(--text);">Formalidade</div><div style="font-size:11px;color:var(--text3);">Escritura pública em cartório</div></div></div>
+    </div>
+  </div>
+  <div class="sh"><div class="sh-eye">DETALHAMENTO</div><h2 class="sh-title">Explicação completa de cada ponto identificado</h2></div>
+  <div class="card">
+    <div class="finding"><div class="f-icon fi-c">C</div><div><div class="f-title">O valor cobrado é muito maior que o capital da empresa</div><div class="f-body">O crédito de R$ 64,3 M é superior ao capital social da Montichiari (R$ 41,8 M). Isso não é um problema em si — é resultado da correção monetária ao longo dos anos. Qualquer investidor precisa entender essa distinção com clareza.</div></div></div>
+    <div class="finding"><div class="f-icon fi-c">C</div><div><div class="f-title">Registro da OAB do advogado aparece de três formas diferentes</div><div class="f-body">Encontramos três números distintos nos documentos do processo. Pode ser uma inscrição válida em dois estados (RS e SP), mas precisa ser confirmado formalmente antes de qualquer decisão.</div></div></div>
+    <div class="finding"><div class="f-icon fi-a">A</div><div><div class="f-title">Não sabemos o conteúdo da decisão de 15/01/2026</div><div class="f-body">Uma decisão judicial foi proferida, mas seu conteúdo não está disponível no sistema público. O sinal positivo: o juiz não rejeitou o processo. Mas é fundamental saber o que está nessa decisão — pode conter exigências com prazo.</div></div></div>
+    <div class="finding"><div class="f-icon fi-a">A</div><div><div class="f-title">Este crédito faz parte de um mercado secundário ativo</div><div class="f-body">Mais de 70 empresas estão cobrando créditos da mesma ação judicial. Fundos de investimento já participam desse mercado. A Montichiari segue o mesmo padrão — o que é normal para esse tipo de operação.</div></div></div>
+    <div class="finding"><div class="f-icon fi-ao">A</div><div><div class="f-title">A compra do crédito foi feita com alto nível de formalidade</div><div class="f-body">Escritura pública em cartório — o instrumento mais seguro disponível. Isso é positivo para a validade jurídica da operação.</div></div></div>
+    <div class="finding"><div class="f-icon fi-m">M</div><div><div class="f-title">O valor do crédito ainda será conferido pelo contador do tribunal</div><div class="f-body">Os cálculos seguem o manual oficial da Justiça Federal — a mesma metodologia usada pelo governo em processos similares. A conferência pelo tribunal é uma etapa normal do processo, não um risco em si.</div></div></div>
+  </div>
+</div>
+
+<!-- ── S5 · MAPA DE RISCOS ── -->
+<div class="sec" id="s5">
+  <div class="sh"><div class="sh-eye">MAPA DE RISCOS</div><h2 class="sh-title">Os principais riscos que podem afetar o valor ou o prazo de recebimento</h2><p class="sh-body">Riscos em vermelho precisam ser resolvidos antes de qualquer decisão. Riscos em amarelo são gerenciáveis com acompanhamento adequado.</p></div>
+  <div class="risk-grid">
+    <div class="risk-card critical"><div class="rk-q">A empresa tem direito ao crédito?</div><div class="rk-body">A sentença original pode ter sido emitida apenas para hospitais — não para empresas de participação. Precisa ser confirmado com o advogado.</div></div>
+    <div class="risk-card critical"><div class="rk-q">O prazo legal para cobrar ainda é válido?</div><div class="rk-body">A ação original é de 2000. Há risco de o governo alegar que o prazo para executar a dívida já venceu. Verificação urgente é necessária.</div></div>
+    <div class="risk-card high"><div class="rk-q">A sentença cobre exatamente este caso?</div><div class="rk-body">A decisão judicial pode ter limites geográficos ou de categoria que excluam a Montichiari. É preciso comparar o caso com o texto original da sentença.</div></div>
+    <div class="risk-card high"><div class="rk-q">O governo pode questionar o valor calculado</div><div class="rk-body">O governo federal pode contestar a metodologia de cálculo, os índices de correção e os juros — o que pode reduzir o valor final e atrasar o pagamento.</div></div>
+    <div class="risk-card high"><div class="rk-q">O crédito pode ser pago em serviços, não em dinheiro</div><div class="rk-body">Se a sentença original exige fornecimento de equipamentos ao invés de pagamento em dinheiro, converter isso em valor monetário exige provas adicionais.</div></div>
+    <div class="risk-card critical"><div class="rk-q">Risco de perder prazo no processo</div><div class="rk-body">Há decisões cujo conteúdo ainda não foi acessado. Podem conter exigências com prazo curto. Qualquer omissão pode encerrar o processo definitivamente.</div></div>
+  </div>
+  <div class="sh"><div class="sh-eye">VISUALIZAÇÃO</div><h2 class="sh-title">Severidade × probabilidade × urgência</h2><p class="sh-body">Cada bolha representa um risco. O tamanho indica a urgência relativa de resolução.</p></div>
+  <div class="card"><div class="cw" style="height:320px;"><canvas id="cBubble"></canvas></div></div>
+</div>
+
+<!-- ── S6 · PLANO DE AÇÃO ── -->
+<div class="sec" id="s6">
+  <div class="sh"><div class="sh-eye">PLANO DE AÇÃO</div><h2 class="sh-title">O que precisa ser feito, por quem e quando</h2><p class="sh-body">As ações em vermelho são urgentes. As em amarelo devem ser iniciadas nos próximos 30 dias. As ativas já estão em execução pela equipe AuraDUE.</p></div>
+  <div class="card flush">
+    <table class="action-tbl">
+      <thead><tr><th style="width:20%">O quê?</th><th style="width:25%">Por quê?</th><th style="width:12%">Quem?</th><th style="width:8%">Quando?</th><th style="width:25%">Como?</th><th style="width:10%">Status</th></tr></thead>
+      <tbody>
+        <tr><td><strong style="color:var(--text);">Baixar decisão de 15/01/2026 via PJe</strong></td><td>Teor desconhecido pode conter exigências críticas sob pena de extinção do processo.</td><td>Advogado</td><td>Imediato</td><td>Acessar PJe com certificado digital e baixar o único documento listado nos autos.</td><td><span class="pill pill-risk">Urgente</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Obter processo originário 0006409</strong></td><td>Necessário verificar sentença, trânsito em julgado, grupo beneficiário e critérios de cálculo.</td><td>Advogado</td><td>7 dias</td><td>Solicitar cópia integral ao TRF1: sentença, acórdãos, certidão de trânsito e delimitação do grupo.</td><td><span class="pill pill-warn">Pendente</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Confirmar legitimidade ativa</strong></td><td>Risco crítico: empresa pode não ser beneficiária da sentença coletiva.</td><td>Adv. + Jurídico</td><td>10 dias</td><td>Confrontar estatuto/CNPJ da Montichiari com os limites subjetivos do título coletivo.</td><td><span class="pill pill-warn">Pendente</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Verificar prescrição intercorrente</strong></td><td>Processo de 2000 — União pode alegar prescrição da pretensão executória.</td><td>Jurídico</td><td>10 dias</td><td>Levantar marcos interruptivos e suspensivos desde 2000. Emitir parecer sobre risco de prescrição.</td><td><span class="pill pill-warn">Pendente</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Due diligence cadastral — Montichiari</strong></td><td>Verificar inexistência de recuperação judicial, falência ou execuções relevantes.</td><td>Equipe AuraDUE</td><td>5 dias</td><td>Consultar CNPJ 62.119.613/0001-08 na Receita Federal, tribunais e cartórios de protesto.</td><td><span class="pill pill-info">Em andamento</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Mapear cumprimentos do proc. 0006409</strong></td><td>Identificar padrão de impugnações da União e tempo médio até RPV/Precatório.</td><td>Equipe AuraDUE</td><td>15 dias</td><td>Levantar no TRF1 todos os cumprimentos derivados. Analisar decisões sobre legitimidade e cálculo.</td><td><span class="pill pill-muted">Planejado</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Avaliar cenários de valor</strong></td><td>Subsidiar decisão de investimento ou cessão com projeção realista de retorno.</td><td>Fin. + Jurídico</td><td>20 dias</td><td>Modelar 3 cenários (conservador / base / otimista) considerando glosas da União e correção monetária.</td><td><span class="pill pill-muted">Planejado</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Monitoramento diário do PJe</strong></td><td>Prazos processuais em curso — qualquer omissão pode encerrar o processo.</td><td>Equipe AuraDUE</td><td>Contínuo</td><td>Configurar alerta automático via AuraDUE para novas movimentações no processo.</td><td><span class="pill pill-ok">Ativo</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Condicionar proposta de aquisição</strong></td><td>Evitar vinculação antes da confirmação de legitimidade, prescrição e natureza monetária.</td><td>Gestor + Jur.</td><td>Após 1–7</td><td>Vincular proposta à confirmação documental das condições jurídicas e financeiras do crédito.</td><td><span class="pill pill-risk">Bloqueado</span></td></tr>
+        <tr><td><strong style="color:var(--text);">Parecer jurídico consolidado</strong></td><td>Documentar formalmente o risco jurídico para decisão de investimento.</td><td>Advogado</td><td>30 dias</td><td>Solicitar parecer sobre enquadramento no grupo, prescrição, natureza da obrigação e riscos de impugnação.</td><td><span class="pill pill-muted">Planejado</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="sh" style="margin-top:24px;"><div class="sh-eye">CRONOGRAMA</div><h2 class="sh-title">Prazo de cada ação em dias</h2></div>
+  <div class="card"><div class="cw" style="height:260px;"><canvas id="cActions"></canvas></div></div>
+</div>
+
+<!-- ── S7 · CUSTÓDIA ── -->
+<div class="sec" id="s7">
+  <div class="sh"><div class="sh-eye">RASTREABILIDADE E CUSTÓDIA DIGITAL</div><h2 class="sh-title">Registro forense de todas as fontes, análises e evidências</h2><p class="sh-body">Cada documento analisado recebeu um código de verificação único (hash SHA-256). Isso garante que qualquer alteração posterior nas evidências possa ser detectada.</p></div>
+  <div class="g2" style="margin-bottom:12px;">
+    <div class="card"><div style="font-size:10px;font-weight:500;letter-spacing:.09em;color:var(--text3);margin-bottom:6px;">Trace ID</div><div style="font-family:Menlo,'Courier New',monospace;font-size:13px;color:var(--cyan);font-weight:600;">RELATORIO-MMJHHHMO-PH0BHM</div></div>
+    <div class="card"><div style="font-size:10px;font-weight:500;letter-spacing:.09em;color:var(--text3);margin-bottom:6px;">SHA-256</div><div style="font-family:Menlo,'Courier New',monospace;font-size:12px;color:var(--text2);">d338489fdb29230c512dca3991273405...8e5c4</div></div>
+  </div>
+  <div class="card" style="margin-bottom:12px;">
+    <table class="info-tbl">
+      <tr><td class="lbl">Artefatos</td><td>46 arquivos · 16 fontes oficiais · 6 análises IA</td></tr>
+      <tr><td class="lbl">Gerado em</td><td class="mono">2026-03-09 · 17:57:28 UTC</td></tr>
+      <tr><td class="lbl">Versão</td><td>Consolidado — Etapas 1–6 + Revisão Documental</td></tr>
+      <tr><td class="lbl">Motores IA</td><td>Gemini 2.5 Flash (análise primária) + GPT-4o (revisão supervisada)</td></tr>
+      <tr><td class="lbl">Revisão</td><td><span class="pill pill-warn">Parcialmente validada</span></td></tr>
+    </table>
+  </div>
+  <div class="sh"><div class="sh-eye">PIPELINE E1 → E7</div><h2 class="sh-title">Detalhamento das etapas de verificação</h2></div>
+  <div class="card">
+    <div class="coc-row"><div class="coc-step">E1</div><div><div class="coc-label">Upload &amp; OCR/IA — documentos originais</div><div class="coc-detail">46 arquivos · Gemini 2.5 Flash (análise primária) + GPT-4o (revisão supervisada)</div><div class="coc-ts">2026-03-09 · UTC · <span class="pill pill-ok">Concluído</span></div></div></div>
+    <div class="coc-row"><div class="coc-step">E2</div><div><div class="coc-label">DataJud CNJ — consulta processual</div><div class="coc-detail">Processo 1148696-04.2025.4.01.3400 · api.cnj.jus.br/pje/intercomunicacao · HTTP 200</div><div class="coc-ts">2026-03-09 · UTC · <span class="pill pill-ok">Concluído</span></div></div></div>
+    <div class="coc-row"><div class="coc-step">E3</div><div><div class="coc-label">Portal TRF1 — movimentações e decisões</div><div class="coc-detail">4ª Vara Federal Cível da SJDF · Juiz Itagiba Catta Preta Neto</div><div class="coc-ts">2026-03-09 · UTC · <span class="pill pill-ok">Concluído</span></div></div></div>
+    <div class="coc-row"><div class="coc-step">E4</div><div><div class="coc-label">DOU / Diários Oficiais — publicações</div><div class="coc-detail">Cruzamento Diário da Justiça Federal · Querido Diário API</div><div class="coc-ts">2026-03-09 · UTC · <span class="pill pill-ok">Concluído</span></div></div></div>
+    <div class="coc-row"><div class="coc-step">E5</div><div><div class="coc-label">BrasilAPI — dados cadastrais CNPJ</div><div class="coc-detail">Montichiari · 62.119.613/0001-08 · Casa de Saúde Santa Cecília · 30.807.069/0001-92</div><div class="coc-ts">2026-03-09 · UTC · <span class="pill pill-ok">Concluído</span></div></div></div>
+    <div class="coc-row"><div class="coc-step">E6</div><div><div class="coc-label">Diário PJe — autos eletrônicos</div><div class="coc-detail">Consulta autos digitais · Decisão de 15/01/2026 pendente de acesso integral</div><div class="coc-ts">2026-03-09 · UTC · <span class="pill pill-warn">Parcial</span></div></div></div>
+    <div class="coc-row"><div class="coc-step">E7</div><div><div class="coc-label">Revisão documental — consolidação</div><div class="coc-detail">Versão: Consolidado E1–E6 + Revisão Documental</div><div class="coc-ts">2026-03-09 · 17:57:28 UTC · <span class="pill pill-warn">Parcialmente validado</span></div></div></div>
+  </div>
+  <div class="sh" style="margin-top:22px;"><div class="sh-eye">COBERTURA</div><h2 class="sh-title">Percentual por etapa</h2></div>
+  <div class="card"><div class="cw" style="height:130px;"><canvas id="cPipeline"></canvas></div></div>
+  <div class="sha-box">
+    <div class="sha-label">AuraDUE Due Diligence Platform · Cadeia de Custódia Digital</div>
+    <div><strong>Trace:</strong> RELATORIO-MMJHHHMO-PH0BHM &nbsp;·&nbsp; <strong>SHA-256:</strong> d338489fdb29230c512dca3991273405...8e5c4</div>
+    <div style="margin-top:4px;font-size:10px;color:var(--text3);">Relatório gerado automaticamente · Versão Consolidado (Etapas 1–6 + Revisão Documental) · Confidencial — uso exclusivo do cliente · Reprodução ou distribuição não autorizada é proibida.</div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer class="site-footer">
+  <div class="site-footer-inner">
+
+    <!-- Coluna 1 — marca -->
+    <div>
+      <div class="sf-logo">
+        <div class="sf-logo-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+          </svg>
+        </div>
+        <span class="sf-logo-name">AuraTECH</span>
+      </div>
+      <p class="sf-tagline">Infrastructure for Evidence-Based Trust. A plataforma definitiva para estruturação de evidências e auditoria com cadeia de custódia digital.</p>
+      <div class="sf-social">
+        <a class="sf-social-btn" href="#" title="Instagram">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="5"/>
+            <circle cx="12" cy="12" r="4"/>
+            <circle cx="17.5" cy="6.5" r=".5" fill="currentColor" stroke="none"/>
+          </svg>
+        </a>
+        <a class="sf-social-btn" href="#" title="TikTok">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5"/>
+          </svg>
+        </a>
+        <a class="sf-social-btn" href="#" title="LinkedIn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/>
+            <rect x="2" y="9" width="4" height="12"/>
+            <circle cx="4" cy="4" r="2"/>
+          </svg>
+        </a>
+      </div>
+    </div>
+
+    <!-- Coluna 2 — Links Rápidos -->
+    <div>
+      <div class="sf-col-title">Links Rápidos</div>
+      <div class="sf-links">
+        <a class="sf-link" href="#">Plataforma e Módulos</a>
+        <a class="sf-link" href="#">Performance</a>
+        <a class="sf-link" href="#">Aura Trust Index</a>
+        <a class="sf-link" href="#" onclick="window.scrollTo({top:0,behavior:'smooth'});return false;">Voltar ao topo</a>
+      </div>
+    </div>
+
+    <!-- Coluna 3 — Legal & Compliance -->
+    <div>
+      <div class="sf-col-title">Legal &amp; Compliance</div>
+      <div class="sf-links">
+        <a class="sf-link" href="#">Compliance &amp; Privacidade</a>
+        <a class="sf-link" href="#">Conformidade LGPD</a>
+        <a class="sf-link" href="#">Termos de Uso</a>
+        <a class="sf-link" href="mailto:privacidade@auradue.com">DPO / Privacidade</a>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Barra inferior -->
+  <div class="sf-bottom-bar">
+    <div class="sf-custody">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      <span>Cadeia de Custódia Digital - Lei 13.964/2019</span>
+    </div>
+    <p class="sf-copyright">© 2026 AuraTECH. Todos os direitos reservados.</p>
+  </div>
+</footer>
+
+</div><!-- /page -->
+
+<script>
+document.querySelectorAll('.nav-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    document.querySelectorAll('.nav-btn').forEach(x=>x.classList.remove('on'));
+    document.querySelectorAll('.sec').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.getElementById(b.dataset.s).classList.add('on');
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+});
+
+Chart.defaults.color='#64748b';
+Chart.defaults.font.family='"Open Sans",sans-serif';
+
+const CYAN='#22d3ee',GREEN='#34d399',AMBER='#fbbf24',RED='#f87171',
+      VIOLET='#a78bfa',GRID='rgba(255,255,255,0.05)',TEXT='#64748b';
+
+const base={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}}};
+
+new Chart(document.getElementById('cWaterfall'),{
+  type:'bar',
+  data:{
+    labels:['Valor original\n(1999–2004)','Correção\nmonetária','Juros\nde mora','Honorários\nestimados','Total\npleiteado'],
+    datasets:[{data:[6.9,50.3,5.1,2.0,64.3],backgroundColor:['#0e7490',AMBER,AMBER,AMBER,GREEN],borderRadius:6,borderSkipped:false}]
+  },
+  options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>'R$ '+v.raw.toFixed(1)+' M'},backgroundColor:'#1a2840',titleColor:'#f1f5f9',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+    scales:{x:{grid:{display:false},ticks:{color:TEXT,font:{size:11},autoSkip:false,maxRotation:0}},y:{grid:{color:GRID},border:{display:false},ticks:{callback:v=>'R$'+v+'M',color:TEXT,font:{size:11}}}}}
+});
+
+new Chart(document.getElementById('cProgress'),{
+  type:'bar',
+  data:{labels:['Distribuição','Aceite judicial','União notificada','Homologação','RPV/Precatório'],datasets:[{data:[100,100,100,0,0],backgroundColor:['#0e7490','#0e7490','#0e7490','rgba(255,255,255,0.08)','rgba(255,255,255,0.08)'],borderRadius:4,borderSkipped:false}]},
+  options:{...base,indexAxis:'y',plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>v.raw===100?'Concluído':'Pendente'},backgroundColor:'#1a2840',titleColor:'#f1f5f9',bodyColor:'#94a3b8'}},
+    scales:{x:{display:false,max:100},y:{grid:{display:false},border:{display:false},ticks:{color:TEXT,font:{size:11}}}}}
+});
+
+new Chart(document.getElementById('cRadar'),{
+  type:'radar',
+  data:{labels:['Legitimidade','Prescrição','Liquidez','Prazo','Cálculo','Formalidade'],datasets:[{data:[90,80,75,65,35,10],backgroundColor:'rgba(248,113,113,0.08)',borderColor:RED,borderWidth:2,pointBackgroundColor:RED,pointRadius:4}]},
+  options:{...base,scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:GRID},angleLines:{color:GRID},pointLabels:{color:TEXT,font:{size:11}}}}}
+});
+
+new Chart(document.getElementById('cBubble'),{
+  type:'bubble',
+  data:{datasets:[
+    {label:'Legitimidade ativa',data:[{x:65,y:95,r:18}],backgroundColor:'rgba(248,113,113,.72)'},
+    {label:'Prescrição intercorrente',data:[{x:55,y:88,r:16}],backgroundColor:'rgba(248,113,113,.60)'},
+    {label:'Prazo decisão 15/01',data:[{x:80,y:75,r:15}],backgroundColor:'rgba(248,113,113,.50)'},
+    {label:'Natureza da obrigação',data:[{x:38,y:68,r:13}],backgroundColor:'rgba(251,191,36,.65)'},
+    {label:'Contestação do cálculo',data:[{x:65,y:52,r:12}],backgroundColor:'rgba(251,191,36,.55)'},
+    {label:'Cobertura da sentença',data:[{x:45,y:60,r:11}],backgroundColor:'rgba(251,191,36,.50)'},
+  ]},
+  options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>v.dataset.label},backgroundColor:'#1a2840',titleColor:'#f1f5f9',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+    scales:{
+      x:{min:10,max:100,title:{display:true,text:'Probabilidade de ocorrência →',font:{size:11},color:TEXT},grid:{color:GRID},border:{display:false},ticks:{color:TEXT,font:{size:10}}},
+      y:{min:30,max:110,title:{display:true,text:'Severidade do impacto →',font:{size:11},color:TEXT},grid:{color:GRID},border:{display:false},ticks:{color:TEXT,font:{size:10}}}
+    }}
+});
+
+new Chart(document.getElementById('cActions'),{
+  type:'bar',
+  data:{labels:['Decisão PJe','Proc. orig.','Legitimidade','Prescrição','Cadastral','Cumprimentos','Cenários','Monitoramento','Proposta','Parecer jur.'],
+    datasets:[{data:[1,7,10,10,5,15,20,0,0,30],backgroundColor:[RED,AMBER,RED,RED,CYAN,AMBER,GREEN,GREEN,RED,GREEN],borderRadius:5,borderSkipped:false}]},
+  options:{...base,plugins:{legend:{display:false},tooltip:{callbacks:{label:v=>v.raw===0?'Imediato/contínuo':v.raw+' dias'},backgroundColor:'#1a2840',titleColor:'#f1f5f9',bodyColor:'#94a3b8',borderColor:'rgba(255,255,255,0.1)',borderWidth:1}},
+    scales:{x:{grid:{display:false},border:{display:false},ticks:{color:TEXT,font:{size:10},maxRotation:35}},y:{grid:{color:GRID},border:{display:false},ticks:{callback:v=>v+'d',color:TEXT,font:{size:11}},title:{display:true,text:'Prazo em dias',font:{size:10},color:TEXT}}}}
+});
+
+new Chart(document.getElementById('cPipeline'),{
+  type:'bar',
+  data:{labels:['E1','E2','E3','E4','E5','E6','E7'],
+    datasets:[
+      {label:'Concluída',data:[100,100,100,100,100,60,70],backgroundColor:'#0e7490',borderRadius:4},
+      {label:'Pendente',data:[0,0,0,0,0,40,30],backgroundColor:'rgba(255,255,255,0.06)',borderRadius:4}
+    ]},
+  options:{...base,scales:{x:{stacked:true,grid:{display:false},border:{display:false},ticks:{color:TEXT,font:{size:11}}},y:{stacked:true,max:100,grid:{color:GRID},border:{display:false},ticks:{callback:v=>v+'%',color:TEXT,font:{size:11}}}}}
+});
+</script>
+</body>
+</html>

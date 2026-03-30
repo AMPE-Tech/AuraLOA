@@ -195,34 +195,37 @@ export function ValidadorPreliminarLOA() {
     }, 700);
 
     try {
-      // Análise heurística do documento (modo upload)
-      if (extractedText) {
+      // Usa resultado da análise já feita no upload (analiseResult do estado pode estar desatualizado)
+      let analiseLocal: BRAnaliseResult | null = analiseResult;
+
+      // Se ainda não foi feita análise server-side, faz agora via texto extraído
+      if (!analiseLocal && extractedText) {
         const analiseRes = await fetch("/api/analise/documento", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ texto: extractedText }),
         });
         if (analiseRes.ok) {
-          const ar: BRAnaliseResult = await analiseRes.json();
-          setAnaliseResult(ar);
-          console.log("[DEBUG] Resultado análise backend:", JSON.stringify(ar.extracted));
-          // Auto-preenche CNJ se vazio
-          if (!processoCNJ && ar.extracted.numero_cnj) {
-            setProcessoCNJ(ar.extracted.numero_cnj as string);
-          }
+          analiseLocal = await analiseRes.json();
+          setAnaliseResult(analiseLocal);
           // Bloqueia se documento suspeito
-          if (ar.status === "SUSPEITO") {
+          if (analiseLocal?.status === "SUSPEITO") {
             clearInterval(interval);
-            setErrorMsg(ar.statusLabel);
+            setErrorMsg(analiseLocal.statusLabel);
             setScanStatus("error");
             return;
           }
         }
+      } else if (analiseLocal?.status === "SUSPEITO") {
+        // Já foi analisado no upload e está suspeito — bloqueia imediatamente
+        clearInterval(interval);
+        setErrorMsg(analiseLocal.statusLabel);
+        setScanStatus("error");
+        return;
       }
 
-      // Usa a URL extraída do próprio documento como fonte prioritária de consulta
-      const urlDocumento =
-        analiseResult?.extracted?.url_verificacao as string | undefined;
+      // URL extraída do documento — usa variável local, não estado React
+      const urlDocumento = analiseLocal?.extracted?.url_verificacao as string | undefined;
 
       const res = await fetch("/api/validador/verificar", {
         method: "POST",
@@ -490,6 +493,17 @@ export function ValidadorPreliminarLOA() {
                         {consultasUsadas} de 3 consultas gratuitas utilizadas
                       </p>
                     )}
+
+                    {/* Aviso beta */}
+                    <div className="mt-4 flex items-start gap-2.5 px-4 py-3 rounded-xl bg-amber-500/[0.06] border border-amber-500/20">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                      <p className="text-xs text-amber-300/70 leading-relaxed">
+                        <span className="font-semibold text-amber-300">Acesso Antecipado — Fase Beta.</span>{" "}
+                        Esta versão está em expansão gradual de cobertura. Agradecemos sua compreensão.
+                        Como participante beta, você tem <span className="font-semibold">3 consultas gratuitas</span> —
+                        cadastre-se para vincular ao seu perfil.
+                      </p>
+                    </div>
                 </div>
 
                 {/* Checklist */}
@@ -800,12 +814,12 @@ export function ValidadorPreliminarLOA() {
               </div>
 
               <div className="flex flex-col gap-3">
-                <a
-                  href="mailto:contato@auratech.com.br"
+                <button
+                  onClick={() => navigate("/login")}
                   className="w-full bg-gradient-to-r from-blue-400 to-cyan-300 hover:opacity-90 text-slate-900 font-bold py-3.5 rounded-xl transition-opacity text-sm text-center shadow-[0_0_20px_rgba(96,165,250,0.3)]"
                 >
-                  Assinar AuraLOA
-                </a>
+                  Criar conta gratuita →
+                </button>
                 <a
                   href="/login"
                   className="w-full border border-slate-700 hover:border-slate-500 hover:bg-slate-800 text-slate-300 font-medium py-3.5 rounded-xl transition-colors text-sm text-center"

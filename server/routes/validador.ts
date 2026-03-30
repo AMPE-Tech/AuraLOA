@@ -3,6 +3,45 @@ import { z } from "zod";
 import { fetchPrecatorioByNumero } from "../services/estoque_datajud";
 import { validateToken, getUserPlan } from "./auth";
 
+import { query } from "../db";
+
+async function salvarPesquisa(opts: {
+  numero_processo: string;
+  numero_oficio?: string;
+  resultado: any;
+  ip: string;
+  user_plan: string;
+  fonte_cache: boolean;
+}) {
+  const r = opts.resultado;
+  await query(
+    `INSERT INTO pesquisas_validador
+      (numero_processo, numero_oficio, tribunal,
+       encontrado, status_datajud, valor_rs,
+       data_autuacao, data_transito, pagamento_pendente,
+       url_consulta, url_origem,
+       ip_origem, user_plan, fonte_cache, resultado_json)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)`,
+    [
+      opts.numero_processo,
+      opts.numero_oficio ?? null,
+      r.tribunal ?? null,
+      r.encontrado ?? false,
+      r.status ?? null,
+      r.valor_rs ? parseFloat(String(r.valor_rs).replace(/[^0-9,]/g, "").replace(",", ".")) : null,
+      r.data_autuacao ?? null,
+      r.data_transito ?? null,
+      r.pagamento_pendente ?? null,
+      r.url_consulta ?? null,
+      r.url_origem ?? null,
+      opts.ip,
+      opts.user_plan,
+      opts.fonte_cache,
+      JSON.stringify(r),
+    ]
+  );
+}
+
 const router = Router();
 
 const validarSchema = z.object({
@@ -106,11 +145,22 @@ router.post("/api/validador/verificar", async (req: Request, res: Response) => {
   // Verifica cache antes de consultar a API externa
   const cached = getCached(numero_processo);
   if (cached) {
-    // Se o documento atual tem URL e o cache não tinha, enriquecer o resultado
-    if (url_verificacao_documento && !cached.url_consulta) {
-      return res.json({ ...cached, url_consulta: url_verificacao_documento, url_origem: "documento", _cache: true });
-    }
-    return res.json({ ...cached, _cache: true });
+    const resultadoCache = url_verificacao_documento && !cached.url_consulta
+      ? { ...cached, url_consulta: url_verificacao_documento, url_origem: "documento" }
+      : cached;
+
+    salvarPesquisa({
+      numero_processo,
+      numero_oficio,
+      resultado: resultadoCache,
+      ip,
+      user_plan: userPlanInfo?.plan ?? "anonimo",
+      fonte_cache: true,
+    }).catch((err) =>
+      console.error("[validador] erro ao salvar cache:", err.message)
+    );
+
+    return res.json({ ...resultadoCache, _cache: true });
   }
 
   // Informa ao frontend quantas consultas ainda restam na janela atual

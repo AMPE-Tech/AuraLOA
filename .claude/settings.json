@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l c:UsersMarcosCostaOneDrive - CTS BrasilÁrea de TrabalhoClaudeCodeAuraLOA/*.ts c:UsersMarcosCostaOneDrive - CTS BrasilÁrea de TrabalhoClaudeCodeAuraLOA/server/**/*.ts c:UsersMarcosCostaOneDrive - CTS BrasilÁrea de TrabalhoClaudeCodeAuraLOA/client/src/**/*.tsx)",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:5000/api/auth/login -X POST -H \"Content-Type: application/json\" -d '{\"\"email\"\":\"\"marcos@auradue.com\"\",\"\"password\"\":\"\"Kore@2823@@@\"\"}')",
+      "Bash(netstat -ano)"
+    ]
+  }
+}

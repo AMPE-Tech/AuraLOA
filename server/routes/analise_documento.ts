@@ -1,12 +1,13 @@
 import type { Express } from "express";
 import multer from "multer";
 import { createRequire } from "module";
-import { fileURLToPath, pathToFileURL } from "url";
-const _currentFile = import.meta.url || pathToFileURL(__filename).href;
-const require = createRequire(_currentFile);
+import { resolve } from "path";
+const require = createRequire(resolve(process.cwd(), "package.json"));
 const _pdfParseModule = require("pdf-parse");
 const pdfParse: (buffer: Buffer) => Promise<{ text: string; numpages: number }> =
-  typeof _pdfParseModule === "function" ? _pdfParseModule : _pdfParseModule.default ?? _pdfParseModule;
+  typeof _pdfParseModule === "function"
+    ? _pdfParseModule
+    : (_pdfParseModule?.default ?? _pdfParseModule);
 import { runBRAnalysis } from "../services/analysis-engine-br";
 import { query } from "../db";
 
