@@ -29,6 +29,7 @@ import {
   RefreshCw,
   LogOut,
 } from "lucide-react";
+import { AppTopbar } from "@/components/app-topbar";
 
 function formatBRL(v: number): string {
   return v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -96,41 +97,19 @@ export default function ContratoTecnico() {
   ];
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 max-w-7xl mx-auto">
-      <div className="flex items-center gap-3 mb-6">
-        <Link href="/dashboard">
-          <Button variant="ghost" size="sm" data-testid="btn-back-home">
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Dashboard
-          </Button>
-        </Link>
-        <Link href="/dashboard/pendentes">
-          <Button variant="ghost" size="sm" data-testid="btn-goto-pendentes">
-            Pendentes
-          </Button>
-        </Link>
-        <Button
-          variant="ghost"
-          size="sm"
-          data-testid="button-logout"
-          onClick={() => {
-            localStorage.removeItem("aura_token");
-            localStorage.removeItem("aura_email");
-            window.location.href = "/";
-          }}
-        >
-          <LogOut className="w-3.5 h-3.5 mr-1" />
-          Sair
-        </Button>
-        <div className="flex-1" />
+    <div className="min-h-screen bg-background">
+      <AppTopbar active="contrato" />
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-6 pt-2">
+        <div>
+          <h1 className="text-xl font-bold tracking-tight" data-testid="page-title">Contrato Técnico Master — AuraLOA</h1>
+          <p className="text-xs text-muted-foreground mt-1">Documentação técnica, cláusulas de proteção e controle DPO</p>
+        </div>
         <Badge variant="outline" className="text-xs font-mono" data-testid="badge-schema">
           <Hash className="w-3 h-3 mr-1" />
-          Contrato Tecnico Master v1.0
+          v1.0
         </Badge>
       </div>
-
-      <h1 className="text-2xl font-bold mb-1" data-testid="page-title">Contrato Tecnico Master - AuraLOA</h1>
-      <p className="text-sm text-muted-foreground mb-4">Documentacao tecnica, clausulas de protecao e controle DPO</p>
 
       <div className="flex gap-2 mb-6 flex-wrap">
         {tabs.map(tab => (
@@ -802,6 +781,7 @@ export default function ContratoTecnico() {
 
         </div>
       )}
+      </div>
     </div>
   );
 }

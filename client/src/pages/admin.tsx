@@ -8,6 +8,7 @@ import {
   TrendingUp, Activity,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { AppTopbar } from "@/components/app-topbar";
 
 function authHeaders() {
   const token = localStorage.getItem("aura_token");
@@ -194,39 +195,7 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-[hsl(225_10%_6%)] text-white">
-      <header className="border-b border-white/[0.07] bg-[hsl(225_10%_6%)/80] backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-[1400px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div
-              className="flex items-center justify-center w-7 h-7 rounded-lg"
-              style={{ background: "linear-gradient(135deg, #06b6d4, #7c3aed)" }}
-            >
-              <Scale className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="font-semibold text-sm tracking-tight">AuraLOA</span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="text-sm text-slate-400 flex items-center gap-1.5">
-              <Shield className="w-3.5 h-3.5 text-violet-400" /> Administração
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setLocation("/dashboard")}
-              className="text-xs text-slate-400 hover:text-white transition-colors px-3 py-1.5 rounded-lg hover:bg-white/5"
-              data-testid="button-back-dashboard"
-            >
-              ← Dashboard
-            </button>
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 transition-colors px-3 py-1.5 rounded-lg hover:bg-red-500/5"
-              data-testid="button-logout-admin"
-            >
-              <LogOut className="w-3.5 h-3.5" /> Sair
-            </button>
-          </div>
-        </div>
-      </header>
+      <AppTopbar active="admin" onLogout={handleLogout} />
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-8 space-y-6">
 

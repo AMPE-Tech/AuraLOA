@@ -36,6 +36,7 @@ import {
   Calendar,
   LogOut,
 } from "lucide-react";
+import { AppTopbar } from "@/components/app-topbar";
 import type {
   A2Response,
   A2HistoryEntry,
@@ -1639,73 +1640,7 @@ export default function LOADashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <div className="p-1.5 rounded-md bg-primary/15">
-                <Scale className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold tracking-tight" data-testid="text-app-title">
-                  AuraLOA
-                </h1>
-                <p className="text-[10px] text-muted-foreground">
-                  Precatorios inscritos na LOA
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard">
-                <Button variant="outline" size="sm" data-testid="link-federal" className="border-blue-400 text-blue-700 dark:text-blue-400">
-                  <Scale className="w-3.5 h-3.5 mr-1" />
-                  Federal
-                </Button>
-              </Link>
-              <Link href="/dashboard/sp">
-                <Button variant="outline" size="sm" data-testid="link-sp" className="border-amber-400 text-amber-700 dark:text-amber-400">
-                  <Scale className="w-3.5 h-3.5 mr-1" />
-                  SP (Estado)
-                </Button>
-              </Link>
-              <Link href="/dashboard/pendentes">
-                <Button variant="outline" size="sm" data-testid="link-pendentes">
-                  <Scale className="w-3.5 h-3.5 mr-1" />
-                  Pendentes
-                </Button>
-              </Link>
-              <Link href="/dashboard/contrato">
-                <Button variant="outline" size="sm" data-testid="link-contrato">
-                  <Shield className="w-3.5 h-3.5 mr-1" />
-                  Contrato DPO
-                </Button>
-              </Link>
-              {localStorage.getItem("aura_role") === "admin" && (
-                <Link href="/dashboard/admin">
-                  <Button variant="outline" size="sm" data-testid="link-admin" className="border-violet-500/40 text-violet-400 hover:text-violet-300">
-                    <Shield className="w-3.5 h-3.5 mr-1" />
-                    Admin
-                  </Button>
-                </Link>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                data-testid="button-logout"
-                onClick={() => {
-                  localStorage.removeItem("aura_token");
-                  localStorage.removeItem("aura_email");
-                  localStorage.removeItem("aura_role");
-                  window.location.href = "/";
-                }}
-              >
-                <LogOut className="w-3.5 h-3.5 mr-1" />
-                Sair
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppTopbar active="loa" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <Card>

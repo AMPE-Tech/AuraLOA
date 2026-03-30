@@ -36,6 +36,7 @@ import {
   FileSpreadsheet,
   LogOut,
 } from "lucide-react";
+import { AppTopbar } from "@/components/app-topbar";
 import type {
   PrecatorioPendenteResult,
   EstoqueProcesso,
@@ -453,61 +454,7 @@ export default function PrecatoriosPendentes() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border/50 bg-card/80 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3">
-          <div className="flex items-center justify-between gap-3 flex-wrap">
-            <div className="flex items-center gap-2.5">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="sm" data-testid="button-voltar">
-                  <ArrowLeft className="w-3.5 h-3.5 mr-1" />
-                  Dashboard
-                </Button>
-              </Link>
-              <Separator orientation="vertical" className="h-5" />
-              <div className="p-1.5 rounded-md bg-amber-500/10">
-                <Scale className="w-4 h-4 text-amber-400" />
-              </div>
-              <div>
-                <h1 className="text-sm font-semibold tracking-tight" data-testid="text-page-title">
-                  Precatorios Pendentes {selectedEnte === "SP" ? "— SP" : "— Federal"}
-                </h1>
-                <p className="text-[10px] text-muted-foreground">
-                  {selectedEnte === "SP"
-                    ? "TJSP — Processos com pagamento pendente via CNJ DataJud"
-                    : "TRF1-TRF6 — Processos com pagamento pendente"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/dashboard/contrato">
-                <Button variant="outline" size="sm" data-testid="link-contrato-dpo">
-                  <Shield className="w-3.5 h-3.5 mr-1" />
-                  Contrato DPO
-                </Button>
-              </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                data-testid="button-logout"
-                onClick={() => {
-                  localStorage.removeItem("aura_token");
-                  localStorage.removeItem("aura_email");
-                  window.location.href = "/";
-                }}
-              >
-                <LogOut className="w-3.5 h-3.5 mr-1" />
-                Sair
-              </Button>
-              {result && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Clock className="w-3 h-3" />
-                  Atualizado: {new Date(result.ultima_atualizacao_iso).toLocaleString("pt-BR")}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
+      <AppTopbar active="pendentes" />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <Card>
