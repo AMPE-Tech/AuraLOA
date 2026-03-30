@@ -89,14 +89,18 @@ export function registerStripeRoutes(app: Express) {
 
     let event: any;
 
+    if (!webhookSecret) {
+      console.error("[Stripe] STRIPE_WEBHOOK_SECRET não definido — webhook rejeitado por segurança.");
+      return res.status(500).json({ error: "Webhook não configurado no servidor." });
+    }
+    if (!sig) {
+      console.error("[Stripe] Requisição sem stripe-signature — rejeitada.");
+      return res.status(400).json({ error: "Assinatura stripe-signature ausente." });
+    }
     try {
-      if (webhookSecret && sig) {
-        event = stripe.webhooks.constructEvent(req.body, sig, webhookSecret);
-      } else {
-        event = req.body;
-      }
+      event = stripe.webhooks.constructEvent(req.rawBody as Buffer, sig, webhookSecret);
     } catch (err: any) {
-      console.error("Webhook signature error:", err.message);
+      console.error("[Stripe] Webhook signature inválida:", err.message);
       return res.status(400).json({ error: `Webhook error: ${err.message}` });
     }
 

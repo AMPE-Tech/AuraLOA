@@ -273,4 +273,37 @@ router.delete("/api/admin/users/:email", requireAdmin, async (req: Request, res:
   }
 });
 
+export async function getUserPlan(email: string): Promise<{
+  plan: string;
+  subscription_status: string;
+  consultas_limite: number;
+}> {
+  const rows = await query<{
+    plan: string;
+    subscription_status: string;
+  }>(
+    "SELECT plan, subscription_status FROM aura_users WHERE LOWER(email) = LOWER($1) LIMIT 1",
+    [email],
+  );
+
+  const plan = rows[0]?.plan || "free";
+  const subscription_status = rows[0]?.subscription_status || "free";
+
+  // Limites de consultas por plano (fonte: shared/plans.ts)
+  const limites: Record<string, number> = {
+    free:            3,
+    essencial:       3,
+    professional:    6,
+    business:       10,
+    enterprise:     20,
+    enterprise_plus: 999999,
+  };
+
+  return {
+    plan,
+    subscription_status,
+    consultas_limite: limites[plan] ?? 3,
+  };
+}
+
 export default router;

@@ -1,6 +1,7 @@
 import { Router, type Request, type Response } from "express";
 import { z } from "zod";
 import { fetchPrecatorioByNumero } from "../services/estoque_datajud";
+import { validateToken, getUserPlan } from "./auth";
 
 const router = Router();
 
@@ -73,6 +74,24 @@ router.post("/api/validador/verificar", async (req: Request, res: Response) => {
       retry_after_sec: retryAfterSec,
     });
   }
+
+  // ── Controle de plano para usuários autenticados ──────────────────────────
+  // Usuários não autenticados ficam limitados a 3 consultas por sessão (sessionStorage no frontend)
+  // Usuários autenticados têm limite definido pelo plano
+  const authHeader = req.headers.authorization;
+  let userPlanInfo: { plan: string; subscription_status: string; consultas_limite: number } | null = null;
+
+  if (authHeader?.startsWith("Bearer ")) {
+    const token = authHeader.slice(7);
+    const tokenData = validateToken(token);
+    if (tokenData.valid && tokenData.email) {
+      userPlanInfo = await getUserPlan(tokenData.email);
+      // Informa o plano e limite ao frontend via headers
+      res.setHeader("X-Plan", userPlanInfo.plan);
+      res.setHeader("X-Plan-Limit", String(userPlanInfo.consultas_limite));
+    }
+  }
+  // ── fim controle de plano ─────────────────────────────────────────────────
 
   const parsed = validarSchema.safeParse(req.body);
   if (!parsed.success) {
