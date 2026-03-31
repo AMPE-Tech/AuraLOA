@@ -9,12 +9,14 @@ import authRouter from "./routes/auth";
 import validadorRouter from "./routes/validador";
 import { registerAnaliseDocumentoRoutes } from "./routes/analise_documento";
 import { registerStripeRoutes } from "./routes/stripe_routes";
+import dueDiligenceViewerRouter from "./routes/due_diligence_viewer";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   app.use(authRouter);
+  app.use(dueDiligenceViewerRouter);
   app.use(validadorRouter);
   registerAnaliseDocumentoRoutes(app);
   registerStripeRoutes(app);
