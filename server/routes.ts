@@ -10,13 +10,19 @@ import validadorRouter from "./routes/validador";
 import { registerAnaliseDocumentoRoutes } from "./routes/analise_documento";
 import { registerStripeRoutes } from "./routes/stripe_routes";
 import dueDiligenceViewerRouter from "./routes/due_diligence_viewer";
+import ddPipelineRouter from "./routes/dd_pipeline";
+import dashboardRouter from "./routes/dashboard";
+import lotesRouter from "./routes/lotes";
 
 export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
   app.use(authRouter);
+  app.use(dashboardRouter);
+  app.use(lotesRouter);
   app.use(dueDiligenceViewerRouter);
+  app.use(ddPipelineRouter);
   app.use(validadorRouter);
   registerAnaliseDocumentoRoutes(app);
   registerStripeRoutes(app);

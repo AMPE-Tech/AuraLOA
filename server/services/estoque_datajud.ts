@@ -367,17 +367,25 @@ export interface ValidacaoPreliminarResult {
   tribunal: string;
   tribunal_alias: string;
   tipo: "PRECATORIO" | "RPV" | "DESCONHECIDO";
+  classe_nome?: string;
   situacao: string;
   grau: string | null;
-  data_ajuizamento_ano: string | null;
+  data_ajuizamento?: string | null;
+  data_ultima_atualizacao?: string | null;
+  valor_causa?: number | null;
+  orgao_julgador?: { codigo: number | null; nome: string } | null;
+  assuntos?: { codigo: number; nome: string }[];
+  total_movimentos?: number;
+  ultima_movimentacao?: { codigo: number | null; nome: string; data: string | null } | null;
+  movimentos?: { codigo: number | null; nome: string; data: string | null }[];
   pagamento_pendente: boolean;
+  tem_baixa?: boolean;
+  tem_pagamento?: boolean;
   url_consulta: string | null;
   sha256_evidencia: string;
   consultado_em: string;
-  // Dados premium (retornados null no modo gratuito)
-  valor_causa_locked: true;
-  credor_locked: true;
-  loa_status_locked: true;
+  observacao?: string;
+  url_origem?: string;
 }
 
 // Mapa J=8 (Justiça Estadual): TT → alias
@@ -477,16 +485,23 @@ async function consultarTribunal(
       tribunal: processo.tribunal,
       tribunal_alias: alias,
       tipo: processo.classe_codigo === CLASSE_PRECATORIO ? "PRECATORIO" : processo.classe_codigo === CLASSE_RPV ? "RPV" : "DESCONHECIDO",
+      classe_nome: processo.classe_nome,
       situacao: processo.situacao,
       grau: processo.grau,
-      data_ajuizamento_ano: processo.data_ajuizamento ? String(processo.data_ajuizamento).substring(0, 4) : null,
+      data_ajuizamento: processo.data_ajuizamento,
+      data_ultima_atualizacao: processo.data_ultima_atualizacao,
+      valor_causa: processo.valor_causa,
+      orgao_julgador: processo.orgao_julgador,
+      assuntos: processo.assuntos,
+      total_movimentos: processo.total_movimentos,
+      ultima_movimentacao: processo.ultima_movimentacao,
+      movimentos: processo.movimentos,
       pagamento_pendente: processo.pagamento_pendente,
+      tem_baixa: processo.tem_baixa,
+      tem_pagamento: processo.tem_pagamento,
       url_consulta: processo.url_consulta,
       sha256_evidencia: sha256,
       consultado_em,
-      valor_causa_locked: true,
-      credor_locked: true,
-      loa_status_locked: true,
     };
   } catch {
     return null;
@@ -548,15 +563,301 @@ export async function fetchPrecatorioByNumero(
     tipo: "DESCONHECIDO" as const,
     situacao: isTJRJ ? "consulta_manual_necessaria" : "nao_localizado",
     grau: null,
-    data_ajuizamento_ano: null,
+    data_ajuizamento: null,
     pagamento_pendente: false,
     url_consulta: urlDocumento || (isTJRJ ? "https://www3.tjrj.jus.br/consultaprocessual/processo.do" : null),
     ...(isTJRJ ? { observacao: "TJRJ utiliza numeração interna. Consulte diretamente o portal do tribunal." } : {}),
     ...(urlDocumento ? { url_origem: "documento" } : {}),
     sha256_evidencia: sha256,
     consultado_em,
-    valor_causa_locked: true as const,
-    credor_locked: true as const,
-    loa_status_locked: true as const,
   };
+}
+
+// ─── Fase 0: Busca reversa CNJ a partir de dados do precatório LOA ──────────
+// Os dados da LOA não contêm CNJ — só nº precatório, tribunal, valor, UO.
+// Esta função consulta o DataJud por classe (1265/1266) + tribunal, filtra por
+// valor aproximado e retorna candidatos com CNJ.
+
+export interface BuscaReversaCNJInput {
+  numero_precatorio: string;
+  tribunal_alias: string;
+  valor: number;
+  ano: number;
+  uo_devedora?: string;
+  assunto?: string;
+}
+
+export interface BuscaReversaCNJResult {
+  encontrado: boolean;
+  cnj: string | null;
+  confianca: "alta" | "media" | "baixa" | "nenhuma";
+  candidatos: {
+    cnj: string;
+    classe: string;
+    orgao: string;
+    valor_causa: number | null;
+    ajuizamento: string | null;
+    movimentos: number;
+    ultima_mov: string | null;
+    score_match: number;
+  }[];
+  tribunal_alias: string;
+  metodo: string;
+  timestamp: string;
+  sha256: string;
+}
+
+export async function buscarCNJPorPrecatorio(input: BuscaReversaCNJInput): Promise<BuscaReversaCNJResult> {
+  const timestamp = new Date().toISOString();
+  const { numero_precatorio, tribunal_alias, valor, ano, uo_devedora, assunto } = input;
+
+  if (!DATAJUD_API_KEY) {
+    const payload = JSON.stringify({ input, erro: "DATAJUD_API_KEY ausente", timestamp });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+    return { encontrado: false, cnj: null, confianca: "nenhuma", candidatos: [], tribunal_alias, metodo: "nenhum", timestamp, sha256 };
+  }
+
+  // Verificar se o tribunal tem dados no DataJud
+  if ((TRIBUNAIS_SEM_DADOS_DATAJUD as readonly string[]).includes(tribunal_alias)) {
+    const payload = JSON.stringify({ input, erro: "tribunal_sem_dados_datajud", timestamp });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+    return {
+      encontrado: false,
+      cnj: null,
+      confianca: "nenhuma",
+      candidatos: [],
+      tribunal_alias,
+      metodo: "datajud_indisponivel",
+      timestamp,
+      sha256,
+    };
+  }
+
+  const endpoint = `${DATAJUD_BASE}/api_publica_${tribunal_alias}/_search`;
+
+  // Estratégia 1: busca por classe precatório + range de valor (±20%)
+  const valorMin = Math.floor(valor * 0.80);
+  const valorMax = Math.ceil(valor * 1.20);
+
+  const esQuery: any = {
+    query: {
+      bool: {
+        must: [
+          { term: { "classe.codigo": CLASSE_PRECATORIO } },
+        ],
+        filter: [
+          { range: { valorCausa: { gte: valorMin, lte: valorMax } } },
+        ],
+      },
+    },
+    size: 20,
+    sort: [{ dataAjuizamento: "desc" }],
+    track_total_hits: true,
+  };
+
+  // Se temos ano, filtrar por ano de ajuizamento (±1 ano para cobrir exercícios)
+  if (ano) {
+    esQuery.query.bool.filter.push({
+      range: {
+        dataAjuizamento: {
+          gte: `${ano - 2}0101000000`,
+          lte: `${ano}1231235959`,
+        },
+      },
+    });
+  }
+
+  try {
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `APIKey ${DATAJUD_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(esQuery),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!resp.ok) {
+      // Estratégia 2 (fallback): busca mais ampla, só por classe no tribunal
+      return await buscarCNJFallback(input, endpoint, timestamp);
+    }
+
+    const data = await resp.json();
+    const hits: DataJudHit[] = data.hits?.hits || [];
+
+    if (hits.length === 0) {
+      // Fallback: busca sem filtro de valor
+      return await buscarCNJFallback(input, endpoint, timestamp);
+    }
+
+    // Pontuar candidatos por proximidade de valor
+    const candidatos = hits.map((hit) => {
+      const src = hit._source;
+      const valorCausa = typeof src.valorCausa === "number" ? src.valorCausa : null;
+      const movs = src.movimentos || [];
+
+      // Score de match: quanto mais próximo o valor, maior o score
+      let score = 0;
+      if (valorCausa !== null) {
+        const ratio = Math.abs(valorCausa - valor) / Math.max(valor, 1);
+        if (ratio < 0.01) score += 50;       // <1% diferença
+        else if (ratio < 0.05) score += 35;  // <5%
+        else if (ratio < 0.10) score += 20;  // <10%
+        else if (ratio < 0.20) score += 10;  // <20%
+      }
+
+      // Bonus: assunto ou UO match parcial
+      const assuntosSrc = (src.assuntos || []).map((a) => (a.nome || "").toLowerCase()).join(" ");
+      if (assunto && assuntosSrc.includes(assunto.toLowerCase().substring(0, 20))) score += 15;
+
+      const orgaoNome = (src.orgaoJulgador?.nome || "").toLowerCase();
+      if (uo_devedora && orgaoNome.includes(uo_devedora.toLowerCase().substring(0, 15))) score += 10;
+
+      // Bonus: tem movimentações recentes
+      if (movs.length > 5) score += 5;
+
+      return {
+        cnj: src.numeroProcesso || "",
+        classe: src.classe?.nome || "",
+        orgao: src.orgaoJulgador?.nome || "",
+        valor_causa: valorCausa,
+        ajuizamento: src.dataAjuizamento || null,
+        movimentos: movs.length,
+        ultima_mov: movs.length > 0 ? movs[movs.length - 1]?.nome || null : null,
+        score_match: score,
+      };
+    });
+
+    // Ordenar por score descendente
+    candidatos.sort((a, b) => b.score_match - a.score_match);
+
+    const melhor = candidatos[0];
+    let confianca: "alta" | "media" | "baixa" | "nenhuma" = "nenhuma";
+    if (melhor && melhor.score_match >= 50) confianca = "alta";
+    else if (melhor && melhor.score_match >= 30) confianca = "media";
+    else if (melhor && melhor.score_match >= 10) confianca = "baixa";
+
+    const payload = JSON.stringify({ input, candidatos: candidatos.slice(0, 5), timestamp });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+
+    return {
+      encontrado: confianca !== "nenhuma",
+      cnj: melhor && confianca !== "nenhuma" ? melhor.cnj : null,
+      confianca,
+      candidatos: candidatos.slice(0, 5),
+      tribunal_alias,
+      metodo: "datajud_valor_classe",
+      timestamp,
+      sha256,
+    };
+  } catch (err: any) {
+    const payload = JSON.stringify({ input, erro: err.message, timestamp });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+    return { encontrado: false, cnj: null, confianca: "nenhuma", candidatos: [], tribunal_alias, metodo: "erro", timestamp, sha256 };
+  }
+}
+
+// Fallback: busca apenas por classe, sem filtro de valor (útil quando valor no DataJud diverge do LOA)
+async function buscarCNJFallback(
+  input: BuscaReversaCNJInput,
+  endpoint: string,
+  timestamp: string,
+): Promise<BuscaReversaCNJResult> {
+  const { numero_precatorio, tribunal_alias, valor, uo_devedora, assunto } = input;
+
+  const esQuery = {
+    query: {
+      bool: {
+        must: [
+          { term: { "classe.codigo": CLASSE_PRECATORIO } },
+        ],
+      },
+    },
+    size: 50,
+    sort: [{ dataAjuizamento: "desc" }],
+    track_total_hits: true,
+  };
+
+  try {
+    const resp = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `APIKey ${DATAJUD_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(esQuery),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!resp.ok) {
+      const payload = JSON.stringify({ input, erro: `HTTP ${resp.status}`, timestamp });
+      const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+      return { encontrado: false, cnj: null, confianca: "nenhuma", candidatos: [], tribunal_alias, metodo: "datajud_fallback_erro", timestamp, sha256 };
+    }
+
+    const data = await resp.json();
+    const hits: DataJudHit[] = data.hits?.hits || [];
+
+    const candidatos = hits.map((hit) => {
+      const src = hit._source;
+      const valorCausa = typeof src.valorCausa === "number" ? src.valorCausa : null;
+      const movs = src.movimentos || [];
+
+      let score = 0;
+      if (valorCausa !== null) {
+        const ratio = Math.abs(valorCausa - valor) / Math.max(valor, 1);
+        if (ratio < 0.01) score += 50;
+        else if (ratio < 0.05) score += 35;
+        else if (ratio < 0.10) score += 20;
+        else if (ratio < 0.20) score += 10;
+        else if (ratio < 0.50) score += 5;
+      }
+
+      const assuntosSrc = (src.assuntos || []).map((a) => (a.nome || "").toLowerCase()).join(" ");
+      if (assunto && assuntosSrc.includes(assunto.toLowerCase().substring(0, 20))) score += 15;
+
+      const orgaoNome = (src.orgaoJulgador?.nome || "").toLowerCase();
+      if (uo_devedora && orgaoNome.includes(uo_devedora.toLowerCase().substring(0, 15))) score += 10;
+
+      if (movs.length > 5) score += 5;
+
+      return {
+        cnj: src.numeroProcesso || "",
+        classe: src.classe?.nome || "",
+        orgao: src.orgaoJulgador?.nome || "",
+        valor_causa: valorCausa,
+        ajuizamento: src.dataAjuizamento || null,
+        movimentos: movs.length,
+        ultima_mov: movs.length > 0 ? movs[movs.length - 1]?.nome || null : null,
+        score_match: score,
+      };
+    });
+
+    candidatos.sort((a, b) => b.score_match - a.score_match);
+
+    const melhor = candidatos[0];
+    let confianca: "alta" | "media" | "baixa" | "nenhuma" = "nenhuma";
+    if (melhor && melhor.score_match >= 50) confianca = "alta";
+    else if (melhor && melhor.score_match >= 30) confianca = "media";
+    else if (melhor && melhor.score_match >= 10) confianca = "baixa";
+
+    const payload = JSON.stringify({ input, candidatos: candidatos.slice(0, 5), timestamp });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+
+    return {
+      encontrado: confianca !== "nenhuma",
+      cnj: melhor && confianca !== "nenhuma" ? melhor.cnj : null,
+      confianca,
+      candidatos: candidatos.slice(0, 5),
+      tribunal_alias,
+      metodo: "datajud_fallback_classe",
+      timestamp,
+      sha256,
+    };
+  } catch (err: any) {
+    const payload = JSON.stringify({ input, erro: err.message, timestamp });
+    const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
+    return { encontrado: false, cnj: null, confianca: "nenhuma", candidatos: [], tribunal_alias, metodo: "erro_fallback", timestamp, sha256 };
+  }
 }
