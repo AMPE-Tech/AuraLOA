@@ -11,7 +11,7 @@
  */
 
 import { Router, type Request, type Response } from "express";
-import crypto from "crypto";
+import * as crypto from "crypto";
 import {
   buscarCNJPorPrecatorio,
   fetchPrecatorioByNumero,
@@ -91,6 +91,209 @@ function normalizarTribunalAlias(tribunal: string): string {
 
 function formatarValorBR(valor: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
+}
+
+// ── FASE 0-ENRIQ: Enriquecimento CNJ (SIOP CSV → CNPJ → TRF1) ──────────────
+
+interface EnriquecimentoResult {
+  cnj_originario: string | null;
+  cnj_execucao: string | null;
+  cnpj_entidade: string | null;
+  metodo: string;
+  candidatos_trf1: { cnj: string; tribunal: string }[];
+  registro_siop: Record<string, string> | null;
+}
+
+async function executarFaseEnriquecimento(
+  numeroPrecatorio: string,
+  valor: number,
+  tribunalAlias: string,
+): Promise<DDFaseResult> {
+  const inicio = Date.now();
+  const resultado: EnriquecimentoResult = {
+    cnj_originario: null,
+    cnj_execucao: null,
+    cnpj_entidade: null,
+    metodo: "nenhum",
+    candidatos_trf1: [],
+    registro_siop: null,
+  };
+
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+
+    // ── PASSO 1: Ler LOA_FULL_CONCILIADO.csv ──────────────────────────────
+    const fullPath = path.resolve("data/LOA_FULL_CONCILIADO.csv");
+    if (!fs.existsSync(fullPath)) {
+      return {
+        fase: "fase0_enriquecimento",
+        status: "indisponivel",
+        dados: { ...resultado, erro: "CSV LOA_FULL_CONCILIADO.csv não encontrado em data/" },
+        fontes: [],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicio,
+      };
+    }
+
+    const content = fs.readFileSync(fullPath, "utf-8");
+    const lines = content.split("\n");
+    const headerLine = lines[0].replace(/^\uFEFF/, "");
+    const header = headerLine.split(",");
+    const foundLine = lines.slice(1).find((l) => l.includes(numeroPrecatorio));
+
+    if (!foundLine) {
+      return {
+        fase: "fase0_enriquecimento",
+        status: "parcial",
+        dados: { ...resultado, metodo: "nao_encontrado_siop", observacao: "Precatório não encontrado no CSV SIOP conciliado" },
+        fontes: ["SIOP/LOA FULL CONCILIADO (1.590 registros)"],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicio,
+      };
+    }
+
+    // Parsear registro
+    const cols = foundLine.split(",");
+    const record: Record<string, string> = {};
+    header.forEach((h, i) => { record[h.trim()] = (cols[i] || "").trim(); });
+    resultado.registro_siop = record;
+
+    // ── PASSO 2: Verificar se já tem CNJ ──────────────────────────────────
+    const cnjOrig = record["cnj_processo_originario"]?.trim();
+    const cnjExec = record["cnj_processo_execucao"]?.trim();
+    const cnpjEnt = record["cnpj_entidade_devedora"]?.trim();
+
+    resultado.cnpj_entidade = cnpjEnt || null;
+
+    if (cnjOrig && cnjOrig.length >= 15) {
+      resultado.cnj_originario = cnjOrig;
+      resultado.cnj_execucao = cnjExec || null;
+      resultado.metodo = "siop_csv_direto";
+      console.log(`[Enriquecimento] CNJ encontrado direto no SIOP: orig=${cnjOrig} exec=${cnjExec || "N/A"}`);
+
+      return {
+        fase: "fase0_enriquecimento",
+        status: "ok",
+        dados: resultado,
+        fontes: ["SIOP/LOA FULL CONCILIADO — CNJ já presente no CSV"],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicio,
+      };
+    }
+
+    // ── PASSO 3: Tem CNPJ? → BrasilAPI (razão social) → PJe TRF1 (nome da parte) ─
+    if (cnpjEnt && cnpjEnt.length >= 11) {
+      resultado.metodo = "cnpj_para_trf1";
+      console.log(`[Enriquecimento] CNJ ausente. CNPJ ${cnpjEnt} — buscando razão social via BrasilAPI...`);
+
+      // Passo 3A: Buscar razão social via BrasilAPI
+      let razaoSocial: string | null = null;
+      let nomeFantasia: string | null = null;
+      try {
+        const https = await import("https");
+        const cnpjLimpo = cnpjEnt.replace(/[.\-\/]/g, "");
+        const brasilData: any = await new Promise((resolve, reject) => {
+          https.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`, (resp) => {
+            let body = "";
+            resp.on("data", (chunk: any) => body += chunk);
+            resp.on("end", () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+          }).on("error", reject);
+        });
+        razaoSocial = brasilData.razao_social || null;
+        nomeFantasia = brasilData.nome_fantasia || null;
+        console.log(`[Enriquecimento] BrasilAPI: razao="${razaoSocial}" fantasia="${nomeFantasia}"`);
+      } catch (brasilErr: any) {
+        console.log(`[Enriquecimento] BrasilAPI erro: ${brasilErr.message}`);
+      }
+
+      // Passo 3B: Buscar no PJe TRF1 por nome da parte
+      // Preferir nome fantasia (curto, ex: "INCRA") para busca mais ampla
+      const termoBusca = nomeFantasia || razaoSocial;
+      if (termoBusca) {
+        try {
+          const roboPje = require("../scripts/robo_pje/drivers/trf1.cjs");
+          const trf1Result = await roboPje.consultarPorCNPJ(cnpjEnt, {
+            headless: true,
+            timeout: 60000,
+            nome_entidade: termoBusca,
+          });
+
+          if (trf1Result.processos && trf1Result.processos.length > 0) {
+            resultado.candidatos_trf1 = trf1Result.processos;
+            console.log(`[Enriquecimento] PJe TRF1 retornou ${trf1Result.processos.length} CNJs para "${termoBusca}"`);
+
+            // Se encontrou apenas 1 candidato, usar direto
+            if (trf1Result.processos.length === 1) {
+              resultado.cnj_originario = trf1Result.processos[0].cnj;
+              resultado.metodo = "pje_trf1_nome_unico";
+            } else {
+              resultado.metodo = "pje_trf1_nome_candidatos";
+            }
+          } else {
+            resultado.metodo = trf1Result.erro ? "pje_trf1_erro" : "pje_trf1_sem_resultado";
+            if (trf1Result.erro) {
+              console.log(`[Enriquecimento] PJe TRF1 erro: ${trf1Result.erro}`);
+            } else {
+              console.log(`[Enriquecimento] PJe TRF1 sem resultados para "${termoBusca}"`);
+            }
+          }
+        } catch (playwrightErr: any) {
+          console.log(`[Enriquecimento] Playwright indisponível ou erro: ${playwrightErr.message}`);
+          resultado.metodo = "cnpj_disponivel_playwright_indisponivel";
+        }
+      } else {
+        resultado.metodo = "cnpj_sem_razao_social";
+        console.log(`[Enriquecimento] CNPJ ${cnpjEnt} sem razão social — não é possível buscar no PJe por nome`);
+      }
+
+      return {
+        fase: "fase0_enriquecimento",
+        status: resultado.cnj_originario ? "ok" : "parcial",
+        dados: {
+          ...resultado,
+          razao_social: razaoSocial,
+          nome_fantasia: nomeFantasia,
+          termo_busca: termoBusca,
+        },
+        fontes: [
+          "SIOP/LOA FULL CONCILIADO (CNPJ)",
+          ...(razaoSocial ? ["BrasilAPI (razão social)"] : []),
+          ...(resultado.candidatos_trf1.length > 0 ? [`PJe TRF1 — Nome da Parte (${resultado.candidatos_trf1.length} processos)`] : []),
+        ],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicio,
+      };
+    }
+
+    // ── PASSO 4: Sem CNPJ → UO genérica ──────────────────────────────────
+    resultado.metodo = "sem_cnpj_uo_generica";
+    const causaProvavel = record["causa_provavel"] || "";
+    console.log(`[Enriquecimento] Sem CNPJ para enriquecimento. UO: ${record["UO_Devedora_Nome"] || "?"} | Causa: ${causaProvavel}`);
+
+    return {
+      fase: "fase0_enriquecimento",
+      status: "parcial",
+      dados: {
+        ...resultado,
+        observacao: `UO genérica (${record["UO_Devedora_Nome"] || "EFU"}) — sem CNPJ específico para busca no TRF1. Enriquecimento CNJ requer identificação manual da entidade devedora.`,
+        causa_provavel: causaProvavel,
+      },
+      fontes: ["SIOP/LOA FULL CONCILIADO"],
+      timestamp: new Date().toISOString(),
+      duracao_ms: Date.now() - inicio,
+    };
+
+  } catch (err: any) {
+    return {
+      fase: "fase0_enriquecimento",
+      status: "erro",
+      dados: { ...resultado, erro: err.message },
+      fontes: [],
+      timestamp: new Date().toISOString(),
+      duracao_ms: Date.now() - inicio,
+    };
+  }
 }
 
 // ── FASE 0: Busca reversa CNJ ────────────────────────────────────────────────
@@ -449,6 +652,128 @@ function executarFase4e5(
     timestamp: new Date().toISOString(),
     duracao_ms: Date.now() - inicio,
   };
+}
+
+// ── FASE 1B: Busca LOA CSV local (42.174 registros) ─────────────────────────
+
+async function executarFase1B(numeroPrecatorio: string): Promise<DDFaseResult> {
+  const inicio = Date.now();
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+    const csvPath = path.resolve("data/precatorios_extraidos.csv");
+    if (!fs.existsSync(csvPath)) {
+      return { fase: "fase1b_loa_csv", status: "indisponivel", dados: { erro: "CSV LOA não encontrado" }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+    }
+    const content = fs.readFileSync(csvPath, "utf-8");
+    const lines = content.split("\n");
+    const header = lines[0].split(";");
+    const found = lines.slice(1).find(l => l.includes(numeroPrecatorio));
+    if (found) {
+      const cols = found.split(";");
+      const record: Record<string, string> = {};
+      header.forEach((h, i) => { record[h.trim()] = (cols[i] || "").trim(); });
+      return { fase: "fase1b_loa_csv", status: "ok", dados: { encontrado: true, ...record }, fontes: ["LOA 2026 CSV (42.174 registros)"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+    }
+    return { fase: "fase1b_loa_csv", status: "parcial", dados: { encontrado: false }, fontes: ["LOA 2026 CSV"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  } catch (e: any) {
+    return { fase: "fase1b_loa_csv", status: "erro", dados: { erro: e.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
+}
+
+// ── FASE 1C: Cruzamento SIOP (164K registros por ano) ───────────────────────
+
+async function executarFase1C(numeroPrecatorio: string, valor: number, uoDevedora: string | null): Promise<DDFaseResult> {
+  const inicio = Date.now();
+  try {
+    const fs = await import("fs");
+    const path = await import("path");
+    const fullPath = path.resolve("data/LOA_FULL_CONCILIADO.csv");
+    if (!fs.existsSync(fullPath)) {
+      return { fase: "fase1c_siop", status: "indisponivel", dados: { erro: "FULL conciliado não encontrado" }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+    }
+    const content = fs.readFileSync(fullPath, "utf-8");
+    const lines = content.split("\n");
+    const header = lines[0].split(",");
+    const found = lines.slice(1).find(l => l.includes(numeroPrecatorio));
+    if (found) {
+      const cols = found.split(",");
+      const record: Record<string, string> = {};
+      header.forEach((h, i) => { record[h.trim()] = (cols[i] || "").trim(); });
+      return { fase: "fase1c_siop", status: "ok", dados: { match: true, siop_match_status: record.siop_match_status || "match", cnj_processo_originario: record.cnj_processo_originario || null, cnj_processo_execucao: record.cnj_processo_execucao || null, ...record }, fontes: ["SIOP/MPO + LOA FULL (32 colunas)"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+    }
+    return { fase: "fase1c_siop", status: "parcial", dados: { match: false }, fontes: ["SIOP/MPO"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  } catch (e: any) {
+    return { fase: "fase1c_siop", status: "erro", dados: { erro: e.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
+}
+
+// ── FASE 4B: Robô PJe (movimentações processuais) ───────────────────────────
+
+async function executarFase4B(cnjOriginario: string | null): Promise<DDFaseResult> {
+  const inicio = Date.now();
+  if (!cnjOriginario) {
+    return { fase: "fase4b_robo_pje", status: "indisponivel", dados: { motivo: "CNJ originário não disponível" }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
+  try {
+    const roboPje = require("../scripts/robo_pje/index.cjs");
+    const resultado = await roboPje.consultarProcesso(cnjOriginario, { headless: true, timeout: 30000 });
+    if (resultado.encontrado && resultado.analise) {
+      return { fase: "fase4b_robo_pje", status: "ok", dados: { encontrado: true, movimentacoes: resultado.analise.total_movimentacoes, status_pagamento: resultado.analise.status_pagamento, data_pagamento: resultado.analise.data_pagamento, oficio_requisitorio: resultado.analise.oficio_requisitorio, gravames: resultado.analise.gravames, primeira_mov: resultado.analise.primeira_movimentacao, ultima_mov: resultado.analise.ultima_movimentacao }, fontes: [`TRF1 Consulta Processual (${resultado.analise.total_movimentacoes} movimentações)`], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+    }
+    return { fase: "fase4b_robo_pje", status: resultado.erro ? "erro" : "parcial", dados: { encontrado: false, erro: resultado.erro }, fontes: ["TRF1 Consulta Processual"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  } catch (e: any) {
+    return { fase: "fase4b_robo_pje", status: "erro", dados: { erro: e.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
+}
+
+// ── FASE 5B: Verificador CNPJ (BrasilAPI) ───────────────────────────────────
+
+async function executarFase5B(cnpjEntidade: string | null): Promise<DDFaseResult> {
+  const inicio = Date.now();
+  if (!cnpjEntidade) {
+    return { fase: "fase5b_cnpj", status: "indisponivel", dados: { motivo: "CNPJ não disponível" }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
+  try {
+    const https = await import("https");
+    const cnpjLimpo = cnpjEntidade.replace(/[.\-\/]/g, "");
+    const data: any = await new Promise((resolve, reject) => {
+      https.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`, (resp) => {
+        let body = "";
+        resp.on("data", (chunk: any) => body += chunk);
+        resp.on("end", () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+      }).on("error", reject);
+    });
+    return { fase: "fase5b_cnpj", status: "ok", dados: { verificado: true, razao_social: data.razao_social, nome_fantasia: data.nome_fantasia, situacao: data.descricao_situacao_cadastral, municipio: data.municipio, uf: data.uf, qsa: (data.qsa || []).map((s: any) => ({ nome: s.nome_socio, qualificacao: s.qualificacao_socio })) }, fontes: ["BrasilAPI (brasilapi.com.br)"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  } catch (e: any) {
+    return { fase: "fase5b_cnpj", status: "erro", dados: { erro: e.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
+}
+
+// ── FASE 5C: Confirmação pagamento Portal Transparência ─────────────────────
+
+async function executarFase5C(acao: string = "0625", ano: number = 2026): Promise<DDFaseResult> {
+  const inicio = Date.now();
+  try {
+    const https = await import("https");
+    const apiKey = process.env.PORTAL_API_KEY || "6081aeff3e70fc8c1fb98be64e427669";
+    const data: any = await new Promise((resolve, reject) => {
+      const req = https.get(`https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=${ano}&acao=${acao}&pagina=1`, {
+        headers: { "chave-api-dados": apiKey, "Accept": "application/json" },
+      }, (resp) => {
+        let body = "";
+        resp.on("data", (chunk: any) => body += chunk);
+        resp.on("end", () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+      });
+      req.on("error", reject);
+    });
+    if (Array.isArray(data) && data.length > 0) {
+      return { fase: "fase5c_portal_transparencia", status: "ok", dados: { empenhado: data[0].empenhado, pago: data[0].pago, acao, ano }, fontes: ["Portal da Transparência API"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+    }
+    return { fase: "fase5c_portal_transparencia", status: "parcial", dados: { acao, ano, resultado: "sem dados" }, fontes: ["Portal da Transparência API"], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  } catch (e: any) {
+    return { fase: "fase5c_portal_transparencia", status: "erro", dados: { erro: e.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicio };
+  }
 }
 
 // ── FASE 6: Geração de relatório HTML (padrão Adimix) ────────────────────────
@@ -915,21 +1240,56 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
   const timestamp = new Date().toISOString();
 
   try {
-    // ── FASE 0: Busca reversa CNJ ──────────────────────────────────────────
-    const fase0Input: BuscaReversaCNJInput = {
-      numero_precatorio,
-      tribunal_alias: tribunalAlias,
-      valor: valorNum,
-      ano: anoNum,
-      uo_devedora: uo_devedora || undefined,
-      assunto: assunto || undefined,
-    };
-    const fase0 = await executarFase0(fase0Input);
+    // ── FASE 0-ENRIQ: Enriquecimento CNJ (PRIMEIRA COISA!) ─────────────────
+    console.log(`[DD Pipeline] ══ INÍCIO ══ Precatório: ${numero_precatorio} | Tribunal: ${tribunal}`);
+    const faseEnriq = await executarFaseEnriquecimento(numero_precatorio, valorNum, tribunalAlias);
+    const enriqDados = faseEnriq.dados as EnriquecimentoResult;
+
+    // CNJ vem do enriquecimento (SIOP direto ou TRF1 via CNPJ)
+    let cnjEncontrado = enriqDados.cnj_originario || null;
+    const cnjExecucao = enriqDados.cnj_execucao || null;
+    const cnpjEntidade = enriqDados.cnpj_entidade || null;
+    console.log(`[DD Pipeline] Enriquecimento: método=${enriqDados.metodo} | CNJ=${cnjEncontrado || "NENHUM"} | CNPJ=${cnpjEntidade || "NENHUM"} | candidatos_trf1=${enriqDados.candidatos_trf1?.length || 0}`);
+
+    // ── FASE 0: Busca reversa CNJ (DataJud — fallback se enriquecimento não achou) ──
+    let fase0: DDFaseResult;
+    if (cnjEncontrado) {
+      // Já temos CNJ do enriquecimento — pular DataJud
+      fase0 = {
+        fase: "fase0_busca_cnj",
+        status: "ok",
+        dados: { encontrado: true, cnj: cnjEncontrado, confianca: "alta", metodo_origem: enriqDados.metodo, candidatos: [] },
+        fontes: [`Enriquecimento SIOP (método: ${enriqDados.metodo})`],
+        timestamp: new Date().toISOString(),
+        duracao_ms: 0,
+      };
+    } else {
+      // Sem CNJ → tentar DataJud como fallback
+      const fase0Input: BuscaReversaCNJInput = {
+        numero_precatorio,
+        tribunal_alias: tribunalAlias,
+        valor: valorNum,
+        ano: anoNum,
+        uo_devedora: uo_devedora || undefined,
+        assunto: assunto || undefined,
+      };
+      fase0 = await executarFase0(fase0Input);
+      const fase0Dados = fase0.dados as BuscaReversaCNJResult;
+      if (fase0Dados.cnj) {
+        cnjEncontrado = fase0Dados.cnj;
+        console.log(`[DD Pipeline] CNJ obtido via DataJud fallback: ${cnjEncontrado}`);
+      }
+    }
     const fase0Dados = fase0.dados as BuscaReversaCNJResult;
-    const cnjEncontrado = fase0Dados.cnj || null;
 
     // ── FASE 1: DataJud com CNJ ────────────────────────────────────────────
     const fase1 = await executarFase1(cnjEncontrado, numero_precatorio);
+
+    // ── FASE 1B: Busca LOA CSV (42.174 registros) ─────────────────────────
+    const fase1b = await executarFase1B(numero_precatorio);
+
+    // ── FASE 1C: Cruzamento SIOP (32 colunas) ─────────────────────────────
+    const fase1c = await executarFase1C(numero_precatorio, valorNum, uo_devedora || null);
 
     // ── FASE 2: Raspagem web ───────────────────────────────────────────────
     const fase2 = await executarFase2(cnjEncontrado, tribunalAlias, uo_devedora, valorNum);
@@ -947,9 +1307,177 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
       fase1.dados,
     );
 
+    // ── FASE 4B: Robô PJe (movimentações processuais TRF1) ────────────────
+    const cnjParaPje = cnjEncontrado || null;
+    const fase4b = await executarFase4B(cnjParaPje);
+
+    // ── FASE 5B: Verificador CNPJ (BrasilAPI) ─────────────────────────────
+    const fase5b = await executarFase5B(cnpjEntidade);
+
+    // ── FASE 5C: Portal Transparência (confirmação pagamento) ──────────────
+    const fase5c = await executarFase5C("0625", anoNum);
+
+    // ── FASE 6A: Apollo.io + Receita Federal (enriquecimento empresa) ─────
+    // ⚠️ SÓ roda se temos CNPJ do credor (regra Marcos 14/04/2026)
+    let fase6a: DDFaseResult;
+    const inicioF6a = Date.now();
+    try {
+      const { consultarCNPJ, determinarStatusEmpresa, enrichOrganization } = await import("../services/apollo_enrichment");
+      let cnpjData = null;
+      let statusEmpresa = null;
+      let apolloOrg = null;
+
+      if (cnpjEntidade) {
+        // Receita Federal (BrasilAPI) — sempre roda
+        cnpjData = await consultarCNPJ(cnpjEntidade);
+        if (cnpjData) statusEmpresa = determinarStatusEmpresa(cnpjData);
+
+        // Apollo.io — enriquece org se tiver domínio no email da Receita
+        const emailEmpresa = cnpjData?.email || null;
+        const dominio = emailEmpresa?.split("@")[1] || null;
+        if (dominio && !dominio.includes("gmail") && !dominio.includes("hotmail") && !dominio.includes("yahoo")) {
+          try { apolloOrg = await enrichOrganization(dominio); } catch { /* Apollo falhou, segue */ }
+        }
+      }
+
+      fase6a = {
+        fase: "fase6a_apollo_receita",
+        status: cnpjData ? "ok" : cnpjEntidade ? "parcial" : "indisponivel",
+        dados: {
+          receita_federal: cnpjData ? {
+            razao_social: cnpjData.razao_social,
+            nome_fantasia: cnpjData.nome_fantasia,
+            status: statusEmpresa,
+            situacao_especial: cnpjData.situacao_especial,
+            capital_social: cnpjData.capital_social,
+            natureza_juridica: cnpjData.natureza_juridica,
+            porte: cnpjData.porte,
+            cnae: cnpjData.cnae_fiscal_descricao,
+            endereco: [cnpjData.logradouro, cnpjData.numero, cnpjData.bairro, cnpjData.municipio, cnpjData.uf].filter(Boolean).join(", "),
+            telefone: cnpjData.ddd_telefone_1,
+            email: cnpjData.email,
+            qsa_count: cnpjData.qsa?.length || 0,
+          } : null,
+          apollo: apolloOrg ? {
+            nome: apolloOrg.name,
+            site: apolloOrg.website_url,
+            linkedin: apolloOrg.linkedin_url,
+            setor: apolloOrg.industry,
+            funcionarios: apolloOrg.estimated_num_employees,
+          } : null,
+        },
+        fontes: [cnpjData ? "BrasilAPI/Receita Federal" : null, apolloOrg ? "Apollo.io" : null].filter(Boolean) as string[],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicioF6a,
+      };
+      console.log(`[DD Pipeline] Fase 6A: Receita=${cnpjData ? "OK" : "N/A"} | Apollo=${apolloOrg ? "OK" : "N/A"} | Status=${statusEmpresa || "N/A"}`);
+    } catch (err: any) {
+      fase6a = { fase: "fase6a_apollo_receita", status: "erro", dados: { erro: err.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicioF6a };
+    }
+
+    // ── FASE 6B: Enriquecimento de Contatos (sócios + advogados) ──────────
+    // ⚠️ REGRA: Se encontrar 10 nomes, buscar dados dos 10. TODOS.
+    let fase6b: DDFaseResult;
+    const inicioF6b = Date.now();
+    try {
+      const { enrichContacts } = await import("../services/contact_enrichment");
+      const contactResult = await enrichContacts({
+        cnpj: cnpjEntidade || "",
+        razao_social: fase6a.dados?.receita_federal?.razao_social || uo_devedora || null,
+      });
+      fase6b = {
+        fase: "fase6b_contatos",
+        status: contactResult.total_pessoas > 0 ? "ok" : "parcial",
+        dados: {
+          total_pessoas: contactResult.total_pessoas,
+          total_com_contato: contactResult.total_com_contato,
+          score_cobertura: contactResult.score_cobertura,
+          socios: contactResult.socios,
+          advogados: contactResult.advogados,
+          alertas: contactResult.alertas,
+        },
+        fontes: ["BrasilAPI/QSA", "CNPJ.ws", "Google CSE"].filter(Boolean),
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicioF6b,
+      };
+      console.log(`[DD Pipeline] Fase 6B: ${contactResult.total_pessoas} pessoas | ${contactResult.total_com_contato} com contato | score=${contactResult.score_cobertura}%`);
+    } catch (err: any) {
+      fase6b = { fase: "fase6b_contatos", status: "erro", dados: { erro: err.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicioF6b };
+    }
+
+    // ── FASE 6C: Auditoria de Contatos (validação cruzada) ────────────────
+    let fase6c: DDFaseResult;
+    const inicioF6c = Date.now();
+    try {
+      const contatos = fase6b.dados;
+      const allPeople = [...(contatos.socios || []), ...(contatos.advogados || [])];
+      const { validarCPF, validarEmail, validarTelefone } = await import("../../shared/validacao_documentos");
+
+      const auditResults = allPeople.map((p: any) => {
+        const checks = {
+          nome: !!p.nome,
+          cpf_valido: p.cpf_cnpj ? validarCPF(p.cpf_cnpj) : null,
+          email_valido: p.email ? validarEmail(p.email) : null,
+          telefone_valido: p.telefone ? validarTelefone(p.telefone) : null,
+          linkedin_presente: !!p.linkedin_url,
+          site_presente: !!(p.site_pessoal || p.site_escritorio),
+          fontes_count: p.fontes_consultadas?.length || 0,
+        };
+        const campos_ok = Object.values(checks).filter(v => v === true).length;
+        const campos_total = Object.values(checks).filter(v => v !== null).length;
+        return {
+          nome: p.nome,
+          tipo: p.tipo,
+          checks,
+          score: campos_total > 0 ? Math.round((campos_ok / campos_total) * 100) : 0,
+          veredicto: campos_ok >= 3 ? "COMPLETO" : campos_ok >= 1 ? "PARCIAL" : "INSUFICIENTE",
+        };
+      });
+
+      const scoreGeral = auditResults.length > 0
+        ? Math.round(auditResults.reduce((s: number, r: any) => s + r.score, 0) / auditResults.length)
+        : 0;
+
+      fase6c = {
+        fase: "fase6c_audit_contatos",
+        status: scoreGeral >= 50 ? "ok" : scoreGeral > 0 ? "parcial" : "erro",
+        dados: { auditResults, scoreGeral, total: auditResults.length },
+        fontes: ["validacao_documentos.ts", "audit-contatos"],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicioF6c,
+      };
+      console.log(`[DD Pipeline] Fase 6C: Audit score=${scoreGeral}% | ${auditResults.length} pessoas auditadas`);
+    } catch (err: any) {
+      fase6c = { fase: "fase6c_audit_contatos", status: "erro", dados: { erro: err.message }, fontes: [], timestamp: new Date().toISOString(), duracao_ms: Date.now() - inicioF6c };
+    }
+
     // ── Montar resultado ───────────────────────────────────────────────────
-    const fasesConcluidas = ["fase0_busca_cnj", "fase1_datajud", "fase2_raspagem", "fase2b_score", "fase3_tribunal", "fase4_5_cruzamento"];
+    const fasesConcluidas = [
+      "fase0_enriquecimento", "fase0_busca_cnj", "fase1_datajud", "fase1b_loa_csv", "fase1c_siop",
+      "fase2_raspagem", "fase2b_score", "fase3_tribunal", "fase4_5_cruzamento",
+      "fase4b_robo_pje", "fase5b_cnpj", "fase5c_portal_transparencia",
+      "fase6a_apollo_receita", "fase6b_contatos", "fase6c_audit_contatos"
+    ].filter(f => {
+      const faseMap: Record<string, DDFaseResult> = {
+        fase0_enriquecimento: faseEnriq, fase0_busca_cnj: fase0, fase1_datajud: fase1, fase1b_loa_csv: fase1b,
+        fase1c_siop: fase1c, fase2_raspagem: fase2, fase2b_score: fase2b,
+        fase3_tribunal: fase3, fase4_5_cruzamento: fase4_5,
+        fase4b_robo_pje: fase4b, fase5b_cnpj: fase5b, fase5c_portal_transparencia: fase5c,
+        fase6a_apollo_receita: fase6a, fase6b_contatos: fase6b, fase6c_audit_contatos: fase6c,
+      };
+      return faseMap[f]?.status === "ok" || faseMap[f]?.status === "parcial";
+    });
     const fasesPendentes = ["fase6_relatorio_completo"];
+
+    // Confiança do CNJ baseada no método de enriquecimento
+    let confiancaCnj = "nenhuma";
+    if (cnjEncontrado) {
+      if (enriqDados.metodo === "siop_csv_direto") confiancaCnj = "alta";
+      else if (enriqDados.metodo === "cnpj_trf1_unico") confiancaCnj = "alta";
+      else if (enriqDados.metodo.startsWith("cnpj_trf1")) confiancaCnj = "media";
+      else if (fase0Dados?.confianca) confiancaCnj = fase0Dados.confianca;
+      else confiancaCnj = "baixa";
+    }
 
     const pipelineResult: DDPipelineResult = {
       precatorio: {
@@ -971,7 +1499,7 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
       fases_concluidas: fasesConcluidas,
       fases_pendentes: fasesPendentes,
       cnj_encontrado: cnjEncontrado,
-      confianca_cnj: fase0Dados.confianca || "nenhuma",
+      confianca_cnj: confiancaCnj,
       score_final: fase2b.dados.score_ajustado ?? fase2b.dados.score_base ?? 0,
       status_final: fase2b.dados.status || "VERIFICAR",
       relatorio_url: null,
@@ -1003,12 +1531,59 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
     return res.json({
       ...pipelineResult,
       relatorio_sha256: relatorioHash,
+      // Fase de enriquecimento (NOVA — primeira do pipeline)
+      fase0_enriquecimento: faseEnriq,
+      enriquecimento: {
+        metodo: enriqDados.metodo,
+        cnj_originario: enriqDados.cnj_originario,
+        cnj_execucao: enriqDados.cnj_execucao,
+        cnpj_entidade: enriqDados.cnpj_entidade,
+        candidatos_trf1: enriqDados.candidatos_trf1,
+        registro_siop: enriqDados.registro_siop ? {
+          conciliacao_status: enriqDados.registro_siop.conciliacao_status,
+          conciliacao_tipo: enriqDados.registro_siop.conciliacao_tipo,
+          match_metodo: enriqDados.registro_siop.match_metodo,
+          causa_provavel: enriqDados.registro_siop.causa_provavel,
+          siop_match_status: enriqDados.registro_siop.siop_match_status,
+          siop_valor_original: enriqDados.registro_siop.siop_valor_original,
+          siop_valor_atualizado: enriqDados.registro_siop.siop_valor_atualizado,
+          siop_data_ajuizamento: enriqDados.registro_siop.siop_data_ajuizamento,
+          siop_tribunal: enriqDados.registro_siop.siop_tribunal,
+        } : null,
+      },
+      // Outras fases
+      fase1b_loa: fase1b,
+      fase1c_siop: fase1c,
+      fase4b_robo_pje: fase4b,
+      fase5b_cnpj: fase5b,
+      fase5c_portal: fase5c,
       // Campos de compatibilidade com o frontend atual
       datajud: {
         status: fase1.status === "ok" ? "encontrado" : fase1.status,
         resultado: fase1.dados,
       },
-      cnj: cnjEncontrado || "pendente_busca_reversa",
+      cnj: cnjEncontrado || "pendente_enriquecimento",
+      cnj_originario: cnjEncontrado || null,
+      cnj_execucao: cnjExecucao || null,
+      status_pagamento: fase4b.dados?.status_pagamento || "PENDENTE",
+      credor_verificado: fase5b.status === "ok" ? fase5b.dados : null,
+      // NOVAS FASES (14/04/2026)
+      fase6a_apollo_receita: fase6a,
+      fase6b_contatos: fase6b,
+      fase6c_audit_contatos: fase6c,
+      empresa: fase6a.dados?.receita_federal || null,
+      status_empresa: fase6a.dados?.receita_federal?.status || null,
+      apollo: fase6a.dados?.apollo || null,
+      contatos: {
+        socios: fase6b.dados?.socios || [],
+        advogados: fase6b.dados?.advogados || [],
+        score_cobertura: fase6b.dados?.score_cobertura || 0,
+        alertas: fase6b.dados?.alertas || [],
+      },
+      audit_contatos: {
+        score: fase6c.dados?.scoreGeral || 0,
+        resultados: fase6c.dados?.auditResults || [],
+      },
       fases_concluidas: pipelineResult.fases_concluidas,
       fases_pendentes: pipelineResult.fases_pendentes,
     });
