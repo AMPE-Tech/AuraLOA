@@ -13,6 +13,10 @@ import dueDiligenceViewerRouter from "./routes/due_diligence_viewer";
 import ddPipelineRouter from "./routes/dd_pipeline";
 import dashboardRouter from "./routes/dashboard";
 import lotesRouter from "./routes/lotes";
+import ddAuditRouter from "./routes/dd_audit";
+import kycNdaRouter from "./routes/kyc_nda";
+import billingAuraloaRouter from "./routes/billing_auraloa";
+import enriquecimentoRouter from "./routes/enriquecimento";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -23,6 +27,10 @@ export async function registerRoutes(
   app.use(lotesRouter);
   app.use(dueDiligenceViewerRouter);
   app.use(ddPipelineRouter);
+  app.use(ddAuditRouter);
+  app.use(kycNdaRouter);
+  app.use(billingAuraloaRouter);
+  app.use(enriquecimentoRouter);
   app.use(validadorRouter);
   registerAnaliseDocumentoRoutes(app);
   registerStripeRoutes(app);

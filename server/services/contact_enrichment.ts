@@ -143,16 +143,21 @@ async function fetchQSA_CNPJWS(cnpj: string): Promise<{
   };
 }
 
-// ── Fonte 3: Google Custom Search (sites de escritórios, LinkedIn) ───────
+// ── Fonte 3: Serper.dev (Google results via API — sem setup Cloud) ──────
 
 /**
- * Busca dados de contato via Google Custom Search Engine.
- * Requer GOOGLE_CSE_KEY e GOOGLE_CSE_CX no .env
+ * Busca dados de contato via Serper.dev (Google Search API).
+ * Requer SERPER_API_KEY no .env
+ *
+ * Por que Serper em vez de Google CSE:
+ * - Não precisa criar/ativar API no Google Cloud Console
+ * - 2.500 buscas grátis, depois $0.001/query
+ * - Retorna resultados idênticos ao Google (mesmo índice)
+ * - Setup: 1 API key, sem projeto, sem CX
  *
  * Queries inteligentes:
  * - "João Silva advogado OAB email telefone"
  * - "João Silva sócio EMPRESA linkedin"
- * - "EMPRESA escritório advocacia contato"
  */
 export async function searchGoogleContacts(
   nome: string,
@@ -161,49 +166,72 @@ export async function searchGoogleContacts(
   linkedin_url: string | null;
   site: string | null;
   email_encontrado: string | null;
+  telefone_encontrado: string | null;
   snippets: string[];
 }> {
-  const key = process.env.GOOGLE_CSE_KEY;
-  const cx = process.env.GOOGLE_CSE_CX;
-  if (!key || !cx) {
-    return { linkedin_url: null, site: null, email_encontrado: null, snippets: [] };
+  const key = process.env.SERPER_API_KEY;
+  if (!key) {
+    return { linkedin_url: null, site: null, email_encontrado: null, telefone_encontrado: null, snippets: [] };
   }
 
   const query = `"${nome}" ${contexto} contato email telefone`;
-  const url = `https://www.googleapis.com/customsearch/v1?key=${key}&cx=${cx}&q=${encodeURIComponent(query)}&num=5`;
 
-  const data = await safeFetch(url);
-  if (!data?.items) return { linkedin_url: null, site: null, email_encontrado: null, snippets: [] };
+  try {
+    const response = await fetch("https://google.serper.dev/search", {
+      method: "POST",
+      headers: {
+        "X-API-KEY": key,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ q: query, num: 10, gl: "br", hl: "pt-br" }),
+    });
 
-  let linkedin_url: string | null = null;
-  let site: string | null = null;
-  let email_encontrado: string | null = null;
-  const snippets: string[] = [];
-
-  for (const item of data.items) {
-    const link: string = item.link || "";
-    const snippet: string = item.snippet || "";
-
-    // LinkedIn
-    if (!linkedin_url && link.includes("linkedin.com/in/")) {
-      linkedin_url = link;
+    if (!response.ok) {
+      return { linkedin_url: null, site: null, email_encontrado: null, telefone_encontrado: null, snippets: [] };
     }
 
-    // Site de escritório jurídico
-    if (!site && (link.includes("adv.br") || link.includes("advocacia") || link.includes("escritorio"))) {
-      site = link;
+    const data = await response.json();
+    const items: any[] = data.organic || [];
+
+    let linkedin_url: string | null = null;
+    let site: string | null = null;
+    let email_encontrado: string | null = null;
+    let telefone_encontrado: string | null = null;
+    const snippets: string[] = [];
+
+    for (const item of items) {
+      const link: string = item.link || "";
+      const snippet: string = item.snippet || "";
+
+      // LinkedIn — prioriza perfil brasileiro
+      if (!linkedin_url && link.includes("linkedin.com/in/")) {
+        linkedin_url = link;
+      }
+
+      // Site de escritório jurídico
+      if (!site && (link.includes("adv.br") || link.includes("advocacia") || link.includes("advogados"))) {
+        site = link;
+      }
+
+      // Email no snippet
+      if (!email_encontrado) {
+        const emailMatch = snippet.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+        if (emailMatch) email_encontrado = emailMatch[0].toLowerCase();
+      }
+
+      // Telefone no snippet — formato (XX) XXXXX-XXXX ou similar
+      if (!telefone_encontrado) {
+        const telMatch = snippet.match(/\(?(\d{2})\)?[\s.-]?9?\d{4}[\s.-]?\d{4}/);
+        if (telMatch) telefone_encontrado = telMatch[0];
+      }
+
+      snippets.push(snippet.slice(0, 200));
     }
 
-    // Email no snippet
-    if (!email_encontrado) {
-      const emailMatch = snippet.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-      if (emailMatch) email_encontrado = emailMatch[0].toLowerCase();
-    }
-
-    snippets.push(snippet.slice(0, 200));
+    return { linkedin_url, site, email_encontrado, telefone_encontrado, snippets };
+  } catch {
+    return { linkedin_url: null, site: null, email_encontrado: null, telefone_encontrado: null, snippets: [] };
   }
-
-  return { linkedin_url, site, email_encontrado, snippets };
 }
 
 // ── Fonte 4: OAB (Conselho Nacional — validação) ────────────────────────
@@ -324,6 +352,7 @@ export async function enrichContacts(params: {
 
     if (googleResult.linkedin_url) person.linkedin_url = googleResult.linkedin_url;
     if (googleResult.email_encontrado) person.email = googleResult.email_encontrado;
+    if (googleResult.telefone_encontrado) person.telefone = googleResult.telefone_encontrado;
     if (googleResult.site) {
       if (person.tipo === "advogado") {
         person.site_escritorio = googleResult.site;
@@ -331,8 +360,8 @@ export async function enrichContacts(params: {
         person.site_pessoal = googleResult.site;
       }
     }
-    if (googleResult.linkedin_url || googleResult.email_encontrado || googleResult.site) {
-      person.fontes_consultadas.push("google_cse");
+    if (googleResult.linkedin_url || googleResult.email_encontrado || googleResult.site || googleResult.telefone_encontrado) {
+      person.fontes_consultadas.push("serper_google");
     }
 
     // Rate limit: 100ms entre buscas para não estourar quota Google
