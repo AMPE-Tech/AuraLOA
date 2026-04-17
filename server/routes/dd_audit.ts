@@ -9,14 +9,10 @@ import { Router, type Request, type Response } from "express";
 import jwt from "jsonwebtoken";
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from "url";
-
-const __filename_local = fileURLToPath(import.meta.url);
-const __dirname_local = path.dirname(__filename_local);
 
 const router = Router();
 const SESSION_SECRET = process.env.SESSION_SECRET || "aura-loa-default-secret-key";
-const AUDIT_DIR = path.resolve(__dirname_local, "public", "dd-audit");
+const AUDIT_DIR = path.resolve("client/public/dd-audit");
 
 function verificarToken(req: Request): boolean {
   const token = req.query["t"] ? String(req.query["t"]) : undefined;

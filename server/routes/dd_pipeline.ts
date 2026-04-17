@@ -12,6 +12,8 @@
 
 import { Router, type Request, type Response } from "express";
 import * as crypto from "crypto";
+import * as path from "path";
+
 import {
   buscarCNJPorPrecatorio,
   fetchPrecatorioByNumero,
@@ -43,6 +45,7 @@ interface DDPipelineResult {
     uo_devedora: string | null;
     assunto: string | null;
   };
+  fase_pre0_credor: DDFaseResult;
   fase0_cnj: DDFaseResult;
   fase1_datajud: DDFaseResult;
   fase2_raspagem: DDFaseResult;
@@ -93,6 +96,308 @@ function formatarValorBR(valor: number): string {
   return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(valor);
 }
 
+// ── FASE PRÉ-0: Identificar Credor via Portal da Transparência ──────────────
+//    LOA(UO) → orgaoSuperior → Portal "recursos-recebidos" → credor + CNPJ
+//    Descoberto e validado em 14/04/2026 (caso DNIT → Rio Pedreira)
+
+const UO_PARA_ORGAO_SUPERIOR: Record<string, { orgaoSuperior: string; nome: string; orgNome: string }> = {
+  "71103": { orgaoSuperior: "03000", nome: "EFU - Sentenças Judiciais", orgNome: "Advocacia-Geral da União" },
+  "33201": { orgaoSuperior: "33000", nome: "INSS", orgNome: "Min. Previdência Social" },
+  "33904": { orgaoSuperior: "33000", nome: "Fundo RGPS", orgNome: "Min. Previdência Social" },
+  "52101": { orgaoSuperior: "52000", nome: "Min. da Defesa", orgNome: "Min. da Defesa" },
+  "26245": { orgaoSuperior: "26000", nome: "UFRJ", orgNome: "Min. da Educação" },
+  "26236": { orgaoSuperior: "26000", nome: "UFF", orgNome: "Min. da Educação" },
+  "26406": { orgaoSuperior: "26000", nome: "IFES", orgNome: "Min. da Educação" },
+  "26271": { orgaoSuperior: "26000", nome: "FUB/UnB", orgNome: "Min. da Educação" },
+  "26298": { orgaoSuperior: "26000", nome: "FNDE", orgNome: "Min. da Educação" },
+  "26269": { orgaoSuperior: "26000", nome: "FURJ", orgNome: "Min. da Educação" },
+  "24204": { orgaoSuperior: "24000", nome: "CNEN", orgNome: "Min. Ciência e Tecnologia" },
+  "24201": { orgaoSuperior: "24000", nome: "CNPq", orgNome: "Min. Ciência e Tecnologia" },
+  "44201": { orgaoSuperior: "44000", nome: "IBAMA", orgNome: "Min. Meio Ambiente" },
+  "25101": { orgaoSuperior: "25000", nome: "Min. da Fazenda", orgNome: "Min. da Fazenda" },
+  "39207": { orgaoSuperior: "39000", nome: "VALEC", orgNome: "Min. Transportes" },
+  "39252": { orgaoSuperior: "39000", nome: "DNIT", orgNome: "Min. Transportes" },
+  "36211": { orgaoSuperior: "36000", nome: "FUNASA", orgNome: "Min. da Saúde" },
+  "36901": { orgaoSuperior: "36000", nome: "Fundo Nac. Saúde", orgNome: "Min. da Saúde" },
+  "47205": { orgaoSuperior: "47000", nome: "IBGE", orgNome: "Min. Plan. e Orçamento" },
+  "47101": { orgaoSuperior: "47000", nome: "Min. Plan. e Orçamento", orgNome: "Min. Plan. e Orçamento" },
+  "32265": { orgaoSuperior: "32000", nome: "ANP", orgNome: "Min. Minas e Energia" },
+  "83201": { orgaoSuperior: "83000", nome: "EGPA", orgNome: "Encargos Financeiros" },
+  "22202": { orgaoSuperior: "22000", nome: "INCRA", orgNome: "Min. Desenv. Agrário" },
+  "53208": { orgaoSuperior: "53000", nome: "SUFRAMA", orgNome: "Min. Desenv. Indústria" },
+  "20113": { orgaoSuperior: "20000", nome: "Presidência", orgNome: "Presidência da República" },
+};
+
+// Palavras-chave de tipo de causa → ajudam a filtrar credor no Portal
+const TIPO_CAUSA_KEYWORDS: Record<string, string[]> = {
+  "FUNDEF": ["municipio", "prefeitura", "estado", "secretaria"],
+  "Desapropriação": ["construtora", "imobiliaria", "fazenda"],
+  "SUS": ["hospital", "santa casa", "clinica", "laboratorio"],
+  "Prestação de Serviços": ["construtora", "engenharia", "servicos"],
+  "Servidores": ["servidor", "associacao", "sindicato"],
+  "Tributário": ["empresa", "industria", "comercio"],
+};
+
+interface CredorIdentificado {
+  nome: string;
+  cnpj: string | null;
+  municipio: string | null;
+  uf: string | null;
+  tipo_pessoa: string | null;
+  valor_recebido: string | null;
+  fonte: string;
+  confianca: "alta" | "media" | "baixa";
+}
+
+async function executarFaseCredor(
+  uoDevedoraCodigo: string,
+  uoDevedoraNome: string,
+  tipoCausa: string,
+  valorPrecatorio: number,
+): Promise<DDFaseResult & { credores: CredorIdentificado[] }> {
+  const inicio = Date.now();
+  const credores: CredorIdentificado[] = [];
+
+  try {
+    const https = await import("https");
+    const apiKey = process.env.PORTAL_API_KEY || "6081aeff3e70fc8c1fb98be64e427669";
+
+    // PASSO 1: Mapear UO → orgaoSuperior
+    const mapa = UO_PARA_ORGAO_SUPERIOR[uoDevedoraCodigo];
+    if (!mapa) {
+      console.log(`[Credor] UO ${uoDevedoraCodigo} (${uoDevedoraNome}) sem mapeamento para orgaoSuperior`);
+      return {
+        fase: "fase_pre0_credor",
+        status: "parcial",
+        dados: {
+          metodo: "uo_sem_mapeamento",
+          uo_codigo: uoDevedoraCodigo,
+          uo_nome: uoDevedoraNome,
+          observacao: `UO ${uoDevedoraCodigo} não possui mapeamento para órgão superior. Adicionar ao mapa.`,
+        },
+        fontes: [],
+        timestamp: new Date().toISOString(),
+        duracao_ms: Date.now() - inicio,
+        credores,
+      };
+    }
+
+    console.log(`[Credor] UO ${uoDevedoraCodigo} → orgaoSuperior ${mapa.orgaoSuperior} (${mapa.orgNome})`);
+
+    // PASSO 2: Consultar Portal da Transparência — recursos-recebidos
+    // Buscar pagamentos do órgão superior no ano mais recente
+    const anoAtual = new Date().getFullYear();
+    const mesAnoInicio = `01/${anoAtual - 1}`;
+    const mesAnoFim = `12/${anoAtual - 1}`;
+
+    const url = `https://api.portaldatransparencia.gov.br/api-de-dados/despesas/recursos-recebidos?mesAnoInicio=${encodeURIComponent(mesAnoInicio)}&mesAnoFim=${encodeURIComponent(mesAnoFim)}&orgaoSuperior=${mapa.orgaoSuperior}&pagina=1`;
+
+    console.log(`[Credor] Consultando Portal Transparência: orgaoSuperior=${mapa.orgaoSuperior}, período=${mesAnoInicio}-${mesAnoFim}`);
+
+    const portalData: any = await new Promise((resolve, reject) => {
+      const req = https.get(url, {
+        headers: { "chave-api-dados": apiKey, "Accept": "application/json" },
+      }, (resp) => {
+        let body = "";
+        resp.on("data", (chunk: any) => body += chunk);
+        resp.on("end", () => {
+          try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+        });
+      });
+      req.on("error", reject);
+      req.setTimeout(15000, () => { req.destroy(); reject(new Error("Timeout Portal Transparência")); });
+    });
+
+    if (!Array.isArray(portalData) || portalData.length === 0) {
+      console.log(`[Credor] Portal Transparência: 0 registros para orgaoSuperior=${mapa.orgaoSuperior}`);
+
+      // Tentar com UO direta como unidadeGestora
+      const url2 = `https://api.portaldatransparencia.gov.br/api-de-dados/despesas/recursos-recebidos?mesAnoInicio=${encodeURIComponent(mesAnoInicio)}&mesAnoFim=${encodeURIComponent(mesAnoFim)}&unidadeGestora=${uoDevedoraCodigo}&pagina=1`;
+
+      const portalData2: any = await new Promise((resolve, reject) => {
+        const req = https.get(url2, {
+          headers: { "chave-api-dados": apiKey, "Accept": "application/json" },
+        }, (resp) => {
+          let body = "";
+          resp.on("data", (chunk: any) => body += chunk);
+          resp.on("end", () => {
+            try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+          });
+        });
+        req.on("error", reject);
+        req.setTimeout(15000, () => { req.destroy(); reject(new Error("Timeout")); });
+      });
+
+      if (Array.isArray(portalData2) && portalData2.length > 0) {
+        console.log(`[Credor] Portal Transparência (UG): ${portalData2.length} registros para UG=${uoDevedoraCodigo}`);
+        processarResultadosPortal(portalData2, credores, valorPrecatorio, tipoCausa);
+      }
+    } else {
+      console.log(`[Credor] Portal Transparência: ${portalData.length} registros para orgaoSuperior=${mapa.orgaoSuperior}`);
+      processarResultadosPortal(portalData, credores, valorPrecatorio, tipoCausa);
+    }
+
+    // PASSO 3: Se ainda não achou, tentar endpoint despesas/documentos (fase=3 pagamento)
+    if (credores.length === 0) {
+      // Buscar por funcional programática — ação de sentenças judiciais
+      const acoesSentencas = ["0005", "0022", "0625", "218Y", "0EC7"];
+      for (const acao of acoesSentencas) {
+        const urlFp = `https://api.portaldatransparencia.gov.br/api-de-dados/despesas/por-funcional-programatica?ano=${anoAtual}&acao=${acao}&orgaoSuperior=${mapa.orgaoSuperior}&pagina=1`;
+        try {
+          const fpData: any = await new Promise((resolve, reject) => {
+            const req = https.get(urlFp, {
+              headers: { "chave-api-dados": apiKey, "Accept": "application/json" },
+            }, (resp) => {
+              let body = "";
+              resp.on("data", (chunk: any) => body += chunk);
+              resp.on("end", () => {
+                try { resolve(JSON.parse(body)); } catch (e) { reject(e); }
+              });
+            });
+            req.on("error", reject);
+            req.setTimeout(10000, () => { req.destroy(); reject(new Error("Timeout")); });
+          });
+
+          if (Array.isArray(fpData) && fpData.length > 0) {
+            console.log(`[Credor] Funcional-programática ação=${acao}: ${fpData.length} registros`);
+            // Extrair favorecidos se disponível nos dados
+            fpData.forEach((item: any) => {
+              if (item.favorecido?.nome && item.favorecido?.codigoFormatado) {
+                credores.push({
+                  nome: item.favorecido.nome,
+                  cnpj: item.favorecido.codigoFormatado?.replace(/[.\-\/]/g, "") || null,
+                  municipio: null,
+                  uf: null,
+                  tipo_pessoa: item.favorecido.tipo || null,
+                  valor_recebido: item.pago || item.valorPago || null,
+                  fonte: `Portal Transparência — ação ${acao}`,
+                  confianca: "media",
+                });
+              }
+            });
+            if (credores.length > 0) break;
+          }
+        } catch {
+          // Silenciar erro de ação individual
+        }
+      }
+    }
+
+    // PASSO 4: Para credores encontrados, buscar CNPJ na BrasilAPI se não tiver
+    for (const credor of credores) {
+      if (credor.cnpj && credor.cnpj.length >= 11) {
+        try {
+          const cnpjLimpo = credor.cnpj.replace(/[.\-\/]/g, "");
+          const brasilData: any = await new Promise((resolve, reject) => {
+            https.get(`https://brasilapi.com.br/api/cnpj/v1/${cnpjLimpo}`, (resp) => {
+              let body = "";
+              resp.on("data", (chunk: any) => body += chunk);
+              resp.on("end", () => { try { resolve(JSON.parse(body)); } catch (e) { reject(e); } });
+            }).on("error", reject);
+          });
+          if (brasilData.razao_social) {
+            credor.nome = brasilData.razao_social;
+            credor.municipio = brasilData.municipio || credor.municipio;
+            credor.uf = brasilData.uf || credor.uf;
+            credor.tipo_pessoa = brasilData.descricao_tipo || credor.tipo_pessoa;
+            console.log(`[Credor] BrasilAPI confirmou: ${credor.nome} (${credor.cnpj}) — ${credor.municipio}/${credor.uf}`);
+          }
+        } catch {
+          // BrasilAPI pode falhar — não é crítico
+        }
+      }
+    }
+
+    const melhorCredor = credores.length > 0 ? credores[0] : null;
+    console.log(`[Credor] Resultado: ${credores.length} candidatos | Melhor: ${melhorCredor?.nome || "NENHUM"} | CNPJ: ${melhorCredor?.cnpj || "N/A"}`);
+
+    return {
+      fase: "fase_pre0_credor",
+      status: credores.length > 0 ? "ok" : "parcial",
+      dados: {
+        metodo: credores.length > 0 ? "portal_transparencia" : "sem_resultado",
+        orgao_superior: mapa.orgaoSuperior,
+        orgao_nome: mapa.orgNome,
+        uo_codigo: uoDevedoraCodigo,
+        uo_nome: uoDevedoraNome,
+        total_candidatos: credores.length,
+        credor_principal: melhorCredor,
+        todos_credores: credores,
+        tipo_causa: tipoCausa,
+        periodo_consulta: `${mesAnoInicio} a ${mesAnoFim}`,
+      },
+      fontes: ["Portal da Transparência API — recursos-recebidos", "BrasilAPI (CNPJ)"],
+      timestamp: new Date().toISOString(),
+      duracao_ms: Date.now() - inicio,
+      credores,
+    };
+
+  } catch (err: any) {
+    console.error(`[Credor] Erro: ${err.message}`);
+    return {
+      fase: "fase_pre0_credor",
+      status: "erro",
+      dados: { erro: err.message },
+      fontes: [],
+      timestamp: new Date().toISOString(),
+      duracao_ms: Date.now() - inicio,
+      credores,
+    };
+  }
+}
+
+function processarResultadosPortal(
+  dados: any[],
+  credores: CredorIdentificado[],
+  valorPrecatorio: number,
+  tipoCausa: string,
+): void {
+  // Filtrar por favorecidos que receberam valores compatíveis
+  const favorecidosUnicos = new Map<string, { nome: string; cnpj: string; total: number; municipio: string; uf: string; tipo: string }>();
+
+  dados.forEach((item: any) => {
+    const nome = item.favorecido?.nome || item.nomeFavorecido || "";
+    const cnpj = item.favorecido?.codigoFormatado || item.codigoFavorecido || "";
+    const valor = parseFloat(String(item.valor || item.pago || "0").replace(/[R$.\s]/g, "").replace(",", ".")) || 0;
+    const municipio = item.favorecido?.municipio || item.municipioFavorecido || "";
+    const uf = item.favorecido?.uf || item.ufFavorecido || "";
+    const tipo = item.favorecido?.tipo || "";
+
+    if (!nome || nome.length < 3) return;
+
+    // Ignorar órgãos públicos e bancos (não são credores de precatórios)
+    const ignorePatterns = /BANCO DO BRASIL|CAIXA ECONOMICA|TESOURO NACIONAL|SECRETARIA DO TESOURO|RECEITA FEDERAL/i;
+    if (ignorePatterns.test(nome)) return;
+
+    const key = cnpj || nome;
+    if (!favorecidosUnicos.has(key)) {
+      favorecidosUnicos.set(key, { nome, cnpj: cnpj.replace(/[.\-\/]/g, ""), total: valor, municipio, uf, tipo });
+    } else {
+      const existing = favorecidosUnicos.get(key)!;
+      existing.total += valor;
+    }
+  });
+
+  // Ordenar por valor (maior primeiro) e pegar os top candidatos
+  const sorted = Array.from(favorecidosUnicos.values())
+    .filter(f => f.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 10);
+
+  sorted.forEach(f => {
+    credores.push({
+      nome: f.nome,
+      cnpj: f.cnpj && f.cnpj.length >= 11 ? f.cnpj : null,
+      municipio: f.municipio || null,
+      uf: f.uf || null,
+      tipo_pessoa: f.tipo || null,
+      valor_recebido: f.total > 0 ? formatarValorBR(f.total) : null,
+      fonte: "Portal da Transparência — recursos-recebidos",
+      confianca: f.total >= valorPrecatorio * 0.5 ? "alta" : f.total >= valorPrecatorio * 0.1 ? "media" : "baixa",
+    });
+  });
+}
+
 // ── FASE 0-ENRIQ: Enriquecimento CNJ (SIOP CSV → CNPJ → TRF1) ──────────────
 
 interface EnriquecimentoResult {
@@ -108,6 +413,7 @@ async function executarFaseEnriquecimento(
   numeroPrecatorio: string,
   valor: number,
   tribunalAlias: string,
+  cnpjCredor?: string | null,
 ): Promise<DDFaseResult> {
   const inicio = Date.now();
   const resultado: EnriquecimentoResult = {
@@ -162,9 +468,12 @@ async function executarFaseEnriquecimento(
     // ── PASSO 2: Verificar se já tem CNJ ──────────────────────────────────
     const cnjOrig = record["cnj_processo_originario"]?.trim();
     const cnjExec = record["cnj_processo_execucao"]?.trim();
-    const cnpjEnt = record["cnpj_entidade_devedora"]?.trim();
+    const cnpjEnt = record["cnpj_entidade_devedora"]?.trim() || cnpjCredor || "";
 
     resultado.cnpj_entidade = cnpjEnt || null;
+    if (cnpjCredor && !record["cnpj_entidade_devedora"]?.trim()) {
+      console.log(`[Enriquecimento] CNPJ do credor injetado pela fase Credor: ${cnpjCredor}`);
+    }
 
     if (cnjOrig && cnjOrig.length >= 15) {
       resultado.cnj_originario = cnjOrig;
@@ -1240,15 +1549,37 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
   const timestamp = new Date().toISOString();
 
   try {
-    // ── FASE 0-ENRIQ: Enriquecimento CNJ (PRIMEIRA COISA!) ─────────────────
+    // ── FASE PRÉ-0: Identificar Credor via Portal da Transparência ────────
     console.log(`[DD Pipeline] ══ INÍCIO ══ Precatório: ${numero_precatorio} | Tribunal: ${tribunal}`);
-    const faseEnriq = await executarFaseEnriquecimento(numero_precatorio, valorNum, tribunalAlias);
+
+    // Primeiro: buscar dados LOA/SIOP para ter UO e Tipo Causa
+    const fase1bPrevia = await executarFase1B(numero_precatorio);
+    const fase1cPrevia = await executarFase1C(numero_precatorio, valorNum, uo_devedora || null);
+    const loaDados = fase1bPrevia.status === "ok" ? fase1bPrevia.dados : {};
+    const siopDados = fase1cPrevia.status === "ok" ? fase1cPrevia.dados : {};
+    const uoCodigo = (siopDados as any)?.UO_Devedora_Codigo || (loaDados as any)?.UO_Devedora_Codigo || "";
+    const uoNome = (siopDados as any)?.UO_Devedora_Nome || (loaDados as any)?.UO_Devedora_Nome || uo_devedora || "";
+    const tipoCausa = (siopDados as any)?.Tipo_Causa || (loaDados as any)?.Tipo_Causa || assunto || "";
+
+    console.log(`[DD Pipeline] LOA/SIOP: UO=${uoCodigo} (${uoNome}) | Tipo=${tipoCausa}`);
+
+    // Executar identificação do credor
+    const faseCredor = await executarFaseCredor(uoCodigo, uoNome, tipoCausa, valorNum);
+    const credoresEncontrados = faseCredor.credores || [];
+    const melhorCredor = credoresEncontrados.length > 0 ? credoresEncontrados[0] : null;
+    const cnpjDoCredor = melhorCredor?.cnpj || null;
+
+    console.log(`[DD Pipeline] Credor: ${credoresEncontrados.length} candidatos | Principal: ${melhorCredor?.nome || "NENHUM"} | CNPJ: ${cnpjDoCredor || "N/A"}`);
+
+    // ── FASE 0-ENRIQ: Enriquecimento CNJ (agora COM o CNPJ do credor!) ───
+    const faseEnriq = await executarFaseEnriquecimento(numero_precatorio, valorNum, tribunalAlias, cnpjDoCredor);
     const enriqDados = faseEnriq.dados as EnriquecimentoResult;
 
     // CNJ vem do enriquecimento (SIOP direto ou TRF1 via CNPJ)
     let cnjEncontrado = enriqDados.cnj_originario || null;
     const cnjExecucao = enriqDados.cnj_execucao || null;
-    const cnpjEntidade = enriqDados.cnpj_entidade || null;
+    // CNPJ: preferir o do credor se enriquecimento não achou
+    const cnpjEntidade = enriqDados.cnpj_entidade || cnpjDoCredor || null;
     console.log(`[DD Pipeline] Enriquecimento: método=${enriqDados.metodo} | CNJ=${cnjEncontrado || "NENHUM"} | CNPJ=${cnpjEntidade || "NENHUM"} | candidatos_trf1=${enriqDados.candidatos_trf1?.length || 0}`);
 
     // ── FASE 0: Busca reversa CNJ (DataJud — fallback se enriquecimento não achou) ──
@@ -1285,11 +1616,11 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
     // ── FASE 1: DataJud com CNJ ────────────────────────────────────────────
     const fase1 = await executarFase1(cnjEncontrado, numero_precatorio);
 
-    // ── FASE 1B: Busca LOA CSV (42.174 registros) ─────────────────────────
-    const fase1b = await executarFase1B(numero_precatorio);
+    // ── FASE 1B: Busca LOA CSV (já executada acima — reusar) ──────────────
+    const fase1b = fase1bPrevia;
 
-    // ── FASE 1C: Cruzamento SIOP (32 colunas) ─────────────────────────────
-    const fase1c = await executarFase1C(numero_precatorio, valorNum, uo_devedora || null);
+    // ── FASE 1C: Cruzamento SIOP (já executada acima — reusar) ──────────
+    const fase1c = fase1cPrevia;
 
     // ── FASE 2: Raspagem web ───────────────────────────────────────────────
     const fase2 = await executarFase2(cnjEncontrado, tribunalAlias, uo_devedora, valorNum);
@@ -1453,13 +1784,13 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
 
     // ── Montar resultado ───────────────────────────────────────────────────
     const fasesConcluidas = [
-      "fase0_enriquecimento", "fase0_busca_cnj", "fase1_datajud", "fase1b_loa_csv", "fase1c_siop",
-      "fase2_raspagem", "fase2b_score", "fase3_tribunal", "fase4_5_cruzamento",
+      "fase_pre0_credor", "fase0_enriquecimento", "fase0_busca_cnj", "fase1b_loa_csv", "fase1c_siop",
+      "fase1_datajud", "fase2_raspagem", "fase2b_score", "fase3_tribunal", "fase4_5_cruzamento",
       "fase4b_robo_pje", "fase5b_cnpj", "fase5c_portal_transparencia",
       "fase6a_apollo_receita", "fase6b_contatos", "fase6c_audit_contatos"
     ].filter(f => {
       const faseMap: Record<string, DDFaseResult> = {
-        fase0_enriquecimento: faseEnriq, fase0_busca_cnj: fase0, fase1_datajud: fase1, fase1b_loa_csv: fase1b,
+        fase_pre0_credor: faseCredor, fase0_enriquecimento: faseEnriq, fase0_busca_cnj: fase0, fase1_datajud: fase1, fase1b_loa_csv: fase1b,
         fase1c_siop: fase1c, fase2_raspagem: fase2, fase2b_score: fase2b,
         fase3_tribunal: fase3, fase4_5_cruzamento: fase4_5,
         fase4b_robo_pje: fase4b, fase5b_cnpj: fase5b, fase5c_portal_transparencia: fase5c,
@@ -1489,6 +1820,7 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
         uo_devedora: uo_devedora || null,
         assunto: assunto || null,
       },
+      fase_pre0_credor: faseCredor,
       fase0_cnj: fase0,
       fase1_datajud: fase1,
       fase2_raspagem: fase2,
@@ -1516,22 +1848,79 @@ router.post("/api/duediligence/pipeline", async (req: Request, res: Response) =>
     const relatorioHash = crypto.createHash("sha256").update(relatorioHtml).digest("hex");
     const relatorioFilename = `dd_${tribunalAlias}_${numero_precatorio}_${Date.now()}.html`;
 
-    // Salvar relatório em /public para acesso via URL
+    // Salvar relatório onde Express realmente serve (dist/public em prod)
     const fs = await import("fs");
     const path = await import("path");
-    const publicDir = path.resolve("client/public/dd-reports");
-    fs.mkdirSync(publicDir, { recursive: true });
-    fs.writeFileSync(path.join(publicDir, relatorioFilename), relatorioHtml, "utf-8");
+    // dist/public em prod (Express serve estáticos dali)
+    const distPublicDir = path.resolve("dist/public/dd-reports");
+    fs.mkdirSync(distPublicDir, { recursive: true });
+    fs.writeFileSync(path.join(distPublicDir, relatorioFilename), relatorioHtml, "utf-8");
+    // client/public também (para dev local com vite)
+    const clientPublicDir = path.resolve("client/public/dd-reports");
+    fs.mkdirSync(clientPublicDir, { recursive: true });
+    fs.writeFileSync(path.join(clientPublicDir, relatorioFilename), relatorioHtml, "utf-8");
 
     pipelineResult.relatorio_url = `/dd-reports/${relatorioFilename}`;
     pipelineResult.fases_concluidas.push("fase6_relatorio");
     pipelineResult.fases_pendentes = [];
 
+    // ── AUDITORIA: Gravar JSON completo em disco ───────────────────────────
+    try {
+      const auditDir = path.resolve("dist/public/dd-audit");
+      fs.mkdirSync(auditDir, { recursive: true });
+      const auditFilename = `audit_${tribunalAlias}_${numero_precatorio}_${Date.now()}.json`;
+      const auditPayload = {
+        _audit: {
+          timestamp,
+          sha256: pipelineResult.sha256,
+          relatorio_sha256: relatorioHash,
+          relatorio_url: pipelineResult.relatorio_url,
+          ip: req.ip || req.socket?.remoteAddress || "unknown",
+        },
+        request: { numero_precatorio, tribunal, valor, ano },
+        result: pipelineResult,
+        fases: {
+          fase_pre0_credor: faseCredor,
+          fase0_enriquecimento: faseEnriq,
+          fase0_cnj: fase0,
+          fase1_datajud: fase1,
+          fase1b_loa: fase1b,
+          fase1c_siop: fase1c,
+          fase2_raspagem: fase2,
+          fase2b_score: fase2b,
+          fase3_tribunal: fase3,
+          fase4_autenticidade: fase4_5,
+          fase4b_robo_pje: fase4b,
+          fase5_cruzamento: fase4_5,
+          fase5b_cnpj: fase5b,
+          fase5c_portal: fase5c,
+          fase6a_apollo_receita: fase6a,
+          fase6b_contatos: fase6b,
+          fase6c_audit_contatos: fase6c,
+        },
+      };
+      fs.writeFileSync(path.join(auditDir, auditFilename), JSON.stringify(auditPayload, null, 2), "utf-8");
+      console.log(`[DD Pipeline] Audit salvo: ${auditFilename}`);
+    } catch (auditErr: any) {
+      console.error("[DD Pipeline] Erro ao salvar audit:", auditErr.message);
+    }
+
     // Retornar resultado completo para o frontend
     return res.json({
       ...pipelineResult,
       relatorio_sha256: relatorioHash,
-      // Fase de enriquecimento (NOVA — primeira do pipeline)
+      // Fase Credor (NOVA — ANTES de tudo)
+      fase_pre0_credor: faseCredor,
+      credor: melhorCredor ? {
+        nome: melhorCredor.nome,
+        cnpj: melhorCredor.cnpj,
+        municipio: melhorCredor.municipio,
+        uf: melhorCredor.uf,
+        valor_recebido: melhorCredor.valor_recebido,
+        confianca: melhorCredor.confianca,
+        total_candidatos: credoresEncontrados.length,
+      } : null,
+      // Fase de enriquecimento
       fase0_enriquecimento: faseEnriq,
       enriquecimento: {
         metodo: enriqDados.metodo,
