@@ -13,6 +13,7 @@ import { Router, type Request, type Response } from "express";
 import * as fs from "fs";
 import * as path from "path";
 import bcrypt from "bcrypt";
+import { query } from "../db";
 import jwt from "jsonwebtoken";
 
 const router = Router();
@@ -721,12 +722,13 @@ router.get("/admin/kyc-pendentes.html", (req: Request, res: Response) => {
 
 // Estrutura: slug → { email, senha }
 // Para o dashboard-cliente, exige email+senha. Para portal-cliente, aceita só senha (retrocompat).
-const CLIENTES: Record<string, { email: string; senha: string }> = {
+const CLIENTES: Record<string, { email: string; senha: string; nome: string }> = {
   ricardo: {
     email: process.env.CLIENT_RICARDO_EMAIL || "cagiva.industria@gmail.com",
     senha: process.env.CLIENT_RICARDO_PASS || "Ricardo-AuraLOA-2026",
+    nome: process.env.CLIENT_RICARDO_NOME || "Ricardo Vinicius Maciel Moreira",
   },
-  // Adicionar novos clientes aqui: slug: { email, senha }
+  // Adicionar novos clientes aqui: slug: { email, senha, nome }
 };
 
 const RELATORIOS_CLIENTE_DIR = path.resolve("dist/public/relatorios-cliente");
@@ -881,6 +883,241 @@ router.get("/dashboard-cliente", (req: Request, res: Response) => {
   res.sendFile(arquivo);
 });
 
+// Extrai campos-resumo de um HTML de relatório DD (tolerante: retorna undefined se não achar)
+function extrairResumoRelatorio(htmlPath: string): {
+  devedor?: string;
+  credor?: string;
+  assunto?: string;
+  valor?: string;
+  cnj?: string;
+  loa?: "sim" | "nao";
+  pagamento?: "pago" | "em_aberto" | "pendente";
+} {
+  let html = "";
+  try { html = fs.readFileSync(htmlPath, "utf-8"); } catch { return {}; }
+
+  const out: any = {};
+  const fieldRow = (label: string): string | undefined => {
+    const re = new RegExp(`field-key">\\s*${label.replace(/[-/\\^$*+?.()|[\\]{}]/g, "\\$&")}\\s*</div>\\s*<div class="field-val[^"]*"[^>]*>([^<]+)</div>`, "i");
+    const m = html.match(re);
+    return m ? m[1].trim() : undefined;
+  };
+
+  out.devedor = fieldRow("UO Devedora") || fieldRow("Entidade Devedora") || fieldRow("Devedor");
+  out.credor = fieldRow("Credor") || fieldRow("Benefici.rio") || fieldRow("Nome / Raz.o Social");
+  out.assunto = fieldRow("Assunto");
+  out.cnj = fieldRow("CNJ Execu..o") || fieldRow("CNJ") || fieldRow("CNJ Originário");
+
+  // Valor: tenta field "Valor (LOA)", depois "Valor", depois KPI "Valor LOA"
+  out.valor = fieldRow("Valor \\(LOA\\)") || fieldRow("Valor LOA") || fieldRow("Valor");
+  if (!out.valor) {
+    const mKpi = html.match(/kpi-label">\s*Valor\s*LOA\s*<\/div>\s*<div class="kpi-value"[^>]*>([^<]+)</i);
+    if (mKpi) out.valor = mKpi[1].trim();
+  }
+  if (!out.valor) {
+    // Fallback: primeiro R$ X.XXX,XX encontrado
+    const mR = html.match(/R\$\s*[\d\.\,]+/);
+    if (mR) out.valor = mR[0];
+  }
+
+  // LOA: sim se o arquivo menciona "LOA 2026" em contexto de precatório listado
+  if (/LOA\s*2026|Precat.rio\s+listado\s+na\s+LOA|Valor\s*\(LOA\)|Valor\s*LOA/i.test(html)) {
+    out.loa = "sim";
+  } else {
+    out.loa = "nao";
+  }
+
+  // Pagamento: heurística
+  const upper = html.toUpperCase();
+  if (/\bPAGO\b|LIQUIDADO|\bQUITADO\b/.test(upper) && !/N.O\s+PAGO|AGUARDANDO\s+PAGAMENTO/.test(upper)) {
+    out.pagamento = "pago";
+  } else if (/EM\s+ABERTO|PENDENTE\s+DE\s+PAGAMENTO|AGUARDANDO\s+PAGAMENTO|N.O\s+PAGO/.test(upper)) {
+    out.pagamento = "em_aberto";
+  } else if (/\bPENDENTE\b/.test(upper)) {
+    out.pagamento = "pendente";
+  }
+
+  return out;
+}
+
+// GET /api/dashboard-cliente/relatorios — lista JSON dos relatórios do cliente logado
+router.get("/api/dashboard-cliente/relatorios", (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+  const pastaCliente = path.join(RELATORIOS_CLIENTE_DIR, check.cliente);
+  const relatorios: any[] = [];
+  try {
+    if (fs.existsSync(pastaCliente)) {
+      const files = fs.readdirSync(pastaCliente).filter((f) => f.endsWith(".html"));
+      for (const f of files) {
+        const fullPath = path.join(pastaCliente, f);
+        const st = fs.statSync(fullPath);
+        const resumo = extrairResumoRelatorio(fullPath);
+        relatorios.push({
+          nome: f.replace(/\.html$/, "").replace(/_/g, " "),
+          arquivo: f,
+          tamanho: `${(st.size / 1024).toFixed(0)} KB`,
+          data: st.mtime.toLocaleDateString("pt-BR"),
+          ...resumo,
+        });
+      }
+      relatorios.sort((a, b) => b.data.localeCompare(a.data));
+    }
+  } catch {}
+  return res.json({ cliente: check.cliente, relatorios });
+});
+
+// GET /dashboard-cliente/relatorio/:arquivo — servir HTML específico do cliente
+router.get("/dashboard-cliente/relatorio/:arquivo", (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) {
+    return res.redirect("/dashboard-cliente");
+  }
+  const filename = path.basename(String(req.params.arquivo));
+  const filePath = path.join(RELATORIOS_CLIENTE_DIR, check.cliente, filename);
+  if (!filename.endsWith(".html") || !fs.existsSync(filePath)) {
+    return res.status(404).send("Relatório não encontrado.");
+  }
+  return res.sendFile(filePath);
+});
+
+// DELETE /api/dashboard-cliente/relatorio/:arquivo — excluir HTML do cliente
+router.delete("/api/dashboard-cliente/relatorio/:arquivo", (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+  const filename = path.basename(String(req.params.arquivo));
+  if (!filename.endsWith(".html")) {
+    return res.status(400).json({ error: "invalid_file" });
+  }
+  const filePath = path.join(RELATORIOS_CLIENTE_DIR, check.cliente, filename);
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).json({ error: "not_found" });
+  }
+  try {
+    fs.unlinkSync(filePath);
+    fs.appendFileSync(path.resolve("Saida/dashboard_cliente_acessos.log"),
+      `[${new Date().toISOString()}] DASHBOARD_CLIENTE_DELETE cliente=${check.cliente} arquivo=${filename} ip=${req.ip}\n`, "utf-8");
+    return res.json({ ok: true, arquivo: filename });
+  } catch (err: any) {
+    return res.status(500).json({ error: "delete_failed", message: err.message });
+  }
+});
+
+// ── CRM do cliente (contatos + negociações) ──────────────────────────
+const ESTAGIOS_CRM = new Set(["prospeccao", "negociacao", "fechado", "perdido"]);
+
+// GET /api/dashboard-cliente/crm — lista contatos do cliente logado
+router.get("/api/dashboard-cliente/crm", async (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) return res.status(401).json({ error: "unauthorized" });
+  try {
+    const rows = await query<any>(
+      `SELECT id, contato_nome, telefone, email, precatorio_ref, valor_negociado::float8 AS valor_negociado,
+              estagio, proximo_followup, observacoes, created_at, updated_at
+       FROM cliente_crm WHERE cliente_slug=$1 ORDER BY
+         CASE WHEN proximo_followup IS NULL THEN 1 ELSE 0 END,
+         proximo_followup ASC, updated_at DESC`,
+      [check.cliente]
+    );
+    return res.json({ cliente: check.cliente, contatos: rows });
+  } catch (err: any) {
+    return res.status(500).json({ error: "db_error", message: err.message });
+  }
+});
+
+// POST /api/dashboard-cliente/crm — criar contato
+router.post("/api/dashboard-cliente/crm", async (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) return res.status(401).json({ error: "unauthorized" });
+  const b = req.body as any;
+  if (!b.contato_nome || String(b.contato_nome).trim().length === 0) {
+    return res.status(400).json({ error: "missing_field", field: "contato_nome" });
+  }
+  const estagio = ESTAGIOS_CRM.has(b.estagio) ? b.estagio : "prospeccao";
+  try {
+    const rows = await query<any>(
+      `INSERT INTO cliente_crm
+        (cliente_slug, contato_nome, telefone, email, precatorio_ref, valor_negociado, estagio, proximo_followup, observacoes)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       RETURNING id`,
+      [
+        check.cliente,
+        String(b.contato_nome).trim(),
+        b.telefone || null,
+        b.email || null,
+        b.precatorio_ref || null,
+        b.valor_negociado ? Number(b.valor_negociado) : null,
+        estagio,
+        b.proximo_followup || null,
+        b.observacoes || null,
+      ]
+    );
+    return res.json({ ok: true, id: rows[0].id });
+  } catch (err: any) {
+    return res.status(500).json({ error: "db_error", message: err.message });
+  }
+});
+
+// PUT /api/dashboard-cliente/crm/:id — atualizar contato
+router.put("/api/dashboard-cliente/crm/:id", async (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) return res.status(401).json({ error: "unauthorized" });
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "invalid_id" });
+  const b = req.body as any;
+  const estagio = ESTAGIOS_CRM.has(b.estagio) ? b.estagio : undefined;
+  try {
+    const rows = await query<any>(
+      `UPDATE cliente_crm SET
+         contato_nome=COALESCE($3,contato_nome),
+         telefone=$4, email=$5, precatorio_ref=$6,
+         valor_negociado=$7,
+         estagio=COALESCE($8,estagio),
+         proximo_followup=$9, observacoes=$10,
+         updated_at=NOW()
+       WHERE id=$1 AND cliente_slug=$2
+       RETURNING id`,
+      [
+        id, check.cliente,
+        b.contato_nome ? String(b.contato_nome).trim() : null,
+        b.telefone ?? null,
+        b.email ?? null,
+        b.precatorio_ref ?? null,
+        b.valor_negociado != null && b.valor_negociado !== "" ? Number(b.valor_negociado) : null,
+        estagio ?? null,
+        b.proximo_followup || null,
+        b.observacoes ?? null,
+      ]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "not_found" });
+    return res.json({ ok: true, id: rows[0].id });
+  } catch (err: any) {
+    return res.status(500).json({ error: "db_error", message: err.message });
+  }
+});
+
+// DELETE /api/dashboard-cliente/crm/:id — remover contato
+router.delete("/api/dashboard-cliente/crm/:id", async (req: Request, res: Response) => {
+  const check = verificarTokenCliente(req);
+  if (!check.valid || !check.cliente) return res.status(401).json({ error: "unauthorized" });
+  const id = parseInt(req.params.id, 10);
+  if (isNaN(id)) return res.status(400).json({ error: "invalid_id" });
+  try {
+    const rows = await query<any>(
+      `DELETE FROM cliente_crm WHERE id=$1 AND cliente_slug=$2 RETURNING id`,
+      [id, check.cliente]
+    );
+    if (rows.length === 0) return res.status(404).json({ error: "not_found" });
+    return res.json({ ok: true });
+  } catch (err: any) {
+    return res.status(500).json({ error: "db_error", message: err.message });
+  }
+});
+
 // POST /dashboard-cliente/auth — validar email + senha e redirecionar com JWT
 router.post("/dashboard-cliente/auth", (req: Request, res: Response) => {
   const { email, senha } = req.body as { email?: string; senha?: string };
@@ -890,11 +1127,15 @@ router.post("/dashboard-cliente/auth", (req: Request, res: Response) => {
     ([_, c]) => c.email.toLowerCase() === emailLower && c.senha === senha
   );
   if (!clienteEncontrado) return res.send(gerarPaginaLoginDashboard(true, "/dashboard-cliente/auth", true));
-  const [nomeCliente] = clienteEncontrado;
-  const token = jwt.sign({ clienteAccess: true, cliente: nomeCliente, cliente_slug: nomeCliente }, SESSION_SECRET, { expiresIn: "8h" });
+  const [slug, dadosCliente] = clienteEncontrado;
+  const token = jwt.sign(
+    { clienteAccess: true, cliente: slug, cliente_slug: slug, nome: dadosCliente.nome, email: dadosCliente.email },
+    SESSION_SECRET,
+    { expiresIn: "8h" }
+  );
   try {
     fs.appendFileSync(path.resolve("Saida/dashboard_cliente_acessos.log"),
-      `[${new Date().toISOString()}] DASHBOARD_CLIENTE_ACCESS cliente=${nomeCliente} email=${emailLower} ip=${req.ip}\n`, "utf-8");
+      `[${new Date().toISOString()}] DASHBOARD_CLIENTE_ACCESS cliente=${slug} nome="${dadosCliente.nome}" email=${emailLower} ip=${req.ip}\n`, "utf-8");
   } catch {}
   res.redirect(`/dashboard-cliente?t=${token}`);
 });

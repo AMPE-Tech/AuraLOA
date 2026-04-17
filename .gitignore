@@ -14,3 +14,8 @@ Documento Saída/
 BDE*.md
 Datajud_New_Code.txt
 Saida/
+.mcp.json
+
+# Relatórios de cliente — dados mutáveis, não versionar
+client/public/relatorios-cliente/
+server/public/relatorios-cliente/

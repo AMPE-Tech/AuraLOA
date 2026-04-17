@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA · Ativar Assinatura — Etapa 3 de 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--surface:#162032;--surface2:#1c2a3f;--border:#1e3a5f;--cyan:#22d3ee;--violet:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(17,24,39,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);padding:14px 28px;display:flex;align-items:center;gap:1.5rem}
+.topbar-logo{font-size:1.25rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-cnj{font-size:.85rem;color:var(--text2)}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+.badge{padding:.2rem .65rem;border-radius:999px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em;background:rgba(52,211,153,.1);color:var(--green);border:1px solid rgba(52,211,153,.2)}
+.main{flex:1;max-width:900px;margin:0 auto;padding:3rem 2rem;width:100%}
+.hero{text-align:center;margin-bottom:3rem}
+.hero h1{font-size:2rem;font-weight:800;margin-bottom:.5rem;color:#fff}
+.hero p{font-size:1rem;color:var(--text2)}
+.plan-card{background:linear-gradient(135deg,rgba(34,211,238,.05),rgba(167,139,250,.05));border:2px solid var(--cyan);border-radius:16px;padding:2.5rem;margin-bottom:2rem;position:relative;overflow:hidden}
+.plan-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+.plan-badge{position:absolute;top:1rem;right:1rem;background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--bg);padding:.3rem .8rem;border-radius:999px;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.plan-title{font-size:1.4rem;font-weight:800;margin-bottom:.3rem}
+.plan-sub{font-size:.9rem;color:var(--text2);margin-bottom:1.5rem}
+.plan-price{display:flex;align-items:baseline;gap:.3rem;margin-bottom:.3rem}
+.plan-currency{font-size:1.3rem;color:var(--cyan);font-weight:700}
+.plan-amount{font-size:3.5rem;font-weight:900;color:#fff;letter-spacing:-2px}
+.plan-period{font-size:1rem;color:var(--text2)}
+.plan-features{list-style:none;margin:1.5rem 0;padding:0}
+.plan-features li{padding:.5rem 0;display:flex;align-items:center;gap:.8rem;font-size:.9rem;color:var(--text)}
+.plan-features li::before{content:'✓';color:var(--green);font-weight:700;font-size:1.1rem}
+.addons{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:2rem}
+@media(max-width:700px){.addons{grid-template-columns:1fr}}
+.addon-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:1.2rem}
+.addon-title{font-size:.85rem;font-weight:700;margin-bottom:.2rem}
+.addon-price{font-size:1.2rem;font-weight:800;color:var(--amber);margin-bottom:.3rem}
+.addon-desc{font-size:.75rem;color:var(--text3);line-height:1.5}
+.btn{padding:1rem 2rem;border:none;border-radius:10px;font-size:1rem;font-weight:700;cursor:pointer;text-decoration:none;text-align:center;display:inline-flex;align-items:center;justify-content:center;gap:.5rem;width:100%;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--bg)}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(34,211,238,.2)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.info-box{padding:1rem 1.2rem;border-radius:10px;font-size:.82rem;line-height:1.7;margin-bottom:1.5rem}
+.info-box.info{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);color:var(--cyan)}
+.info-box.warn{background:rgba(251,191,36,.08);border:1px solid rgba(251,191,36,.25);color:var(--amber)}
+.stripe-note{text-align:center;font-size:.75rem;color:var(--text3);margin-top:1rem;display:flex;align-items:center;justify-content:center;gap:.5rem}
+footer{padding:14px 32px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);background:var(--bg)}
+footer a{color:rgba(255,255,255,.45);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center"><svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 2L4 6v6c0 5.5 3.4 10.7 8 12 4.6-1.3 8-6.5 8-12V6l-8-4z" stroke="white" stroke-width="1.5"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div><span class="topbar-logo">AuraLOA</span><div style="font-size:9px;color:var(--text3);margin-top:-2px;letter-spacing:.04em">Análise Inteligente de Precatórios</div></div>
+  </div>
+  <div class="topbar-cnj">Ativar Assinatura</div>
+  <div class="topbar-right"><span class="badge">Etapa 3 de 3</span><a href="https://loa.auradue.com" style="padding:7px 16px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.1);color:var(--text2);text-decoration:none">AuraTECH Ecosystem</a></div>
+</header>
+
+<div style="display:flex;justify-content:center;gap:2rem;padding:2rem 1rem;flex-wrap:wrap;max-width:900px;margin:0 auto">
+  <div style="display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:var(--green)"><div style="width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem">✓</div>Cadastro</div>
+  <div style="display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:var(--green)"><div style="width:28px;height:28px;border-radius:50%;background:var(--green);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem">✓</div>NDA assinado</div>
+  <div style="display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:var(--cyan)"><div style="width:28px;height:28px;border-radius:50%;background:var(--cyan);color:var(--bg);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem">3</div>Ativar Assinatura</div>
+</div>
+
+<main class="main" style="padding-top:1rem">
+  <div class="hero">
+    <h1>🚀 Último passo</h1>
+    <p>Ative sua assinatura e comece a usar a plataforma imediatamente.</p>
+  </div>
+
+  <div class="plan-card">
+    <div class="plan-badge">Plano Único</div>
+    <div class="plan-title">AuraLOA Marketplace</div>
+    <div class="plan-sub">Acesso completo à plataforma com relatórios incluso</div>
+
+    <div class="plan-price">
+      <span class="plan-currency">USD</span>
+      <span class="plan-amount">100</span>
+      <span class="plan-period">/ mês</span>
+    </div>
+
+    <ul class="plan-features">
+      <li><strong>2 precatórios por mês</strong> inclusos (pesquisa + relatório DD completo)</li>
+      <li>Acesso ao dashboard com <strong>Visão Geral, Análise e Pendentes</strong></li>
+      <li>Busca em <strong>42.174 precatórios da LOA 2026</strong></li>
+      <li>Portal do cliente com relatórios atribuídos</li>
+      <li>Suporte por email</li>
+      <li>Cancele a qualquer momento</li>
+    </ul>
+
+    <button type="button" class="btn btn-primary" id="btnCheckout">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M1 4h22v16H1z" stroke="currentColor" stroke-width="2"/><path d="M1 10h22" stroke="currentColor" stroke-width="2"/></svg>
+      Ativar Assinatura (USD 100/mês)
+    </button>
+
+    <div class="stripe-note">
+      🔒 Pagamento seguro via Stripe · Aceita cartão de crédito internacional
+    </div>
+  </div>
+
+  <h3 style="font-size:1rem;margin-bottom:1rem;color:var(--text2)">Serviços adicionais (cobrança avulsa)</h3>
+
+  <div class="addons">
+    <div class="addon-card">
+      <div class="addon-title">Due Diligence Adicional</div>
+      <div class="addon-price">USD 60/un</div>
+      <div class="addon-desc">Relatório DD extra (além dos 2 inclusos no mês). Cobrança apenas mediante consentimento na plataforma.</div>
+    </div>
+    <div class="addon-card">
+      <div class="addon-title">Ofício Requisitório</div>
+      <div class="addon-price">USD 20/un</div>
+      <div class="addon-desc">Download do documento oficial expedido pelo tribunal (quando disponível no processo).</div>
+    </div>
+  </div>
+
+  <div class="info-box info">
+    <strong>💳 Como funciona:</strong> Você é redirecionado para o <strong>Stripe</strong> (checkout seguro) para cadastrar cartão. Após pagamento confirmado, volta automaticamente para o portal com acesso liberado.
+  </div>
+
+  <div class="info-box warn">
+    <strong>⚠️ Importante:</strong> Adicionais (DD extra e Ofício Requisitório) só podem ser cobrados com <strong>consentimento explícito</strong> seu na plataforma, nunca automaticamente.
+  </div>
+</main>
+
+<footer>
+  <span>&copy; 2026 AuraTECH &middot; Todos os direitos reservados</span>
+  <span style="text-transform:uppercase;letter-spacing:.12em;font-weight:600">Confidencial</span>
+  <span><a href="mailto:suporte@auradue.com">suporte@auradue.com</a></span>
+</footer>
+
+<script>
+const token = new URLSearchParams(window.location.search).get('t') || localStorage.getItem('auraloa_kyc_token');
+if (!token) { window.location.href = '/onboarding/cadastro.html'; }
+
+document.getElementById('btnCheckout').addEventListener('click', async () => {
+  const btn = document.getElementById('btnCheckout');
+  btn.disabled = true;
+  btn.textContent = 'Redirecionando para Stripe...';
+
+  try {
+    const resp = await fetch('/api/billing/checkout?t=' + token, { method: 'POST' });
+    const json = await resp.json();
+
+    if (resp.ok && json.url) {
+      window.location.href = json.url;
+    } else {
+      alert('Erro: ' + (json.error || 'não foi possível iniciar checkout'));
+      btn.disabled = false;
+      btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M1 4h22v16H1z" stroke="currentColor" stroke-width="2"/><path d="M1 10h22" stroke="currentColor" stroke-width="2"/></svg> Ativar Assinatura (USD 100/mês)';
+    }
+  } catch (err) {
+    alert('Erro de conexão');
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

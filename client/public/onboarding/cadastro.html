@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA · Cadastro — Etapa 1 de 3</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#0d1117;--surface:#162032;--surface2:#1c2a3f;--border:#1e3a5f;--cyan:#22d3ee;--violet:#a78bfa;--green:#34d399;--amber:#fbbf24;--red:#f87171;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+html{scroll-behavior:smooth}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased}
+.topbar{position:sticky;top:0;z-index:100;background:rgba(17,24,39,.95);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.06);padding:14px 28px;display:flex;align-items:center;gap:1.5rem}
+.topbar-logo{font-size:1.25rem;font-weight:800;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.topbar-cnj{font-size:.85rem;color:var(--text2);font-family:'Inter',monospace}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:.6rem}
+.badge{display:inline-flex;align-items:center;gap:.3rem;padding:.2rem .65rem;border-radius:999px;font-size:.7rem;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.badge-info{background:rgba(34,211,238,.1);color:var(--cyan);border:1px solid rgba(34,211,238,.2)}
+.steps{display:flex;justify-content:center;gap:2rem;padding:2rem 1rem;flex-wrap:wrap;max-width:900px;margin:0 auto}
+.step{display:flex;align-items:center;gap:.6rem;font-size:.8rem;color:var(--text3)}
+.step.active{color:var(--cyan)}
+.step.done{color:var(--green)}
+.step-num{width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,.05);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem}
+.step.active .step-num{background:var(--cyan);color:var(--bg);border-color:var(--cyan)}
+.step.done .step-num{background:var(--green);color:var(--bg);border-color:var(--green)}
+.main{max-width:640px;margin:0 auto;padding:1rem 2rem 3rem}
+.hero{text-align:center;margin-bottom:2rem}
+.hero h1{font-size:1.8rem;font-weight:800;margin-bottom:.5rem;color:#fff}
+.hero p{font-size:.95rem;color:var(--text2)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:2rem}
+.field{margin-bottom:1.2rem}
+.field-inline{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1.2rem}
+@media(max-width:600px){.field-inline{grid-template-columns:1fr}}
+label{display:block;font-size:.8rem;font-weight:600;color:var(--text);margin-bottom:.4rem}
+label .req{color:var(--red);margin-left:.2rem}
+input,select{width:100%;padding:.75rem 1rem;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;font-family:'Inter',system-ui,sans-serif}
+input:focus,select:focus{outline:none;border-color:var(--cyan);box-shadow:0 0 0 3px rgba(34,211,238,.1)}
+.hint{font-size:.72rem;color:var(--text3);margin-top:.3rem}
+.radio-group{display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+.radio-card{padding:1rem;background:var(--bg);border:2px solid var(--border);border-radius:10px;cursor:pointer;text-align:center;transition:all .2s}
+.radio-card.selected{border-color:var(--cyan);background:rgba(34,211,238,.05)}
+.radio-card input{display:none}
+.radio-title{font-weight:600;font-size:.9rem;color:var(--text)}
+.radio-sub{font-size:.72rem;color:var(--text2);margin-top:.2rem}
+.btn-row{display:flex;gap:1rem;margin-top:2rem}
+.btn{flex:1;padding:.9rem;border:none;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .2s}
+.btn-primary{background:linear-gradient(135deg,var(--cyan),var(--violet));color:var(--bg)}
+.btn-primary:hover{opacity:.9}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed}
+.alert{padding:.9rem 1.1rem;border-radius:8px;font-size:.85rem;margin-bottom:1.5rem}
+.alert-error{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.25);color:var(--red)}
+.alert-info{background:rgba(34,211,238,.08);border:1px solid rgba(34,211,238,.25);color:var(--cyan)}
+footer{padding:14px 32px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);background:var(--bg)}
+footer a{color:rgba(255,255,255,.45);text-decoration:none}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:12px">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 2L4 6v6c0 5.5 3.4 10.7 8 12 4.6-1.3 8-6.5 8-12V6l-8-4z" stroke="white" stroke-width="1.5"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <span class="topbar-logo">AuraLOA</span>
+      <div style="font-size:9px;color:var(--text3);margin-top:-2px;letter-spacing:.04em">Análise Inteligente de Precatórios</div>
+    </div>
+  </div>
+  <div class="topbar-cnj">Cadastro de Novo Cliente</div>
+  <div class="topbar-right">
+    <span class="badge badge-info">Etapa 1 de 3</span>
+    <a href="https://loa.auradue.com" style="padding:7px 16px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(255,255,255,.1);color:var(--text2);text-decoration:none">AuraTECH Ecosystem</a>
+  </div>
+</header>
+
+<div class="steps">
+  <div class="step active"><div class="step-num">1</div>Cadastro</div>
+  <div class="step"><div class="step-num">2</div>Assinatura NDA</div>
+  <div class="step"><div class="step-num">3</div>Ativar Assinatura</div>
+</div>
+
+<main class="main">
+  <div class="hero">
+    <h1>Bem-vindo ao AuraLOA</h1>
+    <p>Preencha seus dados para iniciar o cadastro como investidor/cliente.</p>
+  </div>
+
+  <div id="alertBox"></div>
+
+  <form id="cadastroForm" class="card">
+    <div class="field">
+      <label>Você é pessoa física ou jurídica?<span class="req">*</span></label>
+      <div class="radio-group">
+        <label class="radio-card selected" data-tipo="PF">
+          <input type="radio" name="tipo" value="PF" checked>
+          <div class="radio-title">Pessoa Física</div>
+          <div class="radio-sub">CPF</div>
+        </label>
+        <label class="radio-card" data-tipo="PJ">
+          <input type="radio" name="tipo" value="PJ">
+          <div class="radio-title">Pessoa Jurídica</div>
+          <div class="radio-sub">CNPJ</div>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Nome completo<span class="req">*</span></label>
+      <input type="text" name="nome_completo" required placeholder="Digite seu nome completo">
+    </div>
+
+    <div class="field-inline">
+      <div>
+        <label id="labelDoc">CPF<span class="req">*</span></label>
+        <input type="text" name="cpf_cnpj" id="cpfCnpj" required placeholder="000.000.000-00" maxlength="18">
+      </div>
+      <div id="blocoPJ" style="display:none">
+        <label>Razão Social</label>
+        <input type="text" name="razao_social" placeholder="Razão social da empresa">
+      </div>
+    </div>
+
+    <div class="field-inline">
+      <div>
+        <label>Email<span class="req">*</span></label>
+        <input type="email" name="email" required placeholder="voce@exemplo.com">
+      </div>
+      <div>
+        <label>Telefone</label>
+        <input type="tel" name="telefone" placeholder="(11) 98765-4321">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>WhatsApp (para envio de relatórios)</label>
+      <input type="tel" name="whatsapp" placeholder="(11) 98765-4321">
+      <div class="hint">Mesmo número do telefone? Deixe em branco.</div>
+    </div>
+
+    <div class="field">
+      <label>Perfil de atuação<span class="req">*</span></label>
+      <select name="perfil_atuacao" required>
+        <option value="">Selecione...</option>
+        <option value="investidor_pf">Investidor Pessoa Física</option>
+        <option value="investidor_pj">Investidor Institucional / Fundo</option>
+        <option value="escritorio_advocacia">Escritório de Advocacia</option>
+        <option value="cessionario">Cessionário de Créditos</option>
+        <option value="assessoria">Assessoria Financeira</option>
+        <option value="outro">Outro</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Senha de acesso<span class="req">*</span></label>
+      <input type="password" name="senha" required minlength="8" placeholder="Mínimo 8 caracteres">
+      <div class="hint">Use uma senha forte com letras, números e símbolos.</div>
+    </div>
+
+    <div class="field">
+      <label>Confirme a senha<span class="req">*</span></label>
+      <input type="password" name="senha_conf" required minlength="8" placeholder="Digite a senha novamente">
+    </div>
+
+    <div class="alert alert-info" style="font-size:.78rem">
+      <strong>🔒 Dados criptografados.</strong> Suas informações são armazenadas com criptografia AES-256 e acessíveis apenas ao administrador após aprovação do cadastro.
+    </div>
+
+    <div class="btn-row">
+      <button type="submit" class="btn btn-primary" id="btnEnviar">Continuar para Assinatura do NDA →</button>
+    </div>
+  </form>
+</main>
+
+<footer>
+  <span>&copy; 2026 AuraTECH &middot; Todos os direitos reservados</span>
+  <span style="text-transform:uppercase;letter-spacing:.12em;font-weight:600">Confidencial</span>
+  <span><a href="mailto:suporte@auradue.com">suporte@auradue.com</a></span>
+</footer>
+
+<script>
+// Tipo PF/PJ
+document.querySelectorAll('.radio-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.radio-card').forEach(c => c.classList.remove('selected'));
+    card.classList.add('selected');
+    const tipo = card.dataset.tipo;
+    card.querySelector('input').checked = true;
+    document.getElementById('labelDoc').innerHTML = (tipo === 'PJ' ? 'CNPJ' : 'CPF') + '<span class="req">*</span>';
+    document.getElementById('cpfCnpj').placeholder = tipo === 'PJ' ? '00.000.000/0000-00' : '000.000.000-00';
+    document.getElementById('blocoPJ').style.display = tipo === 'PJ' ? 'block' : 'none';
+  });
+});
+
+// Máscara CPF/CNPJ
+document.getElementById('cpfCnpj').addEventListener('input', (e) => {
+  let v = e.target.value.replace(/\D/g, '');
+  if (v.length <= 11) {
+    v = v.replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  } else {
+    v = v.replace(/(\d{2})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1.$2').replace(/(\d{3})(\d)/, '$1/$2').replace(/(\d{4})(\d{1,2})$/, '$1-$2');
+  }
+  e.target.value = v;
+});
+
+// Submit
+document.getElementById('cadastroForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = document.getElementById('btnEnviar');
+  const alertBox = document.getElementById('alertBox');
+  alertBox.innerHTML = '';
+
+  const form = new FormData(e.target);
+  const dados = Object.fromEntries(form.entries());
+
+  if (dados.senha !== dados.senha_conf) {
+    alertBox.innerHTML = '<div class="alert alert-error">❌ As senhas não conferem.</div>';
+    return;
+  }
+  delete dados.senha_conf;
+
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const resp = await fetch('/api/kyc/cadastro', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(dados)
+    });
+    const json = await resp.json();
+
+    if (resp.ok) {
+      localStorage.setItem('auraloa_kyc_token', json.token);
+      localStorage.setItem('auraloa_cliente_slug', json.cliente_slug);
+      window.location.href = '/onboarding/nda.html?t=' + json.token;
+    } else {
+      alertBox.innerHTML = '<div class="alert alert-error">❌ ' + (json.error || 'Erro no cadastro') + '</div>';
+      btn.disabled = false;
+      btn.textContent = 'Continuar para Assinatura →';
+    }
+  } catch (err) {
+    alertBox.innerHTML = '<div class="alert alert-error">❌ Erro de conexão. Tente novamente.</div>';
+    btn.disabled = false;
+    btn.textContent = 'Continuar para Assinatura →';
+  }
+});
+</script>
+</body>
+</html>

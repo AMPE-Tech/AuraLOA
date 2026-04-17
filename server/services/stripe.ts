@@ -23,9 +23,10 @@ export async function criarCheckoutSession(params: {
     line_items: [{ price: params.priceId, quantity: 1 }],
     success_url: params.successUrl,
     cancel_url: params.cancelUrl,
-    metadata: { userId: params.userId },
+    metadata: { userId: params.userId, plataforma: "AuraTECH" },
     subscription_data: {
-      metadata: { userId: params.userId },
+      metadata: { userId: params.userId, plataforma: "AuraTECH" },
+      description: "AuraTECH · Assinatura",
     },
   });
 
