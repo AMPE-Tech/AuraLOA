@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA — Relatório Profissional de Precatório</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0e17; --card: #111827; --card-alt: #0f1623;
+    --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.14);
+    --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b;
+    --cyan: #22d3ee; --violet: #8b5cf6; --green: #34d399; --amber: #fbbf24; --red: #f87171;
+    --cyan-bg: rgba(34,211,238,0.08); --violet-bg: rgba(139,92,246,0.08);
+    --green-bg: rgba(52,211,153,0.08); --amber-bg: rgba(251,191,36,0.08); --red-bg: rgba(248,113,113,0.08);
+  }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; }
+
+  /* Watermark */
+  .watermark {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-35deg);
+    font-size: 4rem; font-weight: 800; color: rgba(255,255,255,0.03);
+    pointer-events: none; z-index: 9999; white-space: nowrap; letter-spacing: 0.1em;
+  }
+
+  /* Topbar */
+  .topbar {
+    position: sticky; top: 0; z-index: 100; background: rgba(10,14,23,0.92);
+    backdrop-filter: blur(12px); border-bottom: 1px solid var(--border);
+    padding: 0.75rem 2rem; display: flex; align-items: center; gap: 1.5rem;
+  }
+  .topbar-logo { font-size: 1.25rem; font-weight: 800; background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .topbar-cnj { font-size: 0.85rem; color: var(--text-muted); font-family: 'Inter', monospace; }
+  .topbar-right { margin-left: auto; display: flex; gap: 0.5rem; }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .badge-ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+  .badge-fail { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .badge-info { background: var(--cyan-bg); color: var(--cyan); border: 1px solid rgba(34,211,238,0.2); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 2rem; background: var(--card-alt); }
+  .tab { padding: 0.85rem 1.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text-muted); }
+  .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+  /* Content */
+  .content { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.5rem; margin-bottom: 1.25rem; }
+  .card-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 1rem; }
+
+  /* Cover */
+  .cover-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--cyan); margin-bottom: 0.5rem; }
+  .cover-title { font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; }
+  .cover-subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; }
+
+  /* Cover grid */
+  .cover-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .cover-grid-item { background: var(--card-alt); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .cover-grid-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.25rem; }
+  .cover-grid-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+  /* KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .kpi { background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 1.25rem; text-align: center; }
+  .kpi-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.5rem; }
+  .kpi-val { font-size: 1.5rem; font-weight: 800; }
+  .kpi-val.cyan { color: var(--cyan); }
+  .kpi-val.green { color: var(--green); }
+  .kpi-val.amber { color: var(--amber); }
+  .kpi-val.violet { color: var(--violet); }
+
+  /* Alert */
+  .alert { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 500; }
+  .alert-warn { background: var(--amber-bg); border: 1px solid rgba(251,191,36,0.2); color: var(--amber); }
+  .alert-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+  /* Data grid (2 cols) */
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .data-field { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+  .data-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.2rem; }
+  .data-value { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+
+  /* Subject pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .pill { background: var(--violet-bg); color: var(--violet); border: 1px solid rgba(139,92,246,0.2); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+
+  /* Status cards (3 cols) */
+  .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem; }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .tbl thead th { text-align: left; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+  .tbl tbody td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  .tbl tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .tbl .mono { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--text-dim); }
+
+  /* Evidence */
+  .hash-display { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.15); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+  .hash-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); margin-bottom: 0.3rem; }
+  .hash-value { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--green); word-break: break-all; line-height: 1.8; }
+  .evidence-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+  .evidence-label { font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
+  .evidence-value { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+  .disclaimer { font-size: 0.75rem; color: var(--text-dim); line-height: 1.7; margin-top: 1.5rem; padding: 1rem; background: var(--card-alt); border-radius: 8px; border: 1px solid var(--border); }
+
+  /* Footer */
+  .hash-footer { background: var(--card-alt); border-top: 1px solid var(--border); padding: 1.5rem 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; }
+  .footer-brand { font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .footer-meta { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .footer-copy { font-size: 0.7rem; color: var(--text-dim); }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .topbar { padding: 0.5rem 1rem; flex-wrap: wrap; }
+    .tabs { padding: 0 0.5rem; overflow-x: auto; }
+    .tab { padding: 0.7rem 1rem; font-size: 0.75rem; white-space: nowrap; }
+    .content { padding: 1rem; }
+    .cover-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .data-grid { grid-template-columns: 1fr; }
+    .status-grid { grid-template-columns: 1fr; }
+    .cover-title { font-size: 1.4rem; }
+    .hash-footer { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #1a1a1a; }
+    .watermark { display: none; }
+    .topbar { position: static; background: #fff; border-bottom: 2px solid #e5e7eb; }
+    .topbar-logo { -webkit-text-fill-color: #0a0e17; }
+    .tabs { display: none; }
+    .tab-panel { display: block !important; page-break-inside: avoid; }
+    .card { background: #fff; border-color: #e5e7eb; }
+    .kpi { background: #f9fafb; border-color: #e5e7eb; }
+    .kpi-val { color: #0a0e17 !important; }
+    .badge { border-color: #d1d5db; }
+    .tbl tbody tr:hover { background: none; }
+    .hash-footer { background: #f9fafb; border-color: #e5e7eb; }
+    .footer-brand { -webkit-text-fill-color: #0a0e17; }
+    .cover-grid-item { background: #f9fafb; border-color: #e5e7eb; }
+    .hash-display { background: #f0fdf4; border-color: #bbf7d0; }
+    .hash-value, .hash-label { color: #166534; }
+    .alert-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .disclaimer { background: #f9fafb; border-color: #e5e7eb; color: #4b5563; }
+  }
+</style>
+</head>
+<body>
+
+<div class="watermark">MODELO — NAO USAR EM PRODUCAO</div>
+
+<!-- Topbar -->
+<header class="topbar">
+  <span class="topbar-logo">AuraLOA</span>
+  <span class="topbar-cnj">0001234-56.2024.8.26.0053</span>
+  <div class="topbar-right">
+    <span class="badge badge-info">Precatorio</span>
+    <span class="badge badge-warn">Pagamento Pendente</span>
+    <span class="badge badge-ok">Dados Verificados</span>
+  </div>
+</header>
+
+<!-- Tabs -->
+<nav class="tabs">
+  <div class="tab active" data-tab="resumo">Resumo</div>
+  <div class="tab" data-tab="dados">Dados do Processo</div>
+  <div class="tab" data-tab="movimentacoes">Movimentacoes</div>
+  <div class="tab" data-tab="evidencia">Evidencia</div>
+</nav>
+
+<!-- Tab 1: Resumo -->
+<div class="content">
+<section class="tab-panel active" id="tab-resumo">
+  <div class="card" style="border-left: 3px solid var(--cyan);">
+    <div class="cover-eyebrow">RELATORIO PROFISSIONAL &middot; AURALOA</div>
+    <div class="cover-title">Analise de Precatorio</div>
+    <div class="cover-subtitle">CNJ 0001234-56.2024.8.26.0053 &mdash; Tribunal de Justica de Sao Paulo</div>
+
+    <div class="cover-grid">
+      <div class="cover-grid-item">
+        <div class="cover-grid-label">Tribunal</div>
+        <div class="cover-grid-value">TJSP</div>
+      </div>
+      <div class="cover-grid-item">
+        <div class="cover-grid-label">Tipo</div>
+        <div class="cover-grid-value">Precatorio</div>
+      </div>
+      <div class="cover-grid-item">
+        <div class="cover-grid-label">Situacao</div>
+        <div class="cover-grid-value">Em Tramitacao</div>
+      </div>
+      <div class="cover-grid-item">
+        <div class="cover-grid-label">Grau</div>
+        <div class="cover-grid-value">Originario</div>
+      </div>
+      <div class="cover-grid-item">
+        <div class="cover-grid-label">Data Ajuizamento</div>
+        <div class="cover-grid-value">15/03/2024</div>
+      </div>
+      <div class="cover-grid-item">
+        <div class="cover-grid-label">Orgao Julgador</div>
+        <div class="cover-grid-value">3a Vara da Fazenda Publica</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Valor da Causa</div>
+      <div class="kpi-val cyan">R$ 1.250.000,00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Movimentacoes</div>
+      <div class="kpi-val violet">47</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Pagamento Pendente</div>
+      <div class="kpi-val amber">SIM</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Natureza</div>
+      <div class="kpi-val green">Alimentar</div>
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div class="alert alert-warn">
+    <span class="alert-icon">&#9888;</span>
+    <span>Verificacao preliminar com dados oficiais. Analise sujeita a atualizacao conforme novas movimentacoes processuais.</span>
+  </div>
+
+  <!-- Classification -->
+  <div class="card">
+    <div class="card-title">Classificacao</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Tipo de Requisicao</div>
+        <div class="data-value">Precatorio (valor superior a 60 salarios minimos)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Natureza</div>
+        <div class="data-value">Alimentar &mdash; Verbas Remuneratorias</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Fila de Prioridade</div>
+        <div class="data-value">Preferencial &mdash; Idoso (Art. 100, &sect;2o, CF)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Explicacao</div>
+        <div class="data-value" style="color: var(--text-muted);">Precatorio alimentar com prioridade constitucional. O credor se enquadra no regime preferencial por idade, com direito a pagamento antecipado ate o triplo do valor da RPV.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Tab 2: Dados do Processo -->
+<section class="tab-panel" id="tab-dados">
+  <div class="card">
+    <div class="card-title">Dados Completos do Processo</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Numero CNJ</div>
+        <div class="data-value" style="font-family: monospace;">0001234-56.2024.8.26.0053</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Oficio Requisitorio</div>
+        <div class="data-value">Oficio Precatorio no 4.521/2024</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Tribunal</div>
+        <div class="data-value">Tribunal de Justica do Estado de Sao Paulo</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Tipo</div>
+        <div class="data-value">Precatorio</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Classe Processual</div>
+        <div class="data-value">Cumprimento de Sentenca contra a Fazenda Publica</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Situacao</div>
+        <div class="data-value"><span class="badge badge-warn">Em Tramitacao</span></div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Valor da Causa</div>
+        <div class="data-value" style="font-weight: 700; color: var(--cyan);">R$ 1.250.000,00</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Data Ajuizamento</div>
+        <div class="data-value">15/03/2024</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Ultima Atualizacao</div>
+        <div class="data-value">02/04/2026</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Orgao Julgador</div>
+        <div class="data-value">3a Vara da Fazenda Publica &mdash; Foro Central</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Grau</div>
+        <div class="data-value">Originario</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Ente Devedor</div>
+        <div class="data-value">Fazenda Publica do Estado de Sao Paulo</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assuntos -->
+  <div class="card">
+    <div class="card-title">Assuntos</div>
+    <div class="pills">
+      <span class="pill">Servidor Publico Civil</span>
+      <span class="pill">Reajustes de Remuneracao</span>
+      <span class="pill">Diferencas Salariais</span>
+      <span class="pill">Adicional por Tempo de Servico</span>
+      <span class="pill">Gratificacoes e Vantagens</span>
+    </div>
+  </div>
+
+  <!-- Status cards -->
+  <div class="status-grid">
+    <div class="card" style="text-align: center;">
+      <div class="card-title">Pagamento Detectado</div>
+      <div class="kpi-val amber" style="font-size: 1.2rem;">NAO</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem;">Nenhum deposito identificado nas movimentacoes</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="card-title">Baixa / Arquivamento</div>
+      <div class="kpi-val green" style="font-size: 1.2rem;">NAO</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem;">Processo ativo sem indicacao de arquivamento</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="card-title">Total Movimentacoes</div>
+      <div class="kpi-val violet" style="font-size: 1.2rem;">47</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem;">Ultima em 02/04/2026</div>
+    </div>
+  </div>
+</section>
+
+<!-- Tab 3: Movimentacoes -->
+<section class="tab-panel" id="tab-movimentacoes">
+  <div class="card">
+    <div class="card-title">Historico de Movimentacoes</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Data</th><th>Codigo</th><th>Descricao</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">02/04/2026</td><td class="mono">60</td><td>Expedido oficio requisitorio ao ente devedor</td></tr>
+        <tr><td class="mono">28/03/2026</td><td class="mono">85</td><td>Juntada de peticao &mdash; atualizacao de calculo pelo credor</td></tr>
+        <tr><td class="mono">15/03/2026</td><td class="mono">581</td><td>Intimacao eletronica &mdash; Fazenda Publica do Estado de SP</td></tr>
+        <tr><td class="mono">01/03/2026</td><td class="mono">11009</td><td>Certidao de decurso de prazo sem manifestacao do devedor</td></tr>
+        <tr><td class="mono">14/02/2026</td><td class="mono">60</td><td>Expedido oficio ao Tribunal de Contas</td></tr>
+        <tr><td class="mono">30/01/2026</td><td class="mono">85</td><td>Juntada de peticao &mdash; concordancia com calculos</td></tr>
+        <tr><td class="mono">10/01/2026</td><td class="mono">12265</td><td>Disponibilizacao no DJe &mdash; Caderno Judicial</td></tr>
+        <tr><td class="mono">20/12/2025</td><td class="mono">22</td><td>Despacho &mdash; determina intimacao da Fazenda para impugnacao</td></tr>
+        <tr><td class="mono">05/12/2025</td><td class="mono">85</td><td>Juntada de peticao &mdash; apresentacao de calculo atualizado</td></tr>
+        <tr><td class="mono">18/11/2025</td><td class="mono">848</td><td>Redistribuido por prevencao &mdash; 3a Vara da Fazenda Publica</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Tab 4: Evidencia -->
+<section class="tab-panel" id="tab-evidencia">
+  <div class="card">
+    <div class="card-title">Cadeia de Custodia Digital</div>
+
+    <div class="hash-display">
+      <div class="hash-label">SHA-256 do Relatorio</div>
+      <div class="hash-value">a1b2c3d4e5f67890abcdef1234567890fedcba0987654321abcdef1234567890</div>
+    </div>
+
+    <div class="evidence-row">
+      <span class="evidence-label">Timestamp (ISO 8601)</span>
+      <span class="evidence-value" style="font-family: monospace; font-size: 0.8rem;">2026-04-05T14:32:00-03:00</span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Conformidade</span>
+      <span class="evidence-value"><span class="badge badge-ok">Lei 13.964/2019</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Fonte dos Dados</span>
+      <span class="evidence-value"><span class="badge badge-info">Fontes Oficiais Governamentais e Judiciais</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Motor de Analise</span>
+      <span class="evidence-value">AuraLOA v2.1 &mdash; Pipeline Automatizado</span>
+    </div>
+    <div class="evidence-row" style="border-bottom: none;">
+      <span class="evidence-label">Integridade</span>
+      <span class="evidence-value"><span class="badge badge-ok">Verificado</span></span>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Aviso Legal:</strong> Este relatorio foi gerado automaticamente pela plataforma AuraLOA com base em dados obtidos de fontes oficiais governamentais e judiciais. As informacoes apresentadas refletem o estado do processo na data e hora indicadas no timestamp. A AuraTECH nao se responsabiliza por eventuais divergencias decorrentes de atualizacoes posteriores nos sistemas de origem. Este documento nao substitui a consulta direta aos autos processuais nem constitui parecer juridico. O hash SHA-256 permite a verificacao de integridade do conteudo em conformidade com a Lei 13.964/2019 (Pacote Anticrime).
+    </div>
+  </div>
+</section>
+</div>
+
+<!-- Footer -->
+<footer class="hash-footer">
+  <span class="footer-brand">AuraLOA</span>
+  <div class="footer-meta">
+    <span class="badge badge-ok">SHA-256 Verificado</span>
+    <span class="badge badge-info">Lei 13.964/2019</span>
+    <span class="footer-copy">&copy; 2026 AuraTECH &mdash; Todos os direitos reservados</span>
+  </div>
+</footer>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      // Remove active from all tabs and panels
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      // Activate clicked tab and corresponding panel
+      tab.classList.add('active');
+      var panelId = 'tab-' + tab.getAttribute('data-tab');
+      document.getElementById(panelId).classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>
