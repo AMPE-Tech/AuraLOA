@@ -4,6 +4,7 @@ import { serveStatic } from "./static";
 import { createServer } from "http";
 import { testConnection } from "./db";
 import { initDb } from "./db_init";
+import { initDbV2 } from "./v2/db_migrations_v2";
 
 const app = express();
 const httpServer = createServer(app);
@@ -65,6 +66,7 @@ app.use((req, res, next) => {
   try {
     await testConnection();
     await initDb();
+    await initDbV2();
   } catch (err: any) {
     console.warn("[DB] Aviso: banco indisponível no startup —", err.message);
     console.warn("[DB] Servidor subindo sem conexão confirmada. Funcionalidades de banco podem falhar.");
