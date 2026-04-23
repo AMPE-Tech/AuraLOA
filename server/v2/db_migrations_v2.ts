@@ -59,6 +59,16 @@ export async function initDbV2(): Promise<void> {
   await query(`CREATE INDEX IF NOT EXISTS idx_v2_analises_numero_cnj ON v2_analises(numero_cnj)`);
   await query(`CREATE INDEX IF NOT EXISTS idx_v2_analises_status_pag ON v2_analises(status_pagamento)`);
 
+  // ── B2 incremento: URL/QR/código verificador do rodapé do ofício CNJ ──
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS url_verificacao_tribunal TEXT`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS qrcode_tribunal TEXT`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS codigo_verificador TEXT`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS checklist_auditoria JSONB`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS extraction_tokens_input INTEGER`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS extraction_tokens_output INTEGER`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS extraction_cost_usd NUMERIC(10,6)`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS extracted_at TIMESTAMPTZ`);
+
   await query(`
     CREATE TABLE IF NOT EXISTS v2_audit_log (
       id BIGSERIAL PRIMARY KEY,
