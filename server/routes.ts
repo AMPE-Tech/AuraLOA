@@ -18,6 +18,7 @@ import kycNdaRouter from "./routes/kyc_nda";
 import billingAuraloaRouter from "./routes/billing_auraloa";
 import enriquecimentoRouter from "./routes/enriquecimento";
 import v2Router from "./v2/routes_v2";
+import v2LoteRouter from "./v2/routes_lote";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -33,6 +34,7 @@ export async function registerRoutes(
   app.use(billingAuraloaRouter);
   app.use(enriquecimentoRouter);
   app.use(v2Router);
+  app.use(v2LoteRouter);
   app.use(validadorRouter);
   registerAnaliseDocumentoRoutes(app);
   registerStripeRoutes(app);

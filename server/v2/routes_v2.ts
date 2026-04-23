@@ -6,6 +6,7 @@ import { randomBytes } from "crypto";
 import { query } from "../db";
 import { uploadPdfV2, renameToContentHash } from "./upload_config";
 import { extractFields } from "./field_extractor";
+import { runPipelineVerifier } from "./pipeline_verifier";
 
 function cleanupTmp(path?: string) {
   if (path && existsSync(path)) {
@@ -190,8 +191,18 @@ router.post("/api/v2/analise/:validation_id/extrair", async (req: Request, res: 
        checklist_auditoria = $14::jsonb,
        extraction_method = $15,
        extraction_tokens_input = $16, extraction_tokens_output = $17, extraction_cost_usd = $18,
+       raw_text = $19,
+       natureza_documento = $20,
+       processos_identificados = $21::jsonb,
+       documentos_identificados = $22::jsonb,
+       partes = $23::jsonb,
+       autoridades = $24::jsonb,
+       datas_identificadas = $25::jsonb,
+       decisao_resumo = $26,
+       status_processual = $27,
+       observacoes_gerais = $28::jsonb,
        extracted_at = NOW(), updated_at = NOW()
-     WHERE id = $19`,
+     WHERE id = $29`,
     [
       fields.numero_cnj, fields.numero_oficio, fields.tribunal, fields.tipo,
       fields.credor_nome, fields.credor_cpf_cnpj, fields.devedor, fields.valor_rs,
@@ -200,6 +211,16 @@ router.post("/api/v2/analise/:validation_id/extrair", async (req: Request, res: 
       JSON.stringify(checklist),
       method,
       tokens_input, tokens_output, cost_usd,
+      extraction.raw_text_pdf,
+      fields.natureza_documento,
+      JSON.stringify(fields.processos_identificados),
+      JSON.stringify(fields.documentos_identificados),
+      JSON.stringify(fields.partes),
+      JSON.stringify(fields.autoridades),
+      JSON.stringify(fields.datas_identificadas),
+      fields.decisao_resumo,
+      fields.status_processual,
+      JSON.stringify(fields.observacoes_gerais),
       analise.id,
     ],
   );
@@ -233,6 +254,113 @@ router.post("/api/v2/analise/:validation_id/extrair", async (req: Request, res: 
     checklist,
     economia_b3: urlEncontrada ? "URL oficial no ofício — B3 pula descoberta de tribunal" : null,
   });
+});
+
+// ── B3: verificação em fases honestas (F1 DataJud + F2 LOA CSV por enquanto) ─
+router.post("/api/v2/analise/:validation_id/verificar", async (req: Request, res: Response) => {
+  const { validation_id } = req.params;
+
+  const rows = await query<any>(
+    `SELECT id, numero_cnj, numero_oficio, tribunal, devedor, valor_rs,
+            credor_cpf_cnpj, credor_nome,
+            fase1_datajud_json, fase2_loa_json, fase3_cnpj_json
+     FROM v2_analises WHERE validation_id = $1 LIMIT 1`,
+    [validation_id],
+  );
+  if (!rows[0]) {
+    return res.status(404).json({ error: "Análise não encontrada" });
+  }
+  const analise = rows[0];
+
+  if (!analise.numero_cnj && !analise.numero_oficio && !analise.devedor) {
+    return res.status(400).json({
+      error: "Execute /extrair primeiro — sem campos extraídos, não há como verificar",
+    });
+  }
+
+  const startMs = Date.now();
+  const result = await runPipelineVerifier({
+    analise_id: analise.id,
+    numero_cnj: analise.numero_cnj,
+    numero_oficio: analise.numero_oficio,
+    devedor: analise.devedor,
+    valor_rs: analise.valor_rs != null ? Number(analise.valor_rs) : null,
+    credor_cpf_cnpj: analise.credor_cpf_cnpj,
+    credor_nome: analise.credor_nome,
+  });
+  const duracaoMs = Date.now() - startMs;
+
+  await query(
+    `UPDATE v2_analises SET
+       fase1_datajud_json = $1::jsonb,
+       fase2_loa_json = $2::jsonb,
+       fase3_cnpj_json = $3::jsonb,
+       updated_at = NOW()
+     WHERE id = $4`,
+    [
+      JSON.stringify(result.fases.f1_datajud),
+      JSON.stringify(result.fases.f2_loa_csv),
+      JSON.stringify(result.fases.f3_contatos),
+      analise.id,
+    ],
+  );
+
+  await query(
+    `INSERT INTO v2_audit_log (analise_id, fase, fonte_url, status, confianca, alertas, duracao_ms)
+     VALUES
+       ($1, 'F1_datajud', $2, $3, $4, $5::jsonb, $6),
+       ($1, 'F2_loa_csv', $7, $8, $9, $10::jsonb, $11),
+       ($1, 'F3_contatos', $12, $13, $14, $15::jsonb, $16)`,
+    [
+      analise.id,
+      result.fases.f1_datajud.fontes.join(" | "),
+      result.fases.f1_datajud.status,
+      result.fases.f1_datajud.confianca,
+      JSON.stringify({ motivo: result.fases.f1_datajud.motivo }),
+      result.fases.f1_datajud.duracao_ms,
+      result.fases.f2_loa_csv.fontes.join(" | "),
+      result.fases.f2_loa_csv.status,
+      result.fases.f2_loa_csv.confianca,
+      JSON.stringify({ motivo: result.fases.f2_loa_csv.motivo }),
+      result.fases.f2_loa_csv.duracao_ms,
+      result.fases.f3_contatos.fontes.join(" | "),
+      result.fases.f3_contatos.status,
+      result.fases.f3_contatos.confianca,
+      JSON.stringify({ motivo: result.fases.f3_contatos.motivo }),
+      result.fases.f3_contatos.duracao_ms,
+    ],
+  );
+
+  return res.json({
+    ok: true,
+    validation_id,
+    duracao_total_ms: duracaoMs,
+    fases_implementadas: ["F1_datajud", "F2_loa_csv", "F3_contatos"],
+    fases_pendentes: ["F4_portal_transparencia", "F5_pje_cessao"],
+    fases: result.fases,
+  });
+});
+
+// ── GET detalhes completos (inclui raw_text + todos os JSONB) ───────────────
+router.get("/api/v2/analise/:validation_id/detalhes", async (req: Request, res: Response) => {
+  const { validation_id } = req.params;
+  const rows = await query<any>(
+    `SELECT * FROM v2_analises WHERE validation_id = $1 LIMIT 1`,
+    [validation_id],
+  );
+  if (!rows[0]) return res.status(404).json({ error: "Análise não encontrada" });
+  return res.json(rows[0]);
+});
+
+router.get("/api/v2/analise/:validation_id/raw-text", async (req: Request, res: Response) => {
+  const { validation_id } = req.params;
+  const rows = await query<{ raw_text: string | null; file_original_name: string }>(
+    `SELECT raw_text, file_original_name FROM v2_analises WHERE validation_id = $1 LIMIT 1`,
+    [validation_id],
+  );
+  if (!rows[0]) return res.status(404).json({ error: "Análise não encontrada" });
+  res.setHeader("Content-Type", "text/plain; charset=utf-8");
+  return res.send(rows[0].raw_text || "");
 });
 
 router.get("/api/v2/analise/:validation_id", async (req: Request, res: Response) => {
