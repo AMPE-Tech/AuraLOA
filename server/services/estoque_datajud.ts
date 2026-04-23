@@ -437,6 +437,23 @@ function extrairTribunalDoCNJ(numeroCNJ: string): string | null {
   return null;
 }
 
+// Classificação de tipo baseada na classe processual real do CNJ.
+// Antes filtrava só por código 1265/1266, mas:
+// - TRFs frequentemente classificam precatório como "Cumprimento de Sentença
+//   contra a Fazenda Pública" (12078) ou "Cumprimento de Sentença" (156)
+// - Classe 1265 existe mas não é universal entre TRFs (validado 23/04/2026)
+function classificarTipoPorClasse(codigo: number | null | undefined, nome: string | undefined): "PRECATORIO" | "RPV" | "DESCONHECIDO" {
+  if (codigo === CLASSE_PRECATORIO) return "PRECATORIO";
+  if (codigo === CLASSE_RPV) return "RPV";
+  const nomeUpper = (nome || "").toUpperCase();
+  if (/PRECAT[OÓ]RIO/.test(nomeUpper)) return "PRECATORIO";
+  if (/REQUISI[CÇ][AÃ]O DE PEQUENO VALOR|^RPV\b|\bRPV\b/.test(nomeUpper)) return "RPV";
+  // "Cumprimento de Sentença contra a Fazenda Pública" é a fase onde
+  // precatório/RPV é expedido — tratar como precatório em contexto federal
+  if (/CUMPRIMENTO DE SENTEN[CÇ]A.*FAZENDA P[UÚ]BLICA/.test(nomeUpper)) return "PRECATORIO";
+  return "DESCONHECIDO";
+}
+
 async function consultarTribunal(
   alias: string,
   numeroCNJNorm: string,
@@ -444,16 +461,13 @@ async function consultarTribunal(
   consultado_em: string,
 ): Promise<ValidacaoPreliminarResult | null> {
   const endpoint = `${DATAJUD_BASE}/api_publica_${alias}/_search`;
+  // ⚠️ DataJud indexa numeroProcesso como 20 dígitos SEM pontuação.
+  // Passar "1061297-10.2020.4.01.3400" retorna 0 hits.
+  // Passar "10612971020204013400" retorna os hits corretos.
+  // (validado empiricamente em 23/04/2026 via API direta)
+  const numeroDigitos = numeroCNJNorm.replace(/\D/g, "");
   const esQuery = {
-    query: {
-      bool: {
-        should: [
-          { match: { numeroProcesso: numeroCNJNorm } },
-          { term: { "numeroProcesso.keyword": numeroCNJNorm } },
-        ],
-        minimum_should_match: 1,
-      },
-    },
+    query: { match: { numeroProcesso: numeroDigitos } },
     size: 3,
   };
 
@@ -465,15 +479,24 @@ async function consultarTribunal(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(esQuery),
-      signal: AbortSignal.timeout(8000),
     });
 
-    if (!resp.ok) return null;
+    if (!resp.ok) {
+      console.warn(`[consultarTribunal ${alias}] HTTP ${resp.status} para CNJ ${numeroCNJNorm} → ${numeroDigitos}`);
+      return null;
+    }
 
     const data = await resp.json();
     const hits: DataJudHit[] = data.hits?.hits || [];
-    if (hits.length === 0) return null;
+    if (hits.length === 0) {
+      console.warn(`[consultarTribunal ${alias}] 0 hits para CNJ ${numeroCNJNorm} → ${numeroDigitos}`);
+      return null;
+    }
+    console.log(`[consultarTribunal ${alias}] ${hits.length} hits para CNJ ${numeroCNJNorm} → ${numeroDigitos}`);
 
+    // Se múltiplos hits para o mesmo CNJ (ex: G1 + G2 do mesmo processo),
+    // escolhemos o com MAIS movimentos — é o mais rico em informação
+    hits.sort((a, b) => ((b._source as any).movimentos?.length ?? 0) - ((a._source as any).movimentos?.length ?? 0));
     const processo = parseHitToProcesso(hits[0], alias, alias.toUpperCase());
     const payload = JSON.stringify({ numeroCNJ: numeroCNJNorm, numeroOficio, resultado: processo, consultado_em });
     const sha256 = (await import("crypto")).createHash("sha256").update(payload).digest("hex");
@@ -484,7 +507,7 @@ async function consultarTribunal(
       numero_oficio: numeroOficio,
       tribunal: processo.tribunal,
       tribunal_alias: alias,
-      tipo: processo.classe_codigo === CLASSE_PRECATORIO ? "PRECATORIO" : processo.classe_codigo === CLASSE_RPV ? "RPV" : "DESCONHECIDO",
+      tipo: classificarTipoPorClasse(processo.classe_codigo, processo.classe_nome),
       classe_nome: processo.classe_nome,
       situacao: processo.situacao,
       grau: processo.grau,
@@ -503,7 +526,8 @@ async function consultarTribunal(
       sha256_evidencia: sha256,
       consultado_em,
     };
-  } catch {
+  } catch (err: any) {
+    console.warn(`[consultarTribunal ${alias}] exception: ${err?.message ?? err}`);
     return null;
   }
 }

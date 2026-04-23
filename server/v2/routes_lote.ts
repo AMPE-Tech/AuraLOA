@@ -337,8 +337,9 @@ router.get("/api/v2/lote/:lote_id/status", async (req: Request, res: Response) =
 // ══════════════════════════════════════════════════════════════════════════
 // POST /api/v2/lote/:lote_id/consolidar — agrupa por CNJ + revisor automático
 // ══════════════════════════════════════════════════════════════════════════
-import { loadLoteDocs, consolidarLote } from "./consolidador";
+import { loadLoteDocs, consolidarLote, type ChecklistConsolidado } from "./consolidador";
 import { revisarConsolidacao } from "./revisor";
+import { executarOrquestrador } from "./orquestrador";
 
 router.post("/api/v2/lote/:lote_id/consolidar", async (req: Request, res: Response) => {
   const { lote_id } = req.params;
@@ -434,6 +435,381 @@ router.post("/api/v2/lote/:lote_id/consolidar", async (req: Request, res: Respon
         ? "Lote aguardando revisão humana — acessar dashboard admin"
         : `POST /api/v2/lote/${lote_id}/confirmar — usuário confirma para prosseguir enriquecimento`,
   });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// POST /api/v2/lote/:lote_id/confirmar — usuário confirma a consolidação
+// ══════════════════════════════════════════════════════════════════════════
+router.post("/api/v2/lote/:lote_id/confirmar", async (req: Request, res: Response) => {
+  const { lote_id } = req.params;
+
+  const lote = await query<any>(
+    `SELECT * FROM v2_lotes_analise WHERE lote_id = $1 LIMIT 1`,
+    [lote_id],
+  );
+  if (!lote[0]) return res.status(404).json({ error: "Lote não encontrado" });
+  if (!["consolidated", "consolidated_with_alerts"].includes(lote[0].status)) {
+    return res.status(400).json({
+      error: `Lote em estado '${lote[0].status}' — só pode confirmar após consolidar/revisar`,
+      sugestao: `POST /api/v2/lote/${lote_id}/consolidar primeiro`,
+    });
+  }
+
+  await query(
+    `UPDATE v2_lotes_analise SET status = 'confirmed', confirmed_at = NOW() WHERE lote_id = $1`,
+    [lote_id],
+  );
+
+  return res.json({
+    ok: true,
+    lote_id,
+    status: "confirmed",
+    next_step: `POST /api/v2/lote/${lote_id}/enriquecer — dispara F1/F2/F3 + URL oficial para preencher lacunas`,
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// POST /api/v2/lote/:lote_id/enriquecer — orquestrador aciona F1-F5
+// ══════════════════════════════════════════════════════════════════════════
+router.post("/api/v2/lote/:lote_id/enriquecer", async (req: Request, res: Response) => {
+  const { lote_id } = req.params;
+
+  const lote = await query<any>(
+    `SELECT * FROM v2_lotes_analise WHERE lote_id = $1 LIMIT 1`,
+    [lote_id],
+  );
+  if (!lote[0]) return res.status(404).json({ error: "Lote não encontrado" });
+  if (lote[0].status !== "confirmed" && req.query.force !== "true") {
+    return res.status(400).json({
+      error: `Lote em estado '${lote[0].status}' — precisa 'confirmed'. Use ?force=true para sobrescrever.`,
+    });
+  }
+
+  const checklist: ChecklistConsolidado = lote[0].checklist_consolidado;
+  if (!checklist) {
+    return res.status(400).json({ error: "Lote sem checklist_consolidado — execute /consolidar primeiro" });
+  }
+
+  const consolidacaoMetaRaw = lote[0].alertas_revisor?.consolidacao_meta;
+  const consolidacao = {
+    total_docs: lote[0].total_docs,
+    cnjs_encontrados: consolidacaoMetaRaw?.cnjs_encontrados ?? [],
+    cnj_consolidado: lote[0].cnj_consolidado,
+    provavelmente_mesmo_caso: consolidacaoMetaRaw?.provavelmente_mesmo_caso ?? true,
+    partes_em_comum: consolidacaoMetaRaw?.partes_em_comum ?? [],
+    checklist_consolidado: checklist,
+    total_conflitos: consolidacaoMetaRaw?.total_conflitos ?? 0,
+    campos_preenchidos: consolidacaoMetaRaw?.campos_preenchidos ?? 0,
+    total_campos: consolidacaoMetaRaw?.total_campos ?? 0,
+  } as any;
+
+  const startMs = Date.now();
+  const result = await executarOrquestrador({ checklist, consolidacao });
+  const duracaoMs = Date.now() - startMs;
+
+  // Log cada fase no audit log do primeiro doc do lote (referência)
+  const docs = await query<any>(
+    `SELECT analise_id FROM v2_lote_docs WHERE lote_id = $1 ORDER BY ordem LIMIT 1`,
+    [lote_id],
+  );
+  const primeiroDocId = docs[0]?.analise_id;
+  if (primeiroDocId) {
+    for (const fase of result.fases_executadas) {
+      await query(
+        `INSERT INTO v2_audit_log (analise_id, fase, fonte_url, status, confianca, alertas, duracao_ms)
+         VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7)`,
+        [
+          primeiroDocId,
+          fase.fase,
+          fase.fontes.join(" | "),
+          fase.status,
+          fase.confianca,
+          JSON.stringify({ motivo: fase.motivo, lote_id }),
+          fase.duracao_ms,
+        ],
+      );
+    }
+  }
+
+  await query(
+    `UPDATE v2_lotes_analise SET
+       status = 'enriched',
+       alertas_revisor = jsonb_set(
+         COALESCE(alertas_revisor, '{}'::jsonb),
+         '{enriquecimento}',
+         $1::jsonb
+       ),
+       enriched_at = NOW()
+     WHERE lote_id = $2`,
+    [JSON.stringify(result), lote_id],
+  );
+
+  return res.json({
+    ok: true,
+    lote_id,
+    status: "enriched",
+    duracao_total_ms: duracaoMs,
+    lacunas_detectadas: result.lacunas_detectadas,
+    fases_executadas: result.fases_executadas.map((f) => ({
+      fase: f.fase,
+      status: f.status,
+      confianca: f.confianca,
+      duracao_ms: f.duracao_ms,
+      fontes: f.fontes,
+      total_itens_novos: Object.keys(f.dados_novos).length,
+      motivo: f.motivo,
+    })),
+    itens_preenchidos_por_enriquecimento: result.itens_preenchidos_por_enriquecimento,
+    next_step: `GET /api/v2/lote/${lote_id}/relatorio — gera relatório HTML consolidado`,
+  });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
+// GET /api/v2/lote/:lote_id/relatorio — relatório HTML consolidado
+// ══════════════════════════════════════════════════════════════════════════
+
+function maskValue(valor: any, tipo: "email" | "cpf" | "cnpj" | "telefone" | "nome" | "generic"): string {
+  if (valor === null || valor === undefined || valor === "") return "•••";
+  const s = String(valor);
+  switch (tipo) {
+    case "email": {
+      const [local, domain] = s.split("@");
+      if (!domain) return "•••@•••";
+      return `${local.slice(0, 2)}•••@${domain.charAt(0)}•••${domain.slice(domain.lastIndexOf("."))}`;
+    }
+    case "cpf":
+      return s.replace(/(\d{3})\.(\d{3})\.(\d{3})-(\d{2})/, "$1.•••.•••-$4");
+    case "cnpj":
+      return s.replace(/(\d{2})\.(\d{3})\.(\d{3})\/(\d{4})-(\d{2})/, "$1.•••.•••/•••• -$5");
+    case "telefone":
+      return s.replace(/(\d+)(\d{4})/, (_, a) => `${a.slice(0, 2)}•••••-••••`);
+    case "nome":
+      return s.split(" ").map((w) => (w.length > 2 ? w.charAt(0) + "•".repeat(w.length - 1) : w)).join(" ");
+    default:
+      return s.length > 4 ? `${s.slice(0, 2)}•••${s.slice(-2)}` : "•••";
+  }
+}
+
+function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string {
+  const chk = lote.checklist_consolidado ?? {};
+  const revisor = lote.alertas_revisor?.resultado_revisor ?? {};
+  const enriq = lote.alertas_revisor?.enriquecimento ?? {};
+  const meta = lote.alertas_revisor?.consolidacao_meta ?? {};
+
+  const get = (campo: string) => chk[campo]?.valor ?? null;
+  const getArr = (campo: string): any[] => (Array.isArray(chk[campo]?.valor) ? chk[campo].valor : []);
+  const fonte = (campo: string) => {
+    const fontes = chk[campo]?.fontes ?? [];
+    if (fontes.length === 0) return "";
+    if (fontes.length === 1) return `📄 ${fontes[0].doc || "doc"}`;
+    return `📄 ${fontes.length} docs`;
+  };
+
+  const badge = (status: string) => {
+    const map: Record<string, string> = {
+      aprovado: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
+      aprovado_com_ressalva: "bg-amber-500/20 text-amber-300 border-amber-500/40",
+      requer_revisao_humana: "bg-orange-500/20 text-orange-300 border-orange-500/40",
+      rejeitado: "bg-red-500/20 text-red-300 border-red-500/40",
+    };
+    return `<span class="px-2 py-0.5 rounded text-[11px] border ${map[status] || "bg-slate-500/20 text-slate-300"}">${status}</span>`;
+  };
+
+  const valorRS = get("valor_rs");
+  const valorRsFmt = valorRS != null
+    ? (mascarar ? "R$ •••.•••.•••,••" : Number(valorRS).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }))
+    : "[NÃO IDENTIFICADO]";
+
+  const credorMasc = mascarar ? maskValue(get("credor_nome"), "nome") : (get("credor_nome") ?? "[N/D]");
+  const credorCnpjMasc = mascarar ? maskValue(get("credor_cpf_cnpj"), "cnpj") : (get("credor_cpf_cnpj") ?? "[N/D]");
+
+  const partes = getArr("partes");
+  const autoridades = getArr("autoridades");
+  const datas = getArr("datas_identificadas");
+  const processos = getArr("processos_identificados");
+
+  return `<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Relatório AuraLOA — ${lote.lote_id}</title>
+<style>
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0d1117; color: #e2e8f0; margin: 0; padding: 32px; }
+  .container { max-width: 1080px; margin: 0 auto; }
+  h1 { font-size: 24px; margin: 0 0 8px; background: linear-gradient(135deg, #06b6d4, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  h2 { font-size: 16px; margin: 24px 0 12px; color: #22d3ee; border-bottom: 1px solid rgba(34,211,238,0.2); padding-bottom: 6px; }
+  .card { background: #162032; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .value { font-size: 14px; color: #e2e8f0; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+  .fonte { font-size: 10px; color: #94a3b8; margin-top: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  th { text-align: left; padding: 6px 10px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 500; }
+  td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; }
+  .tier-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
+  .tier-free { background: rgba(34,211,238,0.15); color: #22d3ee; border: 1px solid rgba(34,211,238,0.3); }
+  .tier-paid { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+  .lock { color: #fbbf24; }
+</style>
+</head>
+<body><div class="container">
+
+<h1>🔍 AuraLOA — Relatório de Análise</h1>
+<p style="color:#64748b; font-size:12px;">Lote <span class="mono">${lote.lote_id}</span> · ${lote.total_docs} documentos processados · Gerado em ${new Date().toLocaleString("pt-BR")}</p>
+
+<div class="card">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+    <strong style="font-size:14px;">Revisão</strong>
+    ${badge(revisor.decisao || "—")} <span style="color:#64748b; font-size:11px;">score ${revisor.score ?? "—"}/100 · nível ${revisor.nivel_atingido ?? "—"}</span>
+  </div>
+  <div style="font-size:12px; color:#94a3b8;">${revisor.justificativa || "—"}</div>
+</div>
+
+<h2>📋 Identificação do processo ${mascarar ? '<span class="tier-badge tier-free">FREE</span>' : '<span class="tier-badge tier-paid">COMPLETO</span>'}</h2>
+<div class="card">
+<div class="grid-2">
+  <div><div class="label">Tribunal</div><div class="value">${get("tribunal") ?? "[N/D]"}</div><div class="fonte">${fonte("tribunal")}</div></div>
+  <div><div class="label">Tipo</div><div class="value">${get("tipo") ?? "[N/D]"}</div></div>
+  <div><div class="label">Órgão Julgador</div><div class="value">${get("orgao_julgador") ?? "[N/D]"}</div></div>
+  <div><div class="label">Status Processual</div><div class="value">${get("status_processual") ?? "[N/D]"}</div></div>
+  <div><div class="label">CNJ Principal</div><div class="value mono">${get("numero_cnj") ?? "[N/D]"}</div></div>
+  <div><div class="label">Nº Ofício/Precatório</div><div class="value mono">${get("numero_oficio") ?? "[N/D]"}</div></div>
+</div>
+</div>
+
+<h2>💰 Valor ${mascarar ? '<span class="tier-badge tier-paid">🔒 PAGO</span>' : ''}</h2>
+<div class="card">
+<div class="grid-2">
+  <div><div class="label">Valor Requisitado</div><div class="value mono" style="font-size:18px; font-weight:700; color:#22d3ee;">${valorRsFmt}</div></div>
+  <div><div class="label">Data Trânsito em Julgado</div><div class="value mono">${get("data_transito") ?? "[N/D]"}</div></div>
+</div>
+</div>
+
+<h2>👥 Credor ${mascarar ? '<span class="tier-badge tier-paid">🔒 PAGO</span>' : ''}</h2>
+<div class="card">
+<div class="grid-2">
+  <div><div class="label">Credor Principal</div><div class="value">${credorMasc}</div></div>
+  <div><div class="label">CPF/CNPJ</div><div class="value mono">${credorCnpjMasc}</div></div>
+  <div><div class="label">Devedor</div><div class="value">${get("devedor") ?? "[N/D]"}</div></div>
+</div>
+</div>
+
+<h2>📜 Partes do Processo (${partes.length})</h2>
+<div class="card">
+<table>
+<thead><tr><th>Nome</th><th>Polo</th><th>CPF/CNPJ</th><th>Observação</th></tr></thead>
+<tbody>
+${partes.map((p: any) => `<tr>
+  <td>${mascarar ? maskValue(p?.nome, "nome") : (p?.nome || "—")}</td>
+  <td>${p?.polo || "—"}</td>
+  <td class="mono">${mascarar ? "•••" : (p?.cpf_cnpj || "—")}</td>
+  <td style="color:#64748b; font-size:11px;">${p?.observacao || ""}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+
+<h2>⚖️ Autoridades (${autoridades.length})</h2>
+<div class="card">
+<table>
+<thead><tr><th>Nome</th><th>Função</th><th>Órgão</th></tr></thead>
+<tbody>
+${autoridades.map((a: any) => `<tr>
+  <td>${mascarar ? maskValue(a?.nome, "nome") : (a?.nome || "—")}</td>
+  <td>${a?.funcao || "—"}</td>
+  <td>${a?.orgao || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+
+<h2>📅 Datas (${datas.length})</h2>
+<div class="card">
+<table>
+<thead><tr><th>Data</th><th>Descrição</th></tr></thead>
+<tbody>
+${datas.map((d: any) => `<tr>
+  <td class="mono">${d?.data || "—"}</td>
+  <td>${d?.descricao || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+
+<h2>🔗 Processos Identificados (${processos.length})</h2>
+<div class="card">
+<table>
+<thead><tr><th>Número</th><th>Tipo</th><th>Grau</th><th>Tribunal</th></tr></thead>
+<tbody>
+${processos.map((p: any) => `<tr>
+  <td class="mono">${p?.numero || "—"}</td>
+  <td>${p?.tipo || "—"}</td>
+  <td>${p?.grau || "—"}</td>
+  <td>${p?.tribunal || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+
+${enriq.fases_executadas ? `
+<h2>🔄 Enriquecimento por fontes externas</h2>
+<div class="card">
+<table>
+<thead><tr><th>Fase</th><th>Status</th><th>Confiança</th><th>Duração</th><th>Itens novos</th></tr></thead>
+<tbody>
+${(enriq.fases_executadas || []).map((f: any) => `<tr>
+  <td class="mono">${f.fase}</td>
+  <td>${f.status}</td>
+  <td>${f.confianca}</td>
+  <td>${f.duracao_ms}ms</td>
+  <td>${f.total_itens_novos ?? "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+` : ""}
+
+<h2>📦 Documentos analisados (${docs.length})</h2>
+<div class="card">
+<table>
+<thead><tr><th>#</th><th>Arquivo</th><th>Natureza</th><th>Páginas</th></tr></thead>
+<tbody>
+${docs.map((d: any) => `<tr>
+  <td>${d.ordem}</td>
+  <td style="font-size:11px; color:#94a3b8;">${d.file_original_name}</td>
+  <td>${d.natureza_documento || "—"}</td>
+  <td>${d.paginas ?? "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+
+<p style="margin-top:40px; font-size:10px; color:#475569; text-align:center;">
+© 2026 AuraTECH · AuraLOA · Relatório gerado automaticamente<br>
+Cadeia de custódia digital — Lei 13.964/2019
+</p>
+
+</div></body></html>`;
+}
+
+router.get("/api/v2/lote/:lote_id/relatorio", async (req: Request, res: Response) => {
+  const { lote_id } = req.params;
+  // Por padrão, se o status não é 'enriched' ou 'done', retorna mascarado (tier free).
+  // No futuro, checar plano do usuário aqui.
+  const mascararParam = String(req.query.mascarar ?? "").toLowerCase();
+
+  const lote = await query<any>(
+    `SELECT * FROM v2_lotes_analise WHERE lote_id = $1 LIMIT 1`,
+    [lote_id],
+  );
+  if (!lote[0]) return res.status(404).json({ error: "Lote não encontrado" });
+
+  const docs = await query<any>(
+    `SELECT ld.ordem, a.file_original_name, a.natureza_documento, a.paginas
+     FROM v2_lote_docs ld JOIN v2_analises a ON a.id = ld.analise_id
+     WHERE ld.lote_id = $1 ORDER BY ld.ordem`,
+    [lote_id],
+  );
+
+  const mascarar = mascararParam === "true" || (!mascararParam && lote[0].status !== "enriched" && lote[0].status !== "done");
+  const html = renderRelatorioHTML(lote[0], docs, mascarar);
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  return res.send(html);
 });
 
 export default router;

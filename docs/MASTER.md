@@ -172,19 +172,31 @@ Entrada (PDF upload — ofício requisitório ou documento do processo)
   → Saída: landing (público, 3 grátis) / dashboard (autenticado)
 ```
 
-### Status por tribunal (DataJud)
+### Status por tribunal (DataJud) — CORRIGIDO 23/04/2026 tarde
 
-| Tribunal | Status | Observação |
+⚠️ **A afirmação anterior "TRF1/TRF2/TRF5 indisponíveis" estava INCORRETA.** Validação empírica via API direta em 23/04/2026 (CNJ Santa Casa `1061297-10.2020.4.01.3400` TRF1 retornou 2 hits com 117 movimentos) provou que:
+
+1. **DataJud TRF1 FUNCIONA** para busca por `numeroProcesso`
+2. **No TRF1 NÃO existe classe 1265 (Precatório)** — precatório é FASE dentro da classe 156 / 12078 (Cumprimento de Sentença contra a Fazenda Pública)
+3. **Bug real identificado:** `consultarTribunal()` passava CNJ com pontuação (`1061297-10.2020.4.01.3400`); DataJud indexa só dígitos (`10612971020204013400`). **Corrigido**.
+
+| Tribunal | Status DataJud (por numeroProcesso) | Observação |
 |---|---|---|
+| TRF1 | ✅ OK (validado 23/04/2026) | Classes usadas: 156, 12078, 1208 (agravo), 1728 (apelação) — NÃO usa 1265 |
+| TRF2 | ⚠️ A revalidar | Afirmação antiga era errada — refazer teste |
+| TRF3 | ✅ OK | Verificar se usa classe 1265 ou outra |
 | TRF4 | ✅ OK | Retorna dados reais |
+| TRF5 | ⚠️ A revalidar | Afirmação antiga era errada — refazer teste |
 | TRF6 | ✅ OK | Retorna dados reais |
-| TRF3 | ✅ OK | 0 pendentes (esperado) |
-| TRF1 | ❌ INDISPONÍVEL | DataJud não indexa classes 1265/1266 para este TRF (confirmado 29/03/2026) |
-| TRF2 | ❌ INDISPONÍVEL | DataJud não indexa classes 1265/1266 para este TRF (confirmado 29/03/2026) |
-| TRF5 | ❌ INDISPONÍVEL | DataJud não indexa classes 1265/1266 para este TRF (confirmado 29/03/2026) |
 | TJSP | ✅ OK | Conectado e funcionando |
-| TJRJ | ❌ BLOQUEIO | Numeração interna (ex: 2024.09516-4), não CNJ padrão. DataJud retorna 0. Fallback: URL do documento |
+| TJRJ | ⚠️ Numeração interna (ex: 2024.09516-4) — DataJud pode indexar o CNJ mapeado, precisa teste específico |
 | TJMG, TJRS, TJPR, TJSC, TJBA, TJAM | ⚠️ A validar | Declarados no código, não testados |
+
+**Regra técnica para qualquer tribunal no DataJud:**
+```
+Query correta: { match: { numeroProcesso: "<20 dígitos sem pontuação>" } }
+Query errada:  { match: { numeroProcesso: "NNNNNNN-DD.AAAA.J.TT.OOOO" } }
+```
 
 ### Gaps pendentes — fila de evolução
 
@@ -479,3 +491,31 @@ Reiniciar VSCode após qualquer alteração nas skills.
 - Sem alterações de layout não autorizadas
 - Uma etapa por vez
 
+
+## 23/04/2026 (madrugada) — Início da V2 Pipeline Freemium
+
+**Decisão de produto:** após diagnóstico que achou 6 erros graves no pipeline de 17 fases (4 fases são stubs confessados no próprio JSON), Marcos decidiu reescrita completa. Saída da `fix/p0-p5-pipeline-correction` para branch limpa `feat/v2-pipeline-freemium` partindo de `main`.
+
+**Princípios da V2:**
+- Entrada APENAS por upload de PDF (zero digitação)
+- 5 fases HONESTAS (vs 17 stubs antigas): DataJud + LOA CSV + BrasilAPI + Portal Transparência + PJe
+- Extração via Claude Haiku 4.5 (substitui regex que falhava em 50% dos campos)
+- OCR tesseract.js@7.0.0 como fallback quando pdf-parse retorna < 500 chars
+- Auditoria embutida em 3 camadas (auto-verificação, checks cruzados, log imutável)
+- Freemium: "pesquisa de realidade + atividade" = grátis; dados adicionais = pago por tier de valor
+- Promoção Fundadores: 30% off vitalício nos 100 primeiros assinantes
+
+**Entregas desta sessão:**
+- Commit preservação WIP `585f37d` (fix/p0-p5)
+- Branch `feat/v2-pipeline-freemium` criada de main
+- `tesseract.js@7.0.0` instalado
+- B1 Fundação commitado (`3c97153`): schema v2 + multer diskStorage + endpoint `POST /api/v2/analise` + LGPD + rate-limit + dedup SHA-256
+
+**Estado técnico:**
+- Branch ativa: `feat/v2-pipeline-freemium`
+- Último commit: `3c97153`
+- Produção Hetzner: **NÃO TOCADA**
+- `.gitignore` ampliado (LGPD, dados pessoais, scripts debug, data pesada)
+- Tabelas v2 criadas em dev (postgres local): `v2_analises`, `v2_audit_log`, `v2_membros_fundadores`, `v2_rate_limit`
+
+**Pendências pra amanhã:** B2 (extração com Claude Haiku) → B3 (5 fases honestas) → B3.5 (auditoria) → B4 (freemium UX) → B5 (relatório completo). Detalhe em `memory/project_v2_pipeline_freemium.md`.
