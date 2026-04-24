@@ -24,6 +24,18 @@ export class EvidencePack {
     }
   }
 
+  // Backup automático antes de sobrescrever (fase2.5 G12).
+  // Evita perda silenciosa de evidência quando o mesmo processId
+  // é usado em 2+ execuções. Ref: aditivo_2026-04-24_fase2.md G12.
+  private backupIfExists(filePath: string): void {
+    if (fs.existsSync(filePath)) {
+      const ts = new Date().toISOString().replace(/[:.]/g, "-");
+      const bkpPath = `${filePath}.${ts}.bkp`;
+      fs.renameSync(filePath, bkpPath);
+      this.log(`backup: ${path.basename(filePath)} -> ${path.basename(bkpPath)}`);
+    }
+  }
+
   log(message: string) {
     const ts = new Date().toISOString();
     const line = `${ts} ${message}`;
@@ -33,12 +45,14 @@ export class EvidencePack {
 
   saveRequest(data: any) {
     const filePath = path.join(this.basePath, "request.json");
+    this.backupIfExists(filePath);
     fs.writeFileSync(filePath, JSON.stringify(data, null, 2), "utf-8");
     this.log(`saved request.json`);
   }
 
   saveResponse(data: any): string {
     const filePath = path.join(this.basePath, "response.json");
+    this.backupIfExists(filePath);
     const content = JSON.stringify(data, null, 2);
     fs.writeFileSync(filePath, content, "utf-8");
     const hash = computeSHA256(content);
