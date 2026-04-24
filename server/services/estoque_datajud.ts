@@ -10,10 +10,13 @@ if (!DATAJUD_API_KEY) {
 const CLASSE_PRECATORIO = 1265;
 const CLASSE_RPV = 1266;
 
-// Tribunais confirmados sem dados de precatórios/RPV no DataJud (classes 1265/1266)
-// Verificado em 29/03/2026 — HTTP 200 com total.value=0 — problema na fonte (CNJ)
-// Não tentar fallback automático — registrar como PARCIAL_FONTE no summary
-export const TRIBUNAIS_SEM_DADOS_DATAJUD = ["trf1", "trf2", "trf5"] as const;
+// Constante mantida por compatibilidade, porém esvaziada.
+// Testes empíricos em 23/04/2026 e 12/04/2026 comprovaram
+// que TRF1 retorna dados via DataJud. TRF2 e TRF5 precisam
+// ser revalidados individualmente antes de reinserir nesta
+// lista. Até lá, assume-se disponibilidade (fail-open).
+// Ref: aditivo_2026-04-24_fase1.md achado G3.
+export const TRIBUNAIS_SEM_DADOS_DATAJUD: string[] = [];
 
 export const TRIBUNAIS_FEDERAIS: { alias: string; nome: string }[] = [
   { alias: "trf1", nome: "Tribunal Regional Federal da 1ª Região" },
