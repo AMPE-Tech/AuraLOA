@@ -10,6 +10,31 @@
  */
 
 const { chromium } = require('playwright');
+const path = require('path');
+const fs = require('fs');
+
+// ── Fase 3 G10 — Cadeia de custódia via EvidencePack standalone ──
+// Carrega evidence_pack.cjs bundled (gerado por `npm run build` em
+// script/build.ts entry "dist/lib/evidence_pack.cjs"). Single source of
+// truth: evidence_pack.ts. Drivers .cjs consomem via require puro.
+// Ref: contrato_tecnico/aditivos/aditivo_2026-04-24_fase2.md G10.
+const EVIDENCE_PACK_PATH = path.resolve(__dirname, '../../../../dist/lib/evidence_pack.cjs');
+let EvidencePack = null;
+let computeSHA256 = null;
+try {
+  ({ EvidencePack, computeSHA256 } = require(EVIDENCE_PACK_PATH));
+} catch (e) {
+  console.error('[trf1] FATAL: dist/lib/evidence_pack.cjs nao encontrado.');
+  console.error('[trf1] Rode `npm run build` na raiz do projeto antes de executar este driver.');
+  console.error('[trf1] Caminho esperado:', EVIDENCE_PACK_PATH);
+  process.exit(1);
+}
+
+function packIdFor(prefix, key) {
+  const safeKey = String(key).replace(/[^a-zA-Z0-9]/g, '');
+  const ts = new Date().toISOString().replace(/[:.]/g, '-');
+  return `${prefix}_${safeKey}_${ts}`;
+}
 
 const URLS = {
   numero: 'https://processual.trf1.jus.br/consultaProcessual/numeroProcesso.php?secao=TRF1',
@@ -55,6 +80,11 @@ async function consultarPorCNJ(cnj, options = {}) {
     timestamp: new Date().toISOString(),
   };
 
+  // Fase 3 G10 — pack de evidência por consulta
+  const pack = new EvidencePack(packIdFor('trf1_cnj', cnj));
+  pack.log(`consultarPorCNJ start cnj=${cnj} headless=${headless}`);
+  pack.saveRequest({ cnj, url: URLS.numero, headless, timeout, method: 'consultarPorCNJ' });
+
   let browser;
   try {
     const ctx = await criarBrowser(headless);
@@ -90,9 +120,11 @@ async function consultarPorCNJ(cnj, options = {}) {
     await page.waitForTimeout(5000);
 
     const bodyText = await page.locator('body').innerText();
+    pack.saveRawPayload('antigo_resultado_body.txt', bodyText);
 
     if (bodyText.includes('não foi encontrado') || bodyText.includes('Nenhum')) {
       resultado.erro = 'Processo não encontrado no sistema antigo TRF1';
+      pack.log(`antigo: nao encontrado para cnj=${cnj}`);
       // NÃO retornar aqui — deixar o fallback PJe tentar
     } else {
 
@@ -175,6 +207,7 @@ async function consultarPorCNJ(cnj, options = {}) {
   // FALLBACK: Se não encontrou no sistema antigo, tentar PJe 1g
   if (!resultado.encontrado || resultado.movimentacoes.length <= 1) {
     console.log('[TRF1] Sistema antigo insuficiente — tentando PJe 1g...');
+    pack.log('fallback: tentando PJe 1g');
     try {
       const pjeResult = await consultarPJe1g(cnj, options);
       if (pjeResult.encontrado) {
@@ -187,11 +220,20 @@ async function consultarPorCNJ(cnj, options = {}) {
         if (pjeResult.dados_processo.classe) resultado.dados_processo = pjeResult.dados_processo;
         if (pjeResult.partes.length > 0) resultado.partes = pjeResult.partes;
         resultado.erro = null;
+        pack.log(`fallback PJe: encontrado classe=${resultado.dados_processo.classe || '?'} movs=${resultado.movimentacoes.length}`);
+      } else {
+        pack.log('fallback PJe: nao encontrado');
       }
     } catch (e) {
       console.log(`[TRF1] PJe fallback falhou: ${e.message}`);
+      pack.log(`fallback PJe erro: ${e.message.substring(0, 200)}`);
     }
   }
+
+  // Cadeia de custódia final
+  const responseHash = pack.saveResponse(resultado);
+  pack.saveLog();
+  resultado._evidence = { processId: pack.getBasePath().split(/[\\/]/).pop(), responseHash };
 
   return resultado;
 }
@@ -214,6 +256,13 @@ async function consultarPJe1g(cnj, options = {}) {
     sistema: 'pje',
     timestamp: new Date().toISOString(),
   };
+
+  // Fase 3 G10 — pack só se chamada direta (sem caller pack)
+  // Se chamado pelo fallback de consultarPorCNJ, o caller já tem seu próprio pack;
+  // este pack adicional grava a tentativa PJe isoladamente.
+  const pack = new EvidencePack(packIdFor('trf1_pje1g', cnj));
+  pack.log(`consultarPJe1g start cnj=${cnj} headless=${headless}`);
+  pack.saveRequest({ cnj, url: URLS.pje, headless, timeout, method: 'consultarPJe1g' });
 
   let browser;
   try {
@@ -242,9 +291,13 @@ async function consultarPJe1g(cnj, options = {}) {
 
     // Verificar resultado
     const bodyText = await page.locator('body').innerText();
+    pack.saveRawPayload('pje1g_listagem_body.txt', bodyText);
 
     if (bodyText.includes('Nenhum processo encontrado') || bodyText.includes('0 resultados')) {
       resultado.erro = 'Processo não encontrado no PJe 1g';
+      pack.log(`pje1g: nao encontrado para cnj=${cnj}`);
+      pack.saveResponse(resultado);
+      pack.saveLog();
       await browser.close();
       return resultado;
     }
@@ -283,6 +336,7 @@ async function consultarPJe1g(cnj, options = {}) {
 
       // Extrair dados do processo
       const detalheText = await page.locator('body').innerText();
+      pack.saveRawPayload('pje1g_detalhe_body.txt', detalheText);
       const linhas = detalheText.split('\n').map(l => l.trim()).filter(l => l);
 
       for (let i = 0; i < linhas.length; i++) {
@@ -360,9 +414,15 @@ async function consultarPJe1g(cnj, options = {}) {
   } catch (e) {
     resultado.erro = e.message.substring(0, 300);
     console.log(`[TRF1-PJe] Erro: ${resultado.erro}`);
+    pack.log(`pje1g erro: ${resultado.erro}`);
   } finally {
     if (browser) await browser.close();
   }
+
+  // Cadeia de custódia final
+  const responseHash = pack.saveResponse(resultado);
+  pack.saveLog();
+  resultado._evidence = { processId: pack.getBasePath().split(/[\\/]/).pop(), responseHash };
 
   return resultado;
 }
@@ -381,6 +441,11 @@ async function consultarPorCNPJ(cnpj, options = {}) {
     erro: null,
     timestamp: new Date().toISOString(),
   };
+
+  // Fase 3 G10 — pack de evidência por consulta
+  const pack = new EvidencePack(packIdFor('trf1_cnpj', cnpj));
+  pack.log(`consultarPorCNPJ start cnpj=${cnpj} nome_entidade=${nome_entidade || ''} headless=${headless}`);
+  pack.saveRequest({ cnpj, nome_entidade, url: URLS.cpfcnpj, headless, timeout, method: 'consultarPorCNPJ' });
 
   let browser;
   try {
@@ -484,6 +549,7 @@ async function consultarPorCNPJ(cnpj, options = {}) {
       // Extrair CNJs do texto (fallback)
       if (resultado.processos.length === 0) {
         const bodyText = await page.locator('body').innerText();
+        pack.saveRawPayload(`cnpj_pagina${paginaAtual}_fallback_body.txt`, bodyText);
         const cnjPattern = /(\d{7}-\d{2}\.\d{4}\.\d\.\d{2}\.\d{4})/g;
         const cnjs = [...new Set((bodyText.match(cnjPattern) || []))];
         cnjs.forEach(c => {
@@ -516,12 +582,19 @@ async function consultarPorCNPJ(cnpj, options = {}) {
     }
 
     console.log(`[TRF1] Total: ${resultado.processos.length} processos em ${paginaAtual} página(s)`);
+    pack.log(`consultarPorCNPJ end cnpj=${cnpj} processos=${resultado.processos.length} paginas=${paginaAtual}`);
 
   } catch (e) {
     resultado.erro = e.message.substring(0, 300);
+    pack.log(`consultarPorCNPJ erro: ${resultado.erro}`);
   } finally {
     if (browser) await browser.close();
   }
+
+  // Cadeia de custódia final
+  const responseHash = pack.saveResponse(resultado);
+  pack.saveLog();
+  resultado._evidence = { processId: pack.getBasePath().split(/[\\/]/).pop(), responseHash };
 
   return resultado;
 }
