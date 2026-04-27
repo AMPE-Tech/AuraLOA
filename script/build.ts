@@ -59,6 +59,24 @@ async function buildAll() {
     external: externals,
     logLevel: "info",
   });
+
+  // ── Fase 3 G10/G2 — standalone EvidencePack para drivers .cjs ──
+  // Emite um bundle CJS independente de evidence_pack.ts para que os
+  // scripts CommonJS (server/scripts/robo_pje/drivers/trf1.cjs e
+  // enriquecer_precatorio_cnpj.cjs) possam fazer `require('./dist/lib/evidence_pack.cjs')`
+  // sem depender de tsx em runtime.
+  // Ref: contrato_tecnico/aditivos/aditivo_2026-04-24_fase2.md achados G10 + G2.
+  console.log("building dist/lib/evidence_pack.cjs (standalone for .cjs drivers)...");
+  await esbuild({
+    entryPoints: ["server/services/evidence_pack.ts"],
+    platform: "node",
+    bundle: true,
+    format: "cjs",
+    outfile: "dist/lib/evidence_pack.cjs",
+    sourcemap: true,
+    minify: false,
+    logLevel: "info",
+  });
 }
 
 buildAll().catch((err) => {
