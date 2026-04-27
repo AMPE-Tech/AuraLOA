@@ -213,3 +213,149 @@ STRIPE_WEBHOOK_SECRET=...
 - `docs/auraLOA_dark_report_FINAL.html` — relatório Montichiari D1 (dark, 7 seções, Chart.js)
 - `docs/auratech-tokens.json` — design tokens do sistema AuraTECH
 - `docs/auratech-report.css` — variáveis CSS para relatórios HTML (.at-* prefix)
+
+## Sessão 23/04/2026 (madrugada) — Início da V2 Pipeline Freemium
+
+### Decisão estratégica
+Após diagnóstico honesto do pipeline atual (6 erros graves documentados), **Marcos decidiu reescrita completa**: "essa atual nunca funcionou!". Saímos da `fix/p0-p5-pipeline-correction` e criamos branch limpa `feat/v2-pipeline-freemium` de `main`.
+
+### Diagnóstico documentado (pipeline antigo)
+1. `pdf-parse` falha em PDFs image-only (extrai 4 chars de 272KB reais)
+2. `analysis-engine-br` regex não extrai credor/valor/juiz mesmo em PDFs com texto
+3. Threshold SUSPEITO bloqueia documentos legítimos (score 29 em CNJ válido do TRF1)
+4. SIOP conciliado cobre só 4% (1.590 de 42.174 registros)
+5. Fases 2, 3, 4, 5 do pipeline de 17 fases são stubs que **confessam** não implementação no JSON
+6. Mapa UO→Órgão Superior incompleto (Ministério da Saúde sem mapeamento)
+
+### Decisões de produto (aprovadas por Marcos)
+- **Entrada:** APENAS upload de PDF (sem digitação manual)
+- **Freemium:** pesquisa "é real + está ativo" = **GRÁTIS**. Dados adicionais (valor, credor, advogado, gravames, movimentações, PDF SHA-256) = **PAGO por tier de valor**.
+- **Tiers:** R$ 99 (RPV ≤ 50k) · R$ 249 (≤ 500k) · R$ 599 (≤ 2M) · R$ 1.499 (≤ 10M) · R$ 3.999 (≤ 50M) · sob consulta
+- **Assinatura desde MVP:** Starter R$ 299, Pro R$ 999, Enterprise R$ 2.999
+- **Promoção Fundadores:** 30% off vitalício nos 100 primeiros assinantes (não aplica avulso). Inclui selo, acesso antecipado a AuraLEGAL/AuraDUE/AuraAUDIT, canal privado.
+- **LGPD:** checkbox anônimo no upload + servidor Hetzner Alemanha (GDPR)
+- **Rate-limit:** 5 análises grátis/dia/IP
+- **Motor:** 5 fases HONESTAS (DataJud + LOA CSV + BrasilAPI + Portal Transparência + PJe scraping). Zero stubs. Cada fase retorna `{status, confianca, fontes[], evidencia_hash}`.
+- **Extração:** Claude Haiku 4.5 via `@anthropic-ai/sdk` substitui regex puro (~R$ 0,01 por análise)
+- **OCR:** `tesseract.js@7.0.0` como fallback quando `chars_extraidos < 500`
+- **Auditoria embutida:** 3 camadas (auto-verificação por fase, agente revisor com checks cruzados, log imutável `v2_audit_log`)
+
+### Entregas técnicas
+- `.gitignore` ampliado (scripts debug, dados pessoais LGPD, data pesada — 205MB → ~7MB commitado)
+- Commit preservação WIP `585f37d` na `fix/p0-p5-pipeline-correction`
+- Branch nova `feat/v2-pipeline-freemium` de main limpa
+- `tesseract.js@7.0.0` instalado
+- **B1 Fundação** (commit `3c97153`):
+  - `server/v2/db_migrations_v2.ts` — 4 tabelas: `v2_analises`, `v2_audit_log`, `v2_membros_fundadores`, `v2_rate_limit`
+  - `server/v2/upload_config.ts` — multer diskStorage com dedup por SHA-256
+  - `server/v2/routes_v2.ts` — `POST /api/v2/analise` + `GET /api/v2/analise/:id`
+  - Plugado em `server/index.ts` (boot) e `server/routes.ts` (router)
+  - Uploads salvos em `C:/Temp/auraloa-saida/uploads_v2/{SHA-256}.pdf` (dev) ou `/var/www/auraloa/uploads_v2/` (prod)
+
+### Testes localhost:5001 (todos passando)
+- POST sem LGPD → 400
+- POST com LGPD → 200 (validation_id, sha256, paginas, chars_extraidos, rate_limit)
+- GET por validation_id → dados persistidos
+- Rate-limit 5/dia incrementa corretamente
+- Dedup SHA-256 funciona (mesmo PDF = 1 arquivo em disco)
+
+### Pendências para próxima sessão (lembrar Marcos ao entrar)
+- **B2 — Extração:** integrar tesseract.js + Claude Haiku 4.5 (endpoint `POST /api/v2/analise/:validation_id/extrair`)
+- **B3 — Verificação:** 5 fases honestas
+- **B3.5 — Auditoria:** checks cruzados + badges "requer revisão"
+- **B4 — Freemium UX:** landing desbloqueada + teaser (deixar CLARÍSSIMO "pesquisa grátis") + Stripe por tier + contador de Fundadores
+- **B5 — Relatório:** HTML/PDF v2 + dashboard "minhas análises" + webhook Stripe
+
+### Erros observados na sessão
+Nenhum erro grave. Bug pequeno do tmp file órfão em uploads rejeitados foi consertado no mesmo commit. Dev server morreu com `pm2 --update-env`-like ao reiniciar (port 5000 já ocupada por processo antigo PID 25572 desde 22/04 15:34) — workaround: rodar em `PORT=5001`. Marcos NÃO autorizou matar o PID 25572 (cautela).
+
+### Estado de produção
+`loa.auradue.com` **não foi tocada** nesta sessão. Permanece com pipeline antigo em `fix/p0-p5-pipeline-correction` rodando (commit de preservação feito). V2 ficará em dev até aprovação de Marcos para cutover.
+
+## Sessão 23-24/04/2026 (maratona) — V2 Pipeline Freemium validado ponta-a-ponta
+
+### Entregas commitadas
+- `3c97153` B1 Fundação (schema + multer + endpoint POST /api/v2/analise)
+- `b62ff59` Cherry-pick assets reusáveis (templates, ocr_agent, robo_pje, LOA CSV)
+- `00294fd` B2 Extração Claude Haiku 4.5 (OCR nativo + texto)
+- `3da79d3` B2+ expansão + C1 lote (até 5 docs) + C2 consolidador/revisor 3 níveis
+- `fb1cfa3` C3 Orquestrador F1/F2/F3 + C4 Relatório HTML/PDF + **fix crítico DataJud TRF1**
+
+### Entregas NÃO commitadas (pendentes para próxima sessão)
+- 5 ajustes no prompt Haiku: promotor de campos, CNJ antigo pré-2008, advogados[], classificacao_credito[], beneficiarios_detalhados[], metadados_requisicao
+- Detector de complexidade (não bloqueia, só sinaliza)
+- **Alerta anti-golpe automático** quando cessionários detectados ("Due Diligence Global")
+- Revisor pós-extração (`server/v2/revisor_extracao.ts`) com 7 checksums
+- Fix endpoint `/api/v2/analise/:id/extrair` usar `persistExtractionResult` unificado
+- Botão "Exportar PDF ABNT" no teste-v2.html + endpoint `/api/v2/lote/:id/relatorio.pdf`
+- 7 scripts dev_*.ts de diagnóstico
+
+### Alertas vermelhos reportados e resolvidos nesta sessão
+1. **Commit sujo inicial** — `git add -A` pegou 947k linhas. Revertido com `git reset --soft` + commit curado.
+2. **Memória antiga FALSA em MASTER.md** — seção 7-A dizia "TRF1/TRF2/TRF5 indisponíveis no DataJud". Validação empírica direta provou FALSO. Bug real era query com CNJ pontuado. Corrigida + memória nova criada.
+3. **Endpoint `/api/v2/analise/:id/extrair` com UPDATE inline** — não gravava campos novos (advogados, classificacao, beneficiarios, metadados, validacao_extracao). Descoberto quando Marcos perguntou "revisor rodou na primeira fase?". Comprovado via SQL. Corrigido para usar `persistExtractionResult` unificado.
+
+### Descobertas técnicas
+- **tsx NÃO faz hot-reload** — sempre kill + restart após editar TypeScript.
+- **DataJud TRF1 FUNCIONA** — buscar por `numeroProcesso` com 20 dígitos PUROS (sem pontuação). Afirmação antiga era errada.
+- **Classes processuais em TRF1**: NÃO usa 1265 (Precatório). Usa 156, 12078, 1208, 1728. Precatório no TRF1 é FASE em Cumprimento de Sentença.
+- **Haiku 4.5 lê PDF nativo** via `type: "document"`. Custo ~R$ 0,03 por PDF 2 páginas, ~R$ 0,24 por 12 páginas.
+- **CNJ antigo pré-2008** (`1931-10.1990.4.01.3400`) é VÁLIDO.
+
+### Testes reais concluídos
+- **Santa Casa TRF1 R$ 235M**: lote `oBq73QnWy9`, score revisor 100/100, F3 achou Presidente + email + tel.
+- **Agrovale TRF1 R$ 671M**: lote `M8Q812qqvE`, 12 páginas com 3 ofícios, 13 cessionários (5 FIDCs). Revisor pós-extração score 64/100 detectou 2 alertas (valor inflado 2x + duplicação de FIDCs).
+
+### Pendências técnicas próxima sessão
+1. Commitar os 6 arquivos novos + edits (discutir com Marcos).
+2. Bugs do Haiku a corrigir: duplicata FIDC no Agrovale, total=null nos cessionários, valor_rs inflado.
+3. Revisor pós-enriquecimento (revalidar após F1/F2/F3 rodarem).
+4. Deploy produção — aguardando Marcos aprovar cutover.
+
+### Estado do localhost no fim da sessão
+- Dev server rodando em `localhost:5001` (processo vai ser parado)
+- Teste página: `http://localhost:5001/teste-v2.html`
+- Último validation_id testado: `8bl9b0miS6ot` (Agrovale)
+
+## Sessão 27/04/2026 — Governança DPO LOA 2026 Federal (2 aditivos)
+
+### Contexto
+Marcos enviou nova base reconciliada da LOA 2026 Federal (entrega CONCILIADO/upload 27apr2026/) com 4 arquivos derivados + manifesto + log. Demanda original: aplicar regra UO 10101 → 71103 nos consolidados. Sessão regida pelo `CONTRATO_TECNICO_MASTER.md` (Cláusulas N1, N2, N6, 1, 7, 10).
+
+### Diagnósticos
+1. **Manifesto v1 incompleto:** cobria apenas 58 PDFs de input; não tinha hash dos derivados (gap estrutural, não adulteração).
+2. **Regra UO 10101 → 71103 = INVARIANTE:** auditoria mostrou 32/32 linhas STF já aplicadas (uo_devedora_codigo=71103, nome=EFU, normalizado=UNIÃO FEDERAL). Zero transformação necessária.
+3. **Bug crítico no `_BR.csv`:** locale híbrido — separador campo `;` (BR) + decimal `.` (INTL). Causa leitura 10× errada em Excel BR. 79.156 linhas afetadas.
+
+### Aditivos aplicados
+- **Aditivo 1** — `aditivo_2026-04-27_extensao_manifesto_arquivos_saida.md`: criou `manifesto_integridade_v2.json` estendendo o v1 com bloco `arquivos_saida[]` (cadeia de custódia dos 7 derivados). v1 preservado byte-a-byte.
+- **Aditivo 2** — `aditivo_2026-04-27_fix_decimal_br_csv.md`: criou `precatorios_loa_2026_consolidado_BR_v2_decimal_corrigido.csv` (decimal vírgula 2 casas) e `manifesto_integridade_v3.json` no diretório novo `CONCILIADO # 3-sim/`. Validações 2.F (soma) e 2.G (idempotência) OK.
+
+### Hashes finais oficiais (selo da entrega LOA 2026 Federal)
+- `manifesto_integridade.json` v1 (intocado): `f2983eccd0023094f01919e3e145c5f40de49a585ab43fbd9410f30a79cfcacf`
+- `manifesto_integridade_v2.json`: `4f52f740caa9b4e3ea0411f9aa39bc09c04b95742c23e2a9baa99c6d7e419c9a`
+- `manifesto_integridade_v3.json`: `0863c0fbc3b5a182030ff22f48eeff1e98672bc8dd711751512793f62c0be90e`
+- `_BR.csv` (intocado): `232d87951fe5136ad1fb7c1bf2d87cd54fca836865259966c95c903fef69bf4e`
+- `_BR_v2_decimal_corrigido.csv` (NOVO): `991da5862690c87b375f5130473e2f743dc78ece2b60fa4803d452b3b79e34ce`
+- `_INTL.csv` (intocado): `cb90baeadd17638350eb898530f299e3295466a3485bf6a48230942ccb8a62c3`
+
+### Validações cumpridas
+- **Cláusula 2.F:** soma R$ 22.306.037.833,00 origem = destino, zero centavos de diferença.
+- **Cláusula 2.G:** SHA-256 idêntico em 2 execuções da transformação.
+- **58 PDFs de origem:** todos íntegros vs manifesto v1 (sha256sum confirmou os 58).
+- **Cross-check BR↔INTL:** 0 divergências em 79.156 linhas.
+
+### Pendências críticas (próxima sessão)
+1. Linha 79.156 TRF4 com `valor_brl=0,00` (precatório `5018956-53.2024.4.00.0000`, FUNASA, "Custas") — investigar se é totalizador, quitado, ou bug de extração.
+2. **Aditivo 3:** regenerar `ranking_devedores.csv` e `resumo_por_tribunal.csv` a partir do `_v2_decimal_corrigido.csv` (atualmente dessincronizados).
+3. Confirmar fix upstream do producer (decimal `,` em `_BR.csv` nativamente) — encerra validade do Aditivo 2.
+4. Resolver campos `a_definir` no manifesto v2 (`origem_pipeline`, `fonte_derivada_de`, `mtime_timezone`).
+
+### Bug do agente reportado (transparência radical)
+Na auditoria inicial (Passo 2.A do escopo original), parser BR computou soma 10× maior por interpretar `.` como milhar. **Reportado em tempo real** como "DESCOBERTA CRÍTICA #2 — DIVERGÊNCIA DE VALORES ENTRE BR E INTL", confirmado via grep visual da mesma linha em ambos arquivos, e parser corrigido na 2ª iteração. Soma final R$ 22.306.037.833,00 validada e bate com manifesto v1.
+
+### Estado de produção
+`loa.auradue.com` **não foi tocada** nesta sessão. Nenhum deploy. Nenhuma alteração de código backend/frontend. Operação 100% sobre arquivos da entrega LOA 2026 Federal e governança documental do contrato técnico.
+
+### Adendo encerramento (meta-engenharia de skills)
+Skills `/session-start` e `/session-close` atualizadas com **11 patches** consolidados desta sessão (5 em start, 6 em close). SHA finais: start `2647653b…`, close `61d401ae…`. Skill nova `/dpo-session-close` (Tier 4 — Cláusulas 2.F/2.G, validação de manifesto, hash crossover) + aditivo formal de skills no AuraLOA ficam como **P0a/P0b da próxima sessão**. Detalhe completo em `docs/sessions/session_close_2026-04-27.md` seção ADENDO.

@@ -231,6 +231,7 @@ NUNCA alterar sem revisar:
 6. DATAJUD_API_KEY — não usar fallback hardcoded; variável obrigatória no .env
 7. SSL banco Hetzner: rejectUnauthorized: false (certificado autoassinado — CN=ubuntu-4gb-nbg1-3)
 8. hashPassword() é async (bcrypt) — sempre usar await nas chamadas
+9. **Drivers .cjs (`server/scripts/robo_pje/drivers/trf1.cjs` e `enriquecer_precatorio_cnpj.cjs`) dependem de `dist/lib/evidence_pack.cjs` — sempre rodar `npm run build` antes de executar drivers após mexer em `server/services/evidence_pack.ts`. Drivers abortam com mensagem clara se o bundle não existir. Ref: contrato_tecnico/aditivos/aditivo_2026-04-24_fase3.md.**
 
 SEMPRE executar após qualquer alteração:
 ```
@@ -519,3 +520,56 @@ Reiniciar VSCode após qualquer alteração nas skills.
 - Tabelas v2 criadas em dev (postgres local): `v2_analises`, `v2_audit_log`, `v2_membros_fundadores`, `v2_rate_limit`
 
 **Pendências pra amanhã:** B2 (extração com Claude Haiku) → B3 (5 fases honestas) → B3.5 (auditoria) → B4 (freemium UX) → B5 (relatório completo). Detalhe em `memory/project_v2_pipeline_freemium.md`.
+
+## 23-24/04/2026 (sessão maratona) — Pipeline V2 validado end-to-end
+
+**Status:** 5 commits em `feat/v2-pipeline-freemium` + 6 arquivos pendentes commit.
+
+**Principais marcos técnicos:**
+- Pipeline V2 completo (upload → extração Haiku → consolidação → revisor 3 níveis → confirmação → enriquecimento F1/F2/F3 + URL oficial → relatório HTML + PDF ABNT).
+- Revisor pós-extração com 7 checksums implementado e funcionando (detectou 2 bugs no Agrovale: duplicata FIDC + valor 2x inflado).
+- Fix crítico DataJud TRF1: afirmação antiga do MASTER.md (seção 7-A) era FALSA. DataJud INDEXA TRF1 quando CNJ é passado como 20 dígitos sem pontuação. Correção aplicada em `fetchPrecatorioByNumero`. Agora traz 117 movimentos reais do processo Santa Casa.
+
+**Custo real validado:**
+- PDF 2 páginas texto nativo: ~R$ 0,02
+- PDF 2 páginas escaneado (OCR Haiku): ~R$ 0,03
+- PDF 12 páginas complexo (Agrovale 3 ofícios + 13 cessionários): ~R$ 0,24
+
+**Testes reais:**
+- Santa Casa R$ 235M (lote `oBq73QnWy9`) — auto-aprovado score 100/100
+- Agrovale R$ 671M (lote `M8Q812qqvE`) — revisor score 64/100 com 2 alertas detectados
+
+**Estado de produção:** `loa.auradue.com` NÃO TOCADA. V2 permanece em dev até cutover aprovado.
+
+**Pendências:** detalhe em `memory/project_v2_sessao_23-24_abril_completo.md`.
+
+## 27/04/2026 — Sessão DPO LOA 2026 Federal — 3 aditivos aplicados
+
+**Tipo:** governança DPO (não é entrega de produto, não tocou em código de produção).
+
+**Demanda original:** aplicar regra UO 10101 → 71103 nos consolidados LOA 2026. **Resultado:** regra **verificada como invariante** (32/32 linhas STF já aplicadas em ambos `_BR.csv` e `_INTL.csv`); nenhuma transformação UO necessária.
+
+**Achado crítico colateral durante a auditoria:** `precatorios_loa_2026_consolidado_BR.csv` emitido pelo pipeline com **locale-INTL** (decimal `.`) apesar do nome `_BR`. Excel BR / Power BI BR / pandas-decimal-vírgula leem valores **10× errados**. Bug do producer upstream.
+
+**Aditivos aplicados (Cláusula N1 do CONTRATO_TECNICO_MASTER):**
+1. `aditivo_2026-04-27_extensao_manifesto_arquivos_saida.md` — saneamento estrutural; criou `manifesto_integridade_v2.json` estendendo o v1 com bloco `arquivos_saida[]`.
+2. `aditivo_2026-04-27_fix_decimal_br_csv.md` — fix decimal local; criou `precatorios_loa_2026_consolidado_BR_v2_decimal_corrigido.csv` (decimal `,` 2 casas, `decimal_normalizado=true` em 79.156/79.156 linhas) e `manifesto_integridade_v3.json` (no diretório novo `CONCILIADO # 3-sim/`); validações Cláusulas 2.F (soma) e 2.G (idempotência) ambas OK.
+3. `aditivo_2026-04-27_cobertura_xlsx_e_convencao.md` — patch de cobertura; criou `manifesto_integridade_v3.1.json` adicionando entrada do xlsx em `arquivos_saida[]` (era gap detectado pelo teste AuraTRUST) + bloco `convencao_diretorios`.
+
+**Hashes oficiais finais (selo da entrega LOA 2026 Federal):**
+- `manifesto_integridade.json` v1 (intocado): `f2983eccd0023094f01919e3e145c5f40de49a585ab43fbd9410f30a79cfcacf`
+- `manifesto_integridade_v2.json`: `4f52f740caa9b4e3ea0411f9aa39bc09c04b95742c23e2a9baa99c6d7e419c9a`
+- `manifesto_integridade_v3.json`: `0863c0fbc3b5a182030ff22f48eeff1e98672bc8dd711751512793f62c0be90e`
+- `manifesto_integridade_v3.1.json`: `86ce097c6756072de81972cae468c761050c1d188fb536f8cd891dd5191ffbdb` ← **canônico final**
+- `_BR_v2_decimal_corrigido.csv`: `991da5862690c87b375f5130473e2f743dc78ece2b60fa4803d452b3b79e34ce`
+- Soma global preservada: R$ 22.306.037.833,00 (centavo a centavo).
+
+**Validação AuraTRUST executada:** 66/66 arquivos declarados pelo manifesto v3.1 íntegros vs disco; 0 divergências.
+
+**Achado anti-regressão crítico:** `CLAUDE.md` **ausente do projeto root** AuraLOA — verificação anti-regressão fica comprometida sem ele. **Decisão DPO:** criar na próxima sessão (envolve definição de conteúdo institucional).
+
+**Pendências para próxima sessão (6):** ver `docs/sessions/session_close_2026-04-27.md` §8.
+
+**Estado de produção:** `loa.auradue.com` NÃO TOCADA. Operação 100% sobre arquivos da entrega LOA 2026 Federal e governança documental.
+
+**ADENDO 27/04 (encerramento):** meta-engenharia das skills `/session-start` e `/session-close` concluída. 11 patches aplicados (5 em start + 6 em close). Tier 4 (governança DPO + cadeia de custódia AuraTRUST) encaminhado para skill nova `/dpo-session-close` — **P0a da próxima sessão**. Aditivo formal das skills no AuraLOA é **P0b**. SHA finais: session-start `2647653b…`; session-close `61d401ae…`. Detalhes em `docs/sessions/session_close_2026-04-27.md` seção ADENDO.
