@@ -359,3 +359,53 @@ Na auditoria inicial (Passo 2.A do escopo original), parser BR computou soma 10�
 
 ### Adendo encerramento (meta-engenharia de skills)
 Skills `/session-start` e `/session-close` atualizadas com **11 patches** consolidados desta sessão (5 em start, 6 em close). SHA finais: start `2647653b…`, close `61d401ae…`. Skill nova `/dpo-session-close` (Tier 4 — Cláusulas 2.F/2.G, validação de manifesto, hash crossover) + aditivo formal de skills no AuraLOA ficam como **P0a/P0b da próxima sessão**. Detalhe completo em `docs/sessions/session_close_2026-04-27.md` seção ADENDO.
+
+## Sessão 27/04/2026 (tarde) — Pipeline LOA→Credor via DJEN (top 200)
+
+### Contexto
+Sessão operacional de enriquecimento do top 200 LOA 2026 com credor + advogado + OAB. Iniciou tentando rota PJe TRT1 (bate captcha Res 139/2014 CSJT), depois Portal `/despesas` (rate-limit horário 00h-06h Brasília), até o agente-revisor crítico apontar 2 rotas viáveis ignoradas: `/despesas/documentos?fase=1` (empenho — permitido pela diretriz) e Diários Oficiais. A rota DJEN destravou tudo.
+
+### Destrave: API DJEN
+**Endpoint:** `https://comunicaapi.pje.jus.br/api/v1/comunicacao` (oficial CNJ).
+- Sem auth · sem captcha · `numeroProcesso` 20 dígitos sem máscara
+- Retorna `destinatarios[]` (partes com polo A/P/T) + `destinatarioadvogados[]` (nome + OAB + UF + id CNJ)
+- Texto HTML completo da última publicação + link permanente e-proc
+- Cobertura: TRFs, TJs, TRTs, STJ. STF é fluxo próprio.
+
+### Resultado top 200
+| Status | Qtd | % |
+|---|---:|---:|
+| OK + OK_REFINADO | 135 | 67,5% |
+| SEM_CNJ_VALIDO | 41 | 20,5% |
+| DJEN_VAZIO | 23 | 11,5% |
+| Erro | 1 | 0,5% |
+
+**1.380 partes + 1.114 advogados (todos com OAB nominal)** identificados. Soma agregada R$ 3,44 bi.
+
+### Diretriz Marcos 27/04 (memória `feedback_proibido_pagos_para_enriquecimento`)
+NUNCA usar `/recursos-recebidos`, `/despesas/documentos?fase=3`, `/despesas/documentos-por-favorecido?fase=3` para enriquecer pendentes/empenhados. Universo-alvo é complementar ao de pagos. Memória atualizada também no AuraLOA (`project_modelo_negocio_precatorio_nao_pago` ampliada).
+
+### Skills criadas
+- **`djen_auraloa-enriquecer`** (`~/.claude/skills/`) — schema completo + retry/backoff [3s/8s/20s] + delay 1.5s + checkpoint a cada 50 + casos validados
+- **`agente-revisor`** (`~/.claude/skills/`) — referencia `AuraLEGAL/src/agents/agente-revisor.ts`
+- **`agente-auditor`** (`~/.claude/skills/`) — referencia `AuraLEGAL/src/agents/agente-auditor.ts`
+
+Catálogo `SKILLS_AURATECH.md` atualizado com as 3 novas skills.
+
+### Mapeamento de fases (memória `reference_pipeline_loa_credor_9_fases`)
+9 fases executadas mapeadas para virar skills. Decisão arquitetural: criar 8 skills atômicas + 1 orquestradora. Primeira formalizada: `djen_auraloa-enriquecer`. Próximas a fazer: `descobrir-cnj-via-siop` (preencher), `loa-reconciliar-siop`, `loa-ordenar-top-n`, `refinar-sem-cnj-loa`, `relatorio-html-tabela-expandivel`, `cnj-validar-checksum`, `enriquecer-loa-credor-pipeline` (orquestrador).
+
+### Saídas em `C:\Temp\precatorios_loa_2026_pipeline\`
+- `top200_djen_TABELA.html` (1,5 MB) — relatório AuraLOA dark theme com tabela expansível, busca, PDF global e PDF individual por linha
+- 4 CSVs (master / destinatarios / advogados / comunicacoes) — todos refinados
+- `djen_evidencias_top200/` — 127 JSONs DJEN crus
+
+### Pendências (priorizadas)
+- **P1** — publicar HTML no Hetzner (pendente autorização Marcos)
+- **P2** — formalizar 7 skills restantes do pipeline
+- **P3** — email/telefone advogado via OAB CNA (token pendente; Apollo bloqueado plano free)
+- **P4** — 41 SEM_CNJ (24 TRF2 pré-2008, 14 STF/STJ, 3 outros)
+- **P5** — 23 DJEN_VAZIO (CNJs antigos)
+
+### Estado de produção
+`loa.auradue.com` **não foi tocada** nesta sessão. Operação 100% local sobre arquivos da entrega LOA 2026 + memórias + skills globais.

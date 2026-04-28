@@ -573,3 +573,25 @@ Reiniciar VSCode após qualquer alteração nas skills.
 **Estado de produção:** `loa.auradue.com` NÃO TOCADA. Operação 100% sobre arquivos da entrega LOA 2026 Federal e governança documental.
 
 **ADENDO 27/04 (encerramento):** meta-engenharia das skills `/session-start` e `/session-close` concluída. 11 patches aplicados (5 em start + 6 em close). Tier 4 (governança DPO + cadeia de custódia AuraTRUST) encaminhado para skill nova `/dpo-session-close` — **P0a da próxima sessão**. Aditivo formal das skills no AuraLOA é **P0b**. SHA finais: session-start `2647653b…`; session-close `61d401ae…`. Detalhes em `docs/sessions/session_close_2026-04-27.md` seção ADENDO.
+
+---
+
+## Histórico — 27/04/2026 (tarde) — DJEN como rota canônica de credor + advogado
+
+### Mudança técnica relevante
+
+Rota canônica de extração **credor + advogado + OAB** a partir de CNJ federal:
+**API DJEN — `https://comunicaapi.pje.jus.br/api/v1/comunicacao`** (oficial CNJ, sem auth, sem captcha).
+
+Substitui (para a maioria dos casos) os robôs Playwright PJe TRF1 que estavam restritos a 1 tribunal e exigiam scraping com captcha. DJEN cobre TRFs, TJs, TRTs, STJ. STF tem fluxo próprio (sequencial).
+
+### Skill canônica criada
+- **`djen_auraloa-enriquecer`** — método validado em 27/04 com 127/200 sucessos no top 200 LOA 2026. Schema completo + retry/backoff documentados. Localização: `~/.claude/skills/djen_auraloa-enriquecer/SKILL.md`.
+
+### Diretriz vigente (memória `feedback_proibido_pagos_para_enriquecimento`)
+NUNCA usar endpoints de pagamento realizado para enriquecer precatórios pendentes/empenhados. Lista explícita: `/recursos-recebidos`, `/despesas/documentos?fase=3`, `/despesas/documentos-por-favorecido?fase=3`. Permitidos: `fase=1` (empenho), `fase=2` (liquidação), `/pessoa-juridica`, `/contratos/cpf-cnpj`, `/orgaos-siafi`.
+
+### Estado atual do projeto (não alterado nesta sessão)
+- `loa.auradue.com` ONLINE (sessão 17/04 — última intervenção)
+- Pipeline OCR blindado mantido
+- CLAUDE.md AUSENTE no projeto root — achado da sessão DPO 27/04 manhã, ainda pendente
