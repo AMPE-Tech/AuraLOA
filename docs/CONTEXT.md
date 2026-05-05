@@ -409,3 +409,95 @@ Catálogo `SKILLS_AURATECH.md` atualizado com as 3 novas skills.
 
 ### Estado de produção
 `loa.auradue.com` **não foi tocada** nesta sessão. Operação 100% local sobre arquivos da entrega LOA 2026 + memórias + skills globais.
+
+---
+
+## 2026-05-01 — Refatoração Editorial da Landing AuraLOA + Marketplace placeholder
+
+### Escopo
+Sessão de design/frontend sobre a landing pública (`/`) e criação da rota `/marketplace`. Zero impacto em pipelines jurídicos / due diligence / dados.
+
+### Entregas técnicas
+
+**Tipografia padronizada (2 fontes, padrão Vogue editorial):**
+- `client/src/index.css` — `--font-sans` = Lora, `--font-serif`/`--font-display` = Playfair Display, `--font-body` = Lora. Removido `--font-mono` órfão.
+- Body global herda Lora via `@apply font-sans` (já existente).
+- Hierarquia clara: Playfair pros displays (números, H1/H2, eyebrows uppercase, badges); Lora pros corpos (parágrafos, captions, italic narrativo).
+
+**Hero refatorado (`client/src/pages/landing.tsx`):**
+- 3 KPI cards substituídos por componente custom `EditorialGauge` (SVG puro com 60 tick marks, arc animado via framer-motion, counter animation 0→valor, end-cap dot gold).
+- Subtitle reescrita (frase quebrada "...desde" virou frase completa).
+- CTA primário convertido pra indigo solid com glow + focus-ring.
+- Atmosfera com 3 gradient meshes (indigo + blue + amber) + noise SVG via `feTurbulence` + hairline horizontal de topo.
+
+**Brand coherence — fim do rainbow:**
+- Cyan (#22d3ee) trocado por indigo (#818cf8) — alinhamento com cor canônica AuraLOA do design-system AuraTECH.
+- pipelineSteps + features array neutralizados (eram blue/amber/purple/emerald/cyan/rose/primary).
+- Gold (#fbbf24) restrito a accents AuraTECH-parent (gauge end-cap, ratio pill).
+- Emerald restrito a status "live/verified".
+- Red só pra "Manual" (semântica destrutivo).
+
+**Reposicionamento da seção "Cadeia de Custódia Digital":**
+- Movida pra logo após o upload (antes vinha depois de Due Diligence + MarketOverview).
+- Ordem nova: Hero → Validador+Marketplace → Custódia → Módulos → Due Diligence → MarketOverview → Fontes Oficiais → CTA → Footer.
+
+**Novo: card Marketplace dual-side (`client/src/components/marketplace-card.tsx`):**
+- Dual-side "Sou credor / Sou investidor" no hero, ao lado do Validador.
+- Eyebrow + headline Playfair + subhead Lora italic + 2 sub-seções + 1 CTA primário (após pedido explícito de Marcos pra remover o secundário).
+- Prova social honesta: `SHA-256 + Lei 13.964/2019 compliant` (sem fabricar números).
+
+**Novo: rota `/marketplace` (`client/src/pages/marketplace.tsx`):**
+- Hero editorial (Playfair + Lora) + dual-side cards (credor amber / investidor indigo) + how-it-works 4 passos + garantias técnicas + CTA final.
+- Disclosure honesto: "Onboarding institucional aberto · Acesso por convite".
+- CTAs primários apontam pra WhatsApp `5511995300144` com mensagens pré-preenchidas.
+- Registrada em `client/src/App.tsx` em `<Route path="/marketplace" component={MarketplacePage} />`.
+
+**ValidadorPreliminarLOA — modo `embedded`:**
+- Componente compartilhado ganhou prop `embedded?: boolean`.
+- `embedded=true` (usado na landing): remove max-w/mt externos + esconde a faixa de prova social (que foi promovida pro nível do grid pai, acima dos dois cards).
+- Card refatorado: blue/cyan → indigo + amber accent.
+- `embedded=false` (default): comportamento standalone preservado.
+
+**Code cleanup (simplify pass):**
+- Deletadas 7 imports recharts + 4 imports `@/components/ui/chart` + 78 linhas de dead constants (`timelineCompareData`/`timelineChartConfig`/`manualSteps`/`digitalSteps`).
+- Removidos 7 lucide icons órfãos: `Building2`, `Activity`, `Clock`, `BarChart3`, `FileCheck`, `Scale`, `Users`.
+- Substituído Tailwind `font-mono` por `font-serif tabular-nums` (resolve corretamente pra Playfair via CSS var).
+- Total: ~95 linhas removidas + redução de bundle (recharts saiu da rota landing).
+
+### Reviews aplicados
+Antes da entrega, foram rodados 2 sub-agentes em paralelo:
+- **Plan agent (frontend-sales-review)** — punch list de 25+ achados sobre tipografia, conversão, brand coherence, polish premium.
+- **General-purpose agent (simplify)** — punch list de 11 achados sobre dead code, font-mono semanticamente errado, duplicação de estilos, CSS vars não consumidas.
+
+Aplicados todos os blockers e maioria dos importants. Nits documentados.
+
+### Auditoria — HomeOficial_AuraTech.tsx (em AuraAUDIT)
+
+Marcos pediu pra verificar se já existia "motor de marketplace pronto". Verificação:
+- Pasta `AuraDUE/` local: vazia (só docs).
+- URL `https://auradue.replit.app` (declarada como AuraMARKET ativo): **HTTP 404**.
+- URLs Replit dos módulos `active` em `HomeOficial_AuraTech.tsx`: **TODAS retornam 404** (auradue, auraloa, auracarbo, aurarisk).
+- Apenas `https://loa.auradue.com` está vivo (200).
+
+**Conclusão**: AuraMARKET é marca declarada nos contratos AuraTECH mas não há código de marketplace funcional implementado. 7 de 8 módulos catalogados como `active` apontam pra URLs Replit mortas.
+
+**Decisão DPO**: não corrigir nesta sessão. Salvo em `memory/project_home_oficial_auratech.md` com auditoria completa pra próxima sessão dedicada.
+
+### Validação técnica
+- `npx tsc --noEmit`: zero erros no `client/`. (Erros pré-existentes em `server/` — billing_auraloa, due_diligence_viewer, kyc_nda — não regressão).
+- `npm run build`: passou em 19.93s (client) + 6511ms (server) + 8ms (evidence_pack). Bundle: `dist/index.cjs` 1.3MB; CSS 123KB / 19KB gzip; index.js 1.57MB / 443KB gzip.
+- Bundle prod local (`node --env-file=.env dist/index.cjs`): subiu, conectou ao DB Hetzner, respondeu HTTP 200 em `/` e `/marketplace`.
+- HMR Vite durante toda a sessão: limpo, sem warnings.
+
+### Estado de produção
+`loa.auradue.com` **não foi tocada** nesta sessão. Marcos não autorizou deploy. Build local validado e parado ao final da sessão.
+
+### Pendências priorizadas (próxima sessão)
+- **P1** Deploy Hetzner do landing refatorado (carece autorização Marcos)
+- **P2** Auditoria + correção de `HomeOficial_AuraTech.tsx` (URLs Replit mortas + status falso `active` em 7 módulos)
+- **P2** Decisão sobre AuraMARKET — manter `/marketplace` como porta de captação ou construir motor real (schema + rotas + KYC + matching)
+- **P3** Wrapper de framing pro `<ValidadorPreliminarLOA />` (eyebrow/H2/microcopy de privacidade) pra subir conversão
+- **P3** Tokenizar magic numbers (letter-spacing) e hex backgrounds (`bg-[hsl(...)]` × 5) em CSS vars
+- **P3** Topbar/Footer públicos — review próprio (compartilhados entre páginas)
+- **P4** Limpar git status — sessão anterior (27/04) deixou 10 modificados + 11 untracked sem commit; ciclo de governança Git pendente
+

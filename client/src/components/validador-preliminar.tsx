@@ -149,7 +149,11 @@ const SITUACAO_LABELS: Record<string, string> = {
   nao_localizado: "Não localizado",
 };
 
-export function ValidadorPreliminarLOA() {
+interface ValidadorPreliminarLOAProps {
+  embedded?: boolean;
+}
+
+export function ValidadorPreliminarLOA({ embedded = false }: ValidadorPreliminarLOAProps = {}) {
   const [, navigate] = useLocation();
   const [scanStatus, setScanStatus] = useState<ScanStatus>("idle");
   const [scanStep, setScanStep] = useState(0);
@@ -351,28 +355,36 @@ export function ValidadorPreliminarLOA() {
   };
 
   return (
-    <section className="w-full max-w-[1400px] mx-auto py-10 relative z-20 -mt-10 px-4 sm:px-6">
+    <section
+      className={
+        embedded
+          ? "w-full h-full relative z-20"
+          : "w-full max-w-[1400px] mx-auto py-10 relative z-20 -mt-10 px-4 sm:px-6"
+      }
+    >
 
-      {/* Faixa de prova social */}
-      <div className="flex items-center justify-center gap-3 mb-5 flex-wrap">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 text-sm">
-          <Users className="w-3.5 h-3.5 text-blue-400" />
-          Ferramenta utilizada por advogados, investidores e gestores públicos
+      {/* Faixa de prova social — só no modo standalone */}
+      {!embedded && (
+        <div className="flex items-center justify-center gap-3 mb-5 flex-wrap">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/[0.04] border border-white/[0.08] text-slate-400 text-sm">
+            <Users className="w-3.5 h-3.5 text-blue-400" />
+            Ferramenta utilizada por advogados, investidores e gestores públicos
+          </div>
+          <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium">
+            <TrendingUp className="w-3.5 h-3.5" />
+            +2.300 consultas realizadas este mês
+          </div>
         </div>
-        <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-sm font-medium">
-          <TrendingUp className="w-3.5 h-3.5" />
-          +2.300 consultas realizadas este mês
-        </div>
-      </div>
+      )}
 
       {/* Card unificado com glow */}
-      <div className="relative">
-        <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-blue-500/40 via-cyan-400/20 to-blue-500/40 blur-[2px]" />
-        <div className="relative bg-[#080e1c] border border-blue-500/25 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(37,99,235,0.12)] overflow-hidden">
+      <div className="relative h-full">
+        <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-r from-indigo-500/40 via-amber-400/15 to-indigo-500/40 blur-[2px]" />
+        <div className="relative h-full bg-[#080e1c] border border-indigo-500/25 rounded-2xl shadow-[0_20px_60px_rgba(0,0,0,0.6),0_0_40px_rgba(129,140,248,0.12)] overflow-hidden flex flex-col">
 
-          <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70" />
+          <div className="h-[2px] w-full bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-70" />
 
-          <div className="p-8 md:p-12">
+          <div className="p-8 md:p-12 flex flex-col h-full">
 
             {/* Estado 1: Idle */}
             {scanStatus === "idle" && (

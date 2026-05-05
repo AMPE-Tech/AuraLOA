@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLEGAL — Dashboard 4 Camadas · KPI Jurídico-Forense</title>
+<style>
+  :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f5f5f3;
+    --bg-tertiary: #eeece8;
+    --text-primary: #1a1a18;
+    --text-secondary: #5a5a56;
+    --text-tertiary: #9a9890;
+    --border: rgba(0,0,0,0.10);
+    --border-md: rgba(0,0,0,0.18);
+    --radius-md: 8px;
+    --radius-lg: 12px;
+    --font-mono: 'Courier New', monospace;
+    --font-serif: Georgia, serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg-primary: #1c1c1a;
+      --bg-secondary: #242422;
+      --bg-tertiary: #141412;
+      --text-primary: #e8e6e0;
+      --text-secondary: #a0a09a;
+      --text-tertiary: #606058;
+      --border: rgba(255,255,255,0.08);
+      --border-md: rgba(255,255,255,0.14);
+    }
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: var(--font-mono);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    min-height: 100vh;
+  }
+
+  /* TOPBAR */
+  .topbar {
+    background: var(--bg-primary);
+    border-bottom: 0.5px solid var(--border-md);
+    padding: 0 28px;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .topbar-brand { display: flex; align-items: center; gap: 10px; }
+  .topbar-logo {
+    width: 24px; height: 24px;
+    background: var(--text-primary);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .topbar-logo span { color: var(--bg-primary); font-size: 10px; font-weight: 700; letter-spacing: -0.5px; }
+  .topbar-name { font-size: 12px; font-weight: 700; color: var(--text-primary); letter-spacing: 1.5px; }
+  .topbar-module { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.5px; margin-left: 4px; }
+  .topbar-meta { display: flex; align-items: center; gap: 12px; }
+  .topbar-badge {
+    font-size: 9px; padding: 3px 9px; border-radius: 3px; letter-spacing: 0.8px;
+    background: #fcebeb; color: #a32d2d; border: 0.5px solid #f09595;
+  }
+  .topbar-proc { font-size: 10px; color: var(--text-tertiary); }
+
+  /* MAIN */
+  .db { padding: 28px 32px; max-width: 1100px; margin: 0 auto; }
+
+  /* LAYER HEADER */
+  .layer-header {
+    display: flex; align-items: center; gap: 12px;
+    margin: 36px 0 16px;
+    padding-bottom: 12px;
+    border-bottom: 0.5px solid var(--border-md);
+  }
+  .layer-header:first-of-type { margin-top: 0; }
+  .layer-num {
+    width: 28px; height: 28px; border-radius: 4px;
+    background: var(--text-primary); color: var(--bg-primary);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; flex-shrink: 0;
+  }
+  .layer-title { font-size: 13px; font-weight: 700; color: var(--text-primary); letter-spacing: 0.5px; }
+  .layer-sub { font-size: 10px; color: var(--text-tertiary); margin-left: auto; }
+
+  /* GRIDS */
+  .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; margin-bottom: 10px; }
+  .g4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 10px; }
+  .g32 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 10px; margin-bottom: 10px; }
+
+  /* CARD */
+  .card {
+    background: var(--bg-primary);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 14px 16px;
+  }
+  .card-label {
+    font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase;
+    color: var(--text-tertiary); margin-bottom: 8px;
+  }
+
+  /* KPI */
+  .kpi-val { font-size: 28px; font-weight: 700; line-height: 1; }
+  .kpi-sub { font-size: 10px; color: var(--text-tertiary); margin-top: 4px; }
+  .red { color: #a32d2d; } .orange { color: #854f0b; }
+  .green { color: #3b6d11; } .blue { color: #185fa5; }
+
+  /* BAR */
+  .bar-wrap { height: 5px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
+  .bar-fill { height: 100%; border-radius: 3px; transition: width 1.2s ease; }
+  .br { background: #e24b4a; } .bo { background: #ef9f27; }
+  .bg { background: #639922; } .bb { background: #378add; }
+
+  /* GAUGE */
+  .gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 8px 0 4px; }
+
+  /* SPLIT BAR */
+  .split-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; }
+  .split-bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; }
+  .split-seg { height: 100%; border-radius: 3px; }
+
+  /* PRECLUSÃO */
+  .prec-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 0.5px solid var(--border); }
+  .prec-item:last-child { border-bottom: none; }
+  .prec-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 3px; flex-shrink: 0; }
+  .prec-nome { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+  .prec-desc { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+  .prec-badge { font-size: 9px; padding: 2px 7px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; align-self: center; }
+  .pb-urgente { background: #fcebeb; color: #a32d2d; }
+  .pb-memorial { background: #faeeda; color: #854f0b; }
+  .pb-instrucao { background: #e6f1fb; color: #185fa5; }
+
+  /* CONF BARS */
+  .conf-row { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .conf-nome { font-size: 11px; color: var(--text-secondary); width: 120px; flex-shrink: 0; }
+  .conf-bar-wrap { flex: 1; height: 5px; background: var(--bg-secondary); border-radius: 3px; overflow: hidden; }
+  .conf-nota { font-size: 11px; font-weight: 700; width: 30px; text-align: right; flex-shrink: 0; }
+
+  /* CONTRADIÇÕES */
+  .contr-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 0.5px solid var(--border); }
+  .contr-item:last-child { border-bottom: none; }
+  .contr-tipo { font-size: 11px; color: var(--text-secondary); }
+  .contr-count { font-size: 18px; font-weight: 700; }
+
+  /* TIMELINE */
+  .tl2-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 0.5px solid var(--border); }
+  .tl2-item:last-child { border-bottom: none; }
+  .tl2-left { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 60px; flex-shrink: 0; }
+  .tl2-data { font-size: 9px; color: var(--text-tertiary); text-align: center; }
+  .tl2-dot { width: 10px; height: 10px; border-radius: 50%; }
+  .tl2-right { flex: 1; }
+  .tl2-titulo { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 3px; }
+  .tl2-detalhe { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+  .tl2-alerta { font-size: 9px; padding: 2px 7px; border-radius: 3px; margin-top: 4px; display: inline-block; }
+  .ta-ok { background: #eaf3de; color: #3b6d11; }
+  .ta-err { background: #fcebeb; color: #a32d2d; }
+  .ta-warn { background: #faeeda; color: #854f0b; }
+
+  /* IMPACTO */
+  .impacto-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  .impacto-table th { font-size: 9px; letter-spacing: 1px; text-transform: uppercase; color: var(--text-tertiary); padding: 6px 8px; text-align: left; border-bottom: 0.5px solid var(--border); font-weight: 400; }
+  .impacto-table td { padding: 9px 8px; border-bottom: 0.5px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+  .impacto-table tr:last-child td { border-bottom: none; }
+  .impacto-table tr:hover td { background: var(--bg-secondary); cursor: pointer; }
+  .imp-vicio { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+  .imp-sub { font-size: 9px; color: var(--text-tertiary); }
+  .nivel-pill { font-size: 9px; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+  .np-alto { background: #fcebeb; color: #a32d2d; }
+  .np-medio { background: #faeeda; color: #854f0b; }
+  .np-baixo { background: #eaf3de; color: #3b6d11; }
+
+  /* PEDIDOS */
+  .pedido-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 0.5px solid var(--border); cursor: pointer; }
+  .pedido-item:hover { background: var(--bg-secondary); padding-left: 8px; padding-right: 8px; border-radius: 4px; margin: 0 -8px; }
+  .pedido-item:last-child { border-bottom: none; }
+  .pedido-rank { width: 20px; height: 20px; border-radius: 3px; background: var(--bg-secondary); border: 0.5px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 700; color: var(--text-secondary); flex-shrink: 0; margin-top: 1px; }
+  .pedido-rank.top { background: #fcebeb; color: #a32d2d; border-color: #f09595; }
+  .pedido-nome { font-size: 11px; font-weight: 700; color: var(--text-primary); margin-bottom: 2px; }
+  .pedido-base { font-size: 10px; color: var(--text-tertiary); }
+
+  /* OPORTUNIDADE */
+  .opor-item { padding: 10px 12px; border-radius: 6px; margin-bottom: 8px; border: 0.5px solid var(--border); background: var(--bg-primary); cursor: pointer; }
+  .opor-item:hover { background: var(--bg-secondary); }
+  .opor-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .opor-nome { font-size: 11px; font-weight: 700; color: var(--text-primary); }
+  .opor-dots { display: flex; gap: 3px; }
+  .opor-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--bg-secondary); border: 0.5px solid var(--border); }
+  .opor-dot.on { background: #185fa5; border-color: #378add; }
+  .opor-desc { font-size: 10px; color: var(--text-secondary); line-height: 1.4; }
+
+  /* NUL MAP */
+  .nul-header { font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; padding-bottom: 6px; border-bottom: 0.5px solid var(--border); }
+  .nul-item { font-size: 10px; color: var(--text-secondary); padding: 5px 0; border-bottom: 0.5px solid var(--border); display: flex; align-items: flex-start; gap: 6px; line-height: 1.4; }
+  .nul-item:last-child { border-bottom: none; }
+  .nd { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; margin-top: 3px; }
+  .nd-abs { background: #e24b4a; } .nd-rel { background: #ef9f27; } .nd-irr { background: #888780; }
+
+  /* RELÓGIO */
+  .rel-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .rel-label { font-size: 10px; color: var(--text-secondary); width: 130px; flex-shrink: 0; }
+  .rel-bar-wrap { flex: 1; height: 8px; border-radius: 4px; overflow: hidden; background: var(--bg-secondary); }
+  .rel-val { font-size: 11px; font-weight: 700; width: 45px; text-align: right; flex-shrink: 0; }
+
+  /* COMP */
+  .comp-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 0.5px solid var(--border); font-size: 11px; }
+  .comp-item:last-child { border-bottom: none; }
+  .ci-ok { color: #3b6d11; } .ci-err { color: #a32d2d; } .ci-warn { color: #854f0b; }
+  .comp-txt { flex: 1; color: var(--text-secondary); }
+
+  @media (max-width: 700px) {
+    .g4, .g3 { grid-template-columns: 1fr 1fr; }
+    .g32, .g2 { grid-template-columns: 1fr; }
+    .db { padding: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="topbar-logo"><span>AT</span></div>
+    <span class="topbar-name">AURATECH</span>
+    <span class="topbar-module">/ AuraLEGAL</span>
+  </div>
+  <div class="topbar-meta">
+    <span class="topbar-badge">SEGREDO DE JUSTIÇA</span>
+    <span class="topbar-proc">1503896-55.2022.8.26.0050 · TJSP</span>
+  </div>
+</div>
+
+<div class="db">
+
+<!-- ═══════════════════════════ CAMADA 1 ═══════════════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">1</div>
+  <div><div class="layer-title">Visão Executiva</div></div>
+  <div class="layer-sub">1503896-55.2022.8.26.0050 · TJSP · 19.247 laudas</div>
+</div>
+
+<div class="g4">
+  <div class="card">
+    <div class="card-label">Nulidades críticas</div>
+    <div class="kpi-val red">4</div>
+    <div class="kpi-sub">absolutas identificadas</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Provas contaminadas</div>
+    <div class="kpi-val orange">67%</div>
+    <div class="kpi-sub">do conjunto acusatório</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Risco de preclusão</div>
+    <div class="kpi-val red">3</div>
+    <div class="kpi-sub">teses — arg. já na resposta</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Potencial de acolhimento</div>
+    <div class="kpi-val green">Alto</div>
+    <div class="kpi-sub">2 teses consolidadas STJ</div>
+  </div>
+</div>
+
+<div class="g3">
+  <div class="card" style="display:flex;flex-direction:column;align-items:center;padding:16px;">
+    <div class="card-label" style="align-self:flex-start">Score de risco da acusação</div>
+    <svg width="140" height="80" viewBox="0 0 140 80" style="overflow:visible">
+      <path d="M15 75 A55 55 0 0 1 125 75" fill="none" stroke="#eeecea" stroke-width="10" stroke-linecap="round"/>
+      <path d="M15 75 A55 55 0 0 1 125 75" fill="none" stroke="#e24b4a" stroke-width="10" stroke-linecap="round" stroke-dasharray="173" stroke-dashoffset="52"/>
+      <text x="70" y="64" fill="#a32d2d" font-family="Courier New" font-weight="700" font-size="22" text-anchor="middle" dominant-baseline="middle">70</text>
+      <text x="70" y="78" fill="#9a9890" font-family="Courier New" font-size="9" text-anchor="middle">RISCO ALTO</text>
+    </svg>
+    <div style="font-size:10px;color:var(--text-tertiary);text-align:center">Índice de vulnerabilidade defensiva</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Efeito dominó — derivadas</div>
+    <div class="split-label"><span>Conjunto probatório total</span><span style="color:#a32d2d">12 provas</span></div>
+    <div class="split-bar" style="margin-bottom:6px">
+      <div class="split-seg" style="width:40%;background:#e24b4a"></div>
+      <div class="split-seg" style="width:34%;background:#ef9f27"></div>
+      <div class="split-seg" style="width:26%;background:#97c459"></div>
+    </div>
+    <div style="display:flex;gap:10px;margin-bottom:10px">
+      <span style="font-size:9px;color:#a32d2d">Ilícitas orig. 40%</span>
+      <span style="font-size:9px;color:#854f0b">Derivadas 34%</span>
+      <span style="font-size:9px;color:#3b6d11">Válidas 26%</span>
+    </div>
+    <div style="font-size:10px;color:var(--text-secondary);line-height:1.5">Se acolhidas as nulidades, <strong style="color:#a32d2d">74%</strong> das provas saem por efeito dominó (CPP art. 157 §1º)</div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Relógio comparativo da defesa</div>
+    <div class="rel-row">
+      <div class="rel-label">Prazo legal (dias)</div>
+      <div class="rel-bar-wrap"><div class="bar-fill bb" style="width:100%"></div></div>
+      <div class="rel-val blue">10d</div>
+    </div>
+    <div class="rel-row">
+      <div class="rel-label">Dias decorridos</div>
+      <div class="rel-bar-wrap"><div class="bar-fill bo" style="width:70%"></div></div>
+      <div class="rel-val orange">7d</div>
+    </div>
+    <div class="rel-row">
+      <div class="rel-label">Laudas restantes</div>
+      <div class="rel-bar-wrap"><div class="bar-fill br" style="width:60%"></div></div>
+      <div class="rel-val red">11.4k</div>
+    </div>
+    <div class="rel-row">
+      <div class="rel-label">Média defesa criminal</div>
+      <div class="rel-bar-wrap"><div class="bar-fill bg" style="width:85%"></div></div>
+      <div class="rel-val green">8.5d</div>
+    </div>
+    <div style="font-size:9px;color:#a32d2d;margin-top:4px">Ritmo atual insuficiente para cobertura integral</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CAMADA 2 ═══════════════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">2</div>
+  <div><div class="layer-title">Validade da Prova</div></div>
+  <div class="layer-sub">Interceptações · Custódia · Perícia · Integridade digital</div>
+</div>
+
+<div class="g3">
+  <div class="card">
+    <div class="card-label">Interceptações telefônicas</div>
+    <div style="display:flex;gap:16px;margin-bottom:10px">
+      <div><div class="kpi-val green" style="font-size:22px">3</div><div class="kpi-sub">dentro do prazo</div></div>
+      <div><div class="kpi-val red" style="font-size:22px">1</div><div class="kpi-sub">fora do prazo</div></div>
+    </div>
+    <div class="bar-wrap"><div class="bar-fill br" style="width:25%"></div></div>
+    <div style="font-size:9px;color:#a32d2d">+8 dias além da última renovação · Lei 9.296/96 art. 5º</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Custódia digital por objeto</div>
+    <div style="display:flex;gap:12px;margin-bottom:10px">
+      <div><div class="kpi-val green" style="font-size:22px">4</div><div class="kpi-sub">com hash SHA-256</div></div>
+      <div><div class="kpi-val red" style="font-size:22px">3</div><div class="kpi-sub">sem hash / ruptura</div></div>
+    </div>
+    <div class="bar-wrap"><div class="bar-fill br" style="width:43%"></div></div>
+    <div style="font-size:9px;color:#a32d2d">43% dos objetos digitais com cadeia inválida</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Laudas — cadeia de custódia</div>
+    <div style="display:flex;gap:12px;margin-bottom:10px">
+      <div><div class="kpi-val green" style="font-size:22px">16.7k</div><div class="kpi-sub">preservadas</div></div>
+      <div><div class="kpi-val red" style="font-size:22px">2.5k</div><div class="kpi-sub">sem custódia</div></div>
+    </div>
+    <div class="bar-wrap"><div class="bar-fill br" style="width:13%"></div></div>
+    <div style="font-size:9px;color:#854f0b">13% das laudas com integridade comprometida</div>
+  </div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="card-label">Índice de confiabilidade por bloco</div>
+    <div class="conf-row"><div class="conf-nome">Interceptação</div><div class="conf-bar-wrap"><div class="bar-fill br" style="width:30%"></div></div><div class="conf-nota red">3/10</div></div>
+    <div class="conf-row"><div class="conf-nome">Prova digital</div><div class="conf-bar-wrap"><div class="bar-fill bo" style="width:40%"></div></div><div class="conf-nota orange">4/10</div></div>
+    <div class="conf-row"><div class="conf-nome">Relatório policial</div><div class="conf-bar-wrap"><div class="bar-fill bo" style="width:55%"></div></div><div class="conf-nota orange">5.5/10</div></div>
+    <div class="conf-row"><div class="conf-nome">Prova oral</div><div class="conf-bar-wrap"><div class="bar-fill bb" style="width:60%"></div></div><div class="conf-nota blue">6/10</div></div>
+    <div class="conf-row"><div class="conf-nome">Prova documental</div><div class="conf-bar-wrap"><div class="bar-fill bg" style="width:72%"></div></div><div class="conf-nota green">7.2/10</div></div>
+    <div style="font-size:9px;color:var(--text-tertiary);margin-top:6px">Acusação não é homogênea — blocos críticos muito frágeis</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Completude da acusação</div>
+    <div class="comp-item"><span class="ci-err">✕</span><span class="comp-txt" style="color:var(--text-primary)">Laudo pericial — assinado por 1 perito (CPP 159)</span></div>
+    <div class="comp-item"><span class="ci-err">✕</span><span class="comp-txt" style="color:var(--text-primary)">Renovação de interceptação — ausente para último período</span></div>
+    <div class="comp-item"><span class="ci-err">✕</span><span class="comp-txt" style="color:var(--text-primary)">Hash de integridade — 3 mídias sem registro</span></div>
+    <div class="comp-item"><span class="ci-warn">!</span><span class="comp-txt">Transcrição sem lastro técnico verificável</span></div>
+    <div class="comp-item"><span class="ci-warn">!</span><span class="comp-txt">Autorização de quebra bancária — motivação insuficiente</span></div>
+    <div class="comp-item"><span class="ci-ok">✓</span><span class="comp-txt">Denúncia — fatos descritos com circunstâncias (CPP 41)</span></div>
+    <div class="comp-item"><span class="ci-ok">✓</span><span class="comp-txt">Recebimento — decisão fundamentada (CPP 396)</span></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:10px">
+  <div class="card-label">Mapa de nulidades por gravidade</div>
+  <div class="g3" style="margin-bottom:0;gap:16px">
+    <div>
+      <div class="nul-header" style="color:#a32d2d">Nulidade absoluta provável</div>
+      <div class="nul-item"><div class="nd nd-abs"></div>Interceptação fora do prazo legal</div>
+      <div class="nul-item"><div class="nd nd-abs"></div>Prova digital sem cadeia de custódia</div>
+      <div class="nul-item"><div class="nd nd-abs"></div>Quebra de sigilo bancário sem decisão motivada</div>
+      <div class="nul-item"><div class="nd nd-abs"></div>Provas derivadas das três anteriores (CPP 157 §1º)</div>
+    </div>
+    <div>
+      <div class="nul-header" style="color:#854f0b">Nulidade relativa arguível</div>
+      <div class="nul-item"><div class="nd nd-rel"></div>Laudo pericial com perito único (CPP 159)</div>
+      <div class="nul-item"><div class="nd nd-rel"></div>Mandado cumprido fora da comarca</div>
+      <div class="nul-item"><div class="nd nd-rel"></div>Ordem de interrogatório — ciência do corréu</div>
+      <div class="nul-item"><div class="nd nd-rel"></div>Lacuna de 14 dias sem movimentação</div>
+    </div>
+    <div>
+      <div class="nul-header" style="color:#888780">Irregularidade sem força anulatória</div>
+      <div class="nul-item"><div class="nd nd-irr"></div>Certidão de antecedentes sem data de expedição</div>
+      <div class="nul-item"><div class="nd nd-irr"></div>Ofício com timbre divergente do emissor</div>
+      <div class="nul-item"><div class="nd nd-irr"></div>Prazo interno entre autuação e distribuição</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CAMADA 3 ═══════════════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">3</div>
+  <div><div class="layer-title">Coerência da Acusação</div></div>
+  <div class="layer-sub">Contradições · Lacunas · Dependência entre provas</div>
+</div>
+
+<div class="g32">
+  <div class="card">
+    <div class="card-label">Contradições internas da acusação</div>
+    <div class="contr-item"><div class="contr-tipo">Entre testemunhas</div><div class="contr-count red">5</div></div>
+    <div class="contr-item"><div class="contr-tipo">Testemunha vs. Rel. Policial</div><div class="contr-count red">3</div></div>
+    <div class="contr-item"><div class="contr-tipo">Inconsistências cronológicas</div><div class="contr-count orange">4</div></div>
+    <div class="contr-item"><div class="contr-tipo">Lacunas narrativas</div><div class="contr-count orange">6</div></div>
+    <div class="contr-item"><div class="contr-tipo">Contradição entre laudo e APF</div><div class="contr-count red">2</div></div>
+  </div>
+  <div class="card">
+    <div class="card-label">Prova essencial vs. acessória</div>
+    <div style="margin-bottom:10px">
+      <div class="split-label"><span>Provas centrais</span><span style="color:#a32d2d">4</span></div>
+      <div class="split-bar" style="height:6px">
+        <div class="split-seg" style="width:50%;background:#e24b4a"></div>
+        <div class="split-seg" style="width:50%;background:var(--bg-secondary)"></div>
+      </div>
+      <div style="font-size:9px;color:#a32d2d;margin-top:2px">2 de 4 provas centrais com vício originário</div>
+    </div>
+    <div>
+      <div class="split-label"><span>Provas periféricas / repetição</span><span style="color:#854f0b">9</span></div>
+      <div class="split-bar" style="height:6px">
+        <div class="split-seg" style="width:78%;background:#ef9f27"></div>
+        <div class="split-seg" style="width:22%;background:var(--bg-secondary)"></div>
+      </div>
+      <div style="font-size:9px;color:#854f0b;margin-top:2px">7 de 9 derivadas de origem viciada</div>
+    </div>
+    <div style="font-size:10px;color:var(--text-secondary);margin-top:10px;line-height:1.5">Retiradas as provas viciadas, <strong style="color:#a32d2d">o caso acusatório perde sua base central</strong></div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:10px">
+  <div class="card-label">Linha do tempo processual — alertas de legalidade</div>
+  <div class="tl2-item">
+    <div class="tl2-left"><div class="tl2-data">15/03/22</div><div class="tl2-dot" style="background:#639922"></div></div>
+    <div class="tl2-right"><div class="tl2-titulo">Instauração do IP</div><div class="tl2-detalhe">Portaria regular · Delegado titular · Fundamento legal presente</div><span class="tl2-alerta ta-ok">Ato regular</span></div>
+  </div>
+  <div class="tl2-item">
+    <div class="tl2-left"><div class="tl2-data">16/06/22</div><div class="tl2-dot" style="background:#639922"></div></div>
+    <div class="tl2-right"><div class="tl2-titulo">Autorização judicial — interceptação</div><div class="tl2-detalhe">Prazo autorizado: 16/06 a 01/07/2022 · Despacho fundamentado</div><span class="tl2-alerta ta-ok">Regular</span></div>
+  </div>
+  <div class="tl2-item">
+    <div class="tl2-left"><div class="tl2-data">15/07/22</div><div class="tl2-dot" style="background:#ef9f27"></div></div>
+    <div class="tl2-right"><div class="tl2-titulo">2ª Renovação de interceptação</div><div class="tl2-detalhe">Autorizada até 30/07/2022 · Despacho presente nos autos</div><span class="tl2-alerta ta-warn">Verificar renovação subsequente</span></div>
+  </div>
+  <div class="tl2-item">
+    <div class="tl2-left"><div class="tl2-data">22/08/22</div><div class="tl2-dot" style="background:#e24b4a"></div></div>
+    <div class="tl2-right"><div class="tl2-titulo">Última captação registrada nos logs</div><div class="tl2-detalhe">Data da captação: 22/08/2022 · Última autorização expirada em: 30/07/2022</div><span class="tl2-alerta ta-err">+23 dias fora do prazo · Prova ilícita</span></div>
+  </div>
+  <div class="tl2-item">
+    <div class="tl2-left"><div class="tl2-data">22/04/22</div><div class="tl2-dot" style="background:#e24b4a"></div></div>
+    <div class="tl2-right"><div class="tl2-titulo">Apreensão de mídias digitais — sem hash</div><div class="tl2-detalhe">HD Externo, pen drive e celular apreendidos · Ausência de laudo de integridade no APF</div><span class="tl2-alerta ta-err">Cadeia de custódia não iniciada · CPP 158-A</span></div>
+  </div>
+  <div class="tl2-item">
+    <div class="tl2-left"><div class="tl2-data">09/01/23</div><div class="tl2-dot" style="background:#639922"></div></div>
+    <div class="tl2-right"><div class="tl2-titulo">Recebimento da denúncia</div><div class="tl2-detalhe">Decisão fundamentada · Dr. Carlos Eduardo Mendes · Fls. 12.004</div><span class="tl2-alerta ta-ok">Regular</span></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════ CAMADA 4 ═══════════════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">4</div>
+  <div><div class="layer-title">Ação Defensiva</div></div>
+  <div class="layer-sub">Prazo · Preclusão · Pedidos · Prioridade</div>
+</div>
+
+<div class="g2">
+  <div class="card">
+    <div class="card-label">Termômetro de preclusão</div>
+    <div class="prec-item">
+      <div class="prec-dot" style="background:#e24b4a"></div>
+      <div style="flex:1"><div class="prec-nome">Nulidade da interceptação fora do prazo</div><div class="prec-desc">Nulidade absoluta — arguição na resposta consolida o registro processual</div></div>
+      <span class="prec-badge pb-urgente">Já na resposta</span>
+    </div>
+    <div class="prec-item">
+      <div class="prec-dot" style="background:#e24b4a"></div>
+      <div style="flex:1"><div class="prec-nome">Nulidade da cadeia de custódia digital</div><div class="prec-desc">Nulidade absoluta — idem, arguição imediata recomendada</div></div>
+      <span class="prec-badge pb-urgente">Já na resposta</span>
+    </div>
+    <div class="prec-item">
+      <div class="prec-dot" style="background:#e24b4a"></div>
+      <div style="flex:1"><div class="prec-nome">Nulidade relativa — laudo com perito único</div><div class="prec-desc">Nulidade relativa — preclusão real se não arguida agora</div></div>
+      <span class="prec-badge pb-urgente">Já na resposta</span>
+    </div>
+    <div class="prec-item">
+      <div class="prec-dot" style="background:#ef9f27"></div>
+      <div style="flex:1"><div class="prec-nome">Contradições cronológicas entre depoimentos</div><div class="prec-desc">Explorar em alegações finais após confronto em audiência</div></div>
+      <span class="prec-badge pb-memorial">Memoriais / Ap.</span>
+    </div>
+    <div class="prec-item">
+      <div class="prec-dot" style="background:#378add"></div>
+      <div style="flex:1"><div class="prec-nome">Perícia complementar nas mídias digitais</div><div class="prec-desc">Requerer já na resposta — produção na fase de instrução</div></div>
+      <span class="prec-badge pb-instrucao">Instrução</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-label">Teses — potencial de acolhimento</div>
+    <div class="opor-item">
+      <div class="opor-top">
+        <div class="opor-nome">Interceptação além do prazo legal</div>
+        <div class="opor-dots"><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div></div>
+      </div>
+      <div class="opor-desc">Tese consolidada · STJ HC 512.290 · Alto potencial de acolhimento imediato</div>
+    </div>
+    <div class="opor-item">
+      <div class="opor-top">
+        <div class="opor-nome">Cadeia de custódia digital (hash)</div>
+        <div class="opor-dots"><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div></div>
+      </div>
+      <div class="opor-desc">Legislação expressa CPP 158-A · STJ REsp 1.953.667 · Tese sólida e moderna</div>
+    </div>
+    <div class="opor-item">
+      <div class="opor-top">
+        <div class="opor-nome">Sigilo bancário sem decisão motivada</div>
+        <div class="opor-dots"><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot"></div></div>
+      </div>
+      <div class="opor-desc">STF RE 601.314 · CF art. 5º XII · Depende de confirmação da ausência de motivação</div>
+    </div>
+    <div class="opor-item">
+      <div class="opor-top">
+        <div class="opor-nome">Contradições cronológicas da acusação</div>
+        <div class="opor-dots"><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot on"></div><div class="opor-dot"></div><div class="opor-dot"></div></div>
+      </div>
+      <div class="opor-desc">Tese subsidiária · Alto valor em alegações finais e apelação</div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:10px">
+  <div class="card-label">Impacto judicial provável</div>
+  <table class="impacto-table">
+    <thead>
+      <tr>
+        <th style="width:30%">Vício / Tese</th>
+        <th style="width:23%">Admissibilidade da prova</th>
+        <th style="width:23%">Força da acusação</th>
+        <th style="width:24%">Estratégia da defesa</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td><div class="imp-vicio">Interceptação fora do prazo</div><div class="imp-sub">Lei 9.296/96 · art. 5º</div></td><td><span class="nivel-pill np-alto">Exclui toda a prova</span></td><td><span class="nivel-pill np-alto">Impacto crítico</span></td><td><span class="nivel-pill np-alto">Tese principal</span></td></tr>
+      <tr><td><div class="imp-vicio">Ausência de hash digital</div><div class="imp-sub">CPP 158-A a 158-F</div></td><td><span class="nivel-pill np-alto">Imprestável</span></td><td><span class="nivel-pill np-alto">Impacto crítico</span></td><td><span class="nivel-pill np-alto">Tese principal</span></td></tr>
+      <tr><td><div class="imp-vicio">Sigilo bancário s/ motivação</div><div class="imp-sub">LC 105/2001</div></td><td><span class="nivel-pill np-alto">Exclui extratos</span></td><td><span class="nivel-pill np-medio">Impacto alto</span></td><td><span class="nivel-pill np-alto">Tese primária</span></td></tr>
+      <tr><td><div class="imp-vicio">Laudo — perito único</div><div class="imp-sub">CPP art. 159</div></td><td><span class="nivel-pill np-medio">Nulidade relativa</span></td><td><span class="nivel-pill np-medio">Impacto médio</span></td><td><span class="nivel-pill np-medio">Tese secundária</span></td></tr>
+      <tr><td><div class="imp-vicio">Contradições cronológicas</div><div class="imp-sub">Testemunha vs. Rel. Policial</div></td><td><span class="nivel-pill np-baixo">Não exclui prova</span></td><td><span class="nivel-pill np-medio">Fragiliza narrativa</span></td><td><span class="nivel-pill np-medio">Tese subsidiária</span></td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-label">Pedidos processuais — ranking de prioridade</div>
+  <div class="pedido-item"><div class="pedido-rank top">1</div><div style="flex:1"><div class="pedido-nome">Desentranhamento das provas ilícitas e suas derivadas</div><div class="pedido-base">CPP art. 157 §3º · Interceptação + mídias digitais + extratos bancários</div></div><span class="nivel-pill np-alto">Urgente</span></div>
+  <div class="pedido-item"><div class="pedido-rank top">2</div><div style="flex:1"><div class="pedido-nome">Reconhecimento de ilicitude das captações além do prazo</div><div class="pedido-base">Lei 9.296/96 art. 5º · STJ HC 512.290</div></div><span class="nivel-pill np-alto">Urgente</span></div>
+  <div class="pedido-item"><div class="pedido-rank top">3</div><div style="flex:1"><div class="pedido-nome">Perícia complementar nas mídias digitais — dois peritos</div><div class="pedido-base">CPP arts. 158-A e 159 · Verificação de integridade e nulidade</div></div><span class="nivel-pill np-medio">Alta</span></div>
+  <div class="pedido-item"><div class="pedido-rank">4</div><div style="flex:1"><div class="pedido-nome">Acesso integral aos logs de autorização de interceptação</div><div class="pedido-base">Princípio da ampla defesa · CF art. 5º LV</div></div><span class="nivel-pill np-medio">Alta</span></div>
+  <div class="pedido-item"><div class="pedido-rank">5</div><div style="flex:1"><div class="pedido-nome">Subsidiariamente — absolvição sumária por insuficiência probatória</div><div class="pedido-base">CPP art. 397 IV · Caso as nulidades sejam acolhidas integralmente</div></div><span class="nivel-pill np-baixo">Subsidiário</span></div>
+</div>
+
+</div>
+
+<script>
+document.querySelectorAll('.bar-fill').forEach(b => {
+  const w = b.style.width;
+  b.style.width = '0%';
+  setTimeout(() => { b.style.width = w; }, 120);
+});
+</script>
+</body>
+</html>

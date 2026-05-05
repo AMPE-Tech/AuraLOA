@@ -595,3 +595,39 @@ NUNCA usar endpoints de pagamento realizado para enriquecer precatórios pendent
 - `loa.auradue.com` ONLINE (sessão 17/04 — última intervenção)
 - Pipeline OCR blindado mantido
 - CLAUDE.md AUSENTE no projeto root — achado da sessão DPO 27/04 manhã, ainda pendente
+
+---
+
+## 2026-05-01 — Sessão de Refatoração Editorial da Landing AuraLOA
+
+**Resumo:** sessão de design/frontend exclusiva — landing pública (`/`) + nova rota `/marketplace`. Zero impacto em pipelines jurídicos.
+
+**Mudanças técnicas relevantes:**
+- Tipografia unificada em duas famílias (Playfair Display display + Lora body) — padrão Vogue editorial. CSS vars centralizadas em `client/src/index.css`.
+- Cor de marca AuraLOA confirmada como **indigo** (#818cf8) — alinhada ao design-system AuraTECH. Cyan (AuraMARKET) e blue (AuraTECH-parent) removidos da landing.
+- Hero refatorado com componente custom `client/src/components/editorial-gauge.tsx` (190 linhas, SVG puro, framer-motion, counter animation, end-cap dot gold AuraTECH).
+- Novo card dual-side `client/src/components/marketplace-card.tsx` (credor/investidor) ao lado do Validador no hero.
+- Nova rota `/marketplace` em `client/src/pages/marketplace.tsx` — onboarding institucional dual-side com CTAs WhatsApp; placeholder visual sem motor real.
+- `client/src/components/validador-preliminar.tsx` ganhou prop `embedded` pra renderizar dentro de grid 2-col sem max-w/mt externos.
+- ~95 linhas de dead code removidas (recharts + ChartContainer imports + dead constants timelineCompareData/timelineChartConfig/manualSteps/digitalSteps + 7 lucide icons órfãos).
+- Tailwind `font-mono` substituído por `font-serif tabular-nums` (semântica correta com a nova arquitetura tipográfica).
+- Reviews internos: Plan agent (frontend-sales-review, 25+ achados) + general-purpose agent (simplify, 11 achados) — blockers + importants aplicados.
+
+**Auditoria do ecossistema AuraTECH (achado crítico):**
+- 7 dos 8 módulos catalogados como `status: "active"` em `AuraAUDIT/AuraAUDIT/client/src/pages/HomeOficial_AuraTech.tsx` apontam pra URLs Replit que retornam HTTP 404.
+- Apenas `https://loa.auradue.com` está vivo (200).
+- Pasta `AuraDUE/` local está vazia. AuraMARKET é marca declarada mas não há motor implementado.
+- Decisão DPO: corrigir em sessão dedicada. Memória `project_home_oficial_auratech.md` registra auditoria completa.
+
+**Estado atual:**
+- `loa.auradue.com` **não tocada** — Marcos não autorizou deploy.
+- Build prod local validado: TS zero erros (client), `npm run build` passou em ~26s, bundle prod respondeu HTTP 200 em `/` e `/marketplace`.
+- Git: estado sujo herdado da sessão anterior (27/04) — 10 modificados + 11 untracked não-commitados; ciclo de governança Git pendente.
+
+**Pendências priorizadas:**
+- P1: Deploy Hetzner do landing refatorado (carece autorização)
+- P2: Auditoria de URLs/status em `HomeOficial_AuraTech.tsx`
+- P2: Decisão sobre motor real do AuraMARKET vs placeholder
+- P3: Wrapper de framing do Validador (eyebrow/H2/microcopy)
+- P3: Tokenização de magic numbers + bg-[hsl(...)] em CSS vars
+- P4: Limpeza/commit do git acumulado das duas últimas sessões

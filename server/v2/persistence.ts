@@ -1,5 +1,6 @@
 import { query } from "../db";
 import type { ExtractionResult } from "./field_extractor";
+import { revisarPosExtracao } from "./revisor_extracao";
 
 // Persiste resultado da extração Haiku num registro v2_analises existente.
 // Usado pelo endpoint individual e pelo lote.
@@ -8,6 +9,9 @@ export async function persistExtractionResult(
   extraction: ExtractionResult,
 ): Promise<void> {
   const { fields, checklist, method, tokens_input, tokens_output, cost_usd } = extraction;
+
+  // 🛡️ REVISOR PÓS-EXTRAÇÃO — valida ANTES de persistir
+  const validacaoExtracao = revisarPosExtracao(fields);
 
   await query(
     `UPDATE v2_analises SET
@@ -28,8 +32,13 @@ export async function persistExtractionResult(
        decisao_resumo = $26,
        status_processual = $27,
        observacoes_gerais = $28::jsonb,
+       advogados = $29::jsonb,
+       classificacao_credito = $30::jsonb,
+       beneficiarios_detalhados = $31::jsonb,
+       metadados_requisicao = $32::jsonb,
+       validacao_extracao = $33::jsonb,
        extracted_at = NOW(), updated_at = NOW()
-     WHERE id = $29`,
+     WHERE id = $34`,
     [
       fields.numero_cnj, fields.numero_oficio, fields.tribunal, fields.tipo,
       fields.credor_nome, fields.credor_cpf_cnpj, fields.devedor, fields.valor_rs,
@@ -48,7 +57,30 @@ export async function persistExtractionResult(
       fields.decisao_resumo,
       fields.status_processual,
       JSON.stringify(fields.observacoes_gerais),
+      JSON.stringify(fields.advogados ?? []),
+      JSON.stringify(fields.classificacao_credito ?? []),
+      JSON.stringify(fields.beneficiarios_detalhados ?? []),
+      JSON.stringify(fields.metadados_requisicao ?? {}),
+      JSON.stringify(validacaoExtracao),
       analiseId,
+    ],
+  );
+
+  // Log audit da validação
+  await query(
+    `INSERT INTO v2_audit_log (analise_id, fase, fonte_url, status, confianca, alertas, duracao_ms)
+     VALUES ($1, 'revisor_pos_extracao', 'local://revisor_extracao.ts', $2, $3, $4::jsonb, 0)`,
+    [
+      analiseId,
+      validacaoExtracao.score >= 80 ? "ok" : validacaoExtracao.score >= 60 ? "parcial" : "erro",
+      validacaoExtracao.score >= 80 ? "alta" : validacaoExtracao.score >= 60 ? "media" : "baixa",
+      JSON.stringify({
+        score: validacaoExtracao.score,
+        total_alertas: validacaoExtracao.total_alertas,
+        alertas: validacaoExtracao.alertas,
+        checksums: validacaoExtracao.checksums,
+        recomenda_reextrair: validacaoExtracao.recomenda_reextrair,
+      }),
     ],
   );
 }

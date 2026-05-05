@@ -81,6 +81,19 @@ export async function initDbV2(): Promise<void> {
   await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS status_processual TEXT`);
   await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS observacoes_gerais JSONB`);
 
+  // ── B2+ ajuste 23/04/2026 tarde: campos estruturados para multi-beneficiário ──
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS advogados JSONB`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS classificacao_credito JSONB`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS beneficiarios_detalhados JSONB`);
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS metadados_requisicao JSONB`);
+
+  // ── Revisor pós-extração (23/04/2026 fim do dia) ──
+  await query(`ALTER TABLE v2_analises ADD COLUMN IF NOT EXISTS validacao_extracao JSONB`);
+
+  // ── Auditor Final (24/04/2026) — 3ª camada: valida o RELATÓRIO ao cliente ──
+  await query(`ALTER TABLE v2_lotes_analise ADD COLUMN IF NOT EXISTS auditoria_final JSONB`);
+  await query(`ALTER TABLE v2_lotes_analise ADD COLUMN IF NOT EXISTS audited_at TIMESTAMPTZ`);
+
   await query(`
     CREATE TABLE IF NOT EXISTS v2_audit_log (
       id BIGSERIAL PRIMARY KEY,

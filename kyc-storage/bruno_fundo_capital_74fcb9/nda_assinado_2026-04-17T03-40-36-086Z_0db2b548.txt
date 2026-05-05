@@ -1,0 +1,211 @@
+# TERMO DE CONFIDENCIALIDADE E NÃO DIVULGAÇÃO — NDA
+
+**Plataforma:** AuraLOA — Ecossistema AuraTECH
+**Versão:** 1.0.0
+**Vigência:** A partir da data de aceite
+**Base legal:** Lei 14.063/2020 · MP 2.200-2/2001 · LGPD (Lei 13.709/2018) · Código Civil Brasileiro
+
+---
+
+## PARTES
+
+**CONTRATADA (Cedente das Informações Confidenciais):**
+**CTS SERVIÇOS ADMINISTRATIVOS LTDA EPP**
+CNPJ: 46.715.429/0001-66
+Endereço: Avenida Brigadeiro Faria Lima, nº 2369, Conj. 1102 — Jardim Paulistano, São Paulo/SP — CEP 01452-922
+Gestora do ecossistema **AuraTECH** e de seus módulos: **AuraDUE**, **AuraAUDIT**, **AuraLOA**, **AuraRisk**, **AuraCERTIFIED**, **AuraDATA** e **AuraMARKET**.
+Contato: suporte@auradue.com
+
+**CONTRATANTE (Receptor das Informações Confidenciais):**
+Bruno Fundo Capital
+CPF/CNPJ: 11222333000181
+Email de cadastro: bruno@fundo.com.br
+IP de aceite: 127.0.0.1
+User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36
+Data e hora de aceite: 2026-04-17T03:40:36.086Z
+
+---
+
+## CLÁUSULA 1 — OBJETO
+
+1.1. Este Termo regula a relação de confidencialidade entre as Partes quanto ao acesso do CONTRATANTE à plataforma **AuraLOA** e aos demais módulos do **Ecossistema AuraTECH** (AuraDUE, AuraAUDIT, AuraLOA, AuraRisk, AuraCERTIFIED, AuraDATA, AuraMARKET e quaisquer outros módulos, existentes ou futuros, geridos pela CONTRATADA).
+
+1.2. O acesso é **pessoal, intransferível e monitorado**, concedido mediante aceite integral deste instrumento.
+
+## CLÁUSULA 2 — INFORMAÇÕES CONFIDENCIAIS
+
+2.1. São consideradas **Informações Confidenciais** de propriedade exclusiva da AuraTECH:
+
+a) **Dados de precatórios** — números, valores, credores, devedores, advogados, sócios, histórico processual, relatórios de due diligence, scores, classificações, análises, pareceres;
+
+b) **Dados de compradores e vendedores** — nomes, CPFs/CNPJs, endereços, dados bancários, preferências de investimento, histórico de transações, perfil de risco;
+
+c) **Tecnologia e propriedade intelectual** — algoritmos, modelos de análise, fontes de dados, metodologia, pipelines, scripts, código-fonte, arquitetura de agentes, heurísticas, fórmulas de cálculo de desconto/spread;
+
+d) **Documentos gerados pela plataforma** — relatórios DD, contratos, NDAs, procurações, planilhas, dashboards, qualquer output visual ou digital;
+
+e) **Informações estratégicas** — precificação, tabelas de comissão, lista de clientes, fornecedores, parceiros, roadmap de produto, segredos de negócio;
+
+f) **Qualquer conteúdo** acessado, visualizado, copiado ou derivado do AuraLOA, independentemente de estar marcado como "confidencial".
+
+## CLÁUSULA 3 — OBRIGAÇÕES DO CONTRATANTE
+
+3.1. O CONTRATANTE compromete-se a:
+
+a) **Manter sigilo absoluto** sobre todas as Informações Confidenciais;
+
+b) **Não reproduzir, copiar, divulgar, compartilhar, publicar ou transmitir**, por qualquer meio (físico, digital, verbal, impresso), as Informações Confidenciais;
+
+c) **Não permitir acesso de terceiros** às Informações Confidenciais, ainda que sócios, familiares, funcionários ou prepostos;
+
+d) **Não desenvolver produto concorrente** baseado nas Informações Confidenciais acessadas;
+
+e) **Não fazer engenharia reversa, descompilar, desmontar** qualquer elemento da tecnologia AuraTECH;
+
+f) **Comunicar imediatamente** à AuraTECH qualquer suspeita de vazamento ou uso indevido.
+
+## CLÁUSULA 4 — PENALIDADES POR VIOLAÇÃO
+
+4.1. A violação de qualquer dispositivo da Cláusula 3, bem como as hipóteses de (i) **quebra de contrato**, (ii) **oferta de precatório inexistente ou informação inverídica**, ou (iii) **divergência entre o produto/serviço oferecido e o documentado via plataforma AuraLOA**, sujeitará o CONTRATANTE ao pagamento de **cláusula penal de R$ 50.000,00 (cinquenta mil reais)**, devida em favor da AuraTECH.
+
+4.2. A cláusula penal prevista em 4.1 tem **natureza compensatória mínima** e **não substitui, nem limita**, a obrigação de ressarcimento integral, pelo CONTRATANTE, de todas as perdas e danos suportados pela AuraTECH, incluindo:
+
+a) **Todas as despesas jurídicas** incorridas pela AuraTECH (honorários advocatícios contratuais e sucumbenciais, custas processuais, periciais e extrajudiciais);
+
+b) **Danos emergentes** (perdas diretas comprovadas);
+
+c) **Lucros cessantes** (ganhos que deixariam de ser auferidos);
+
+d) **Danos morais e à imagem** da AuraTECH e seus sócios;
+
+e) **Danos a terceiros** decorrentes do vazamento;
+
+f) **Qualquer valor adicional** necessário à reparação integral do dano, **sem limite máximo** de indenização.
+
+4.3. As penalidades são **devidas por evento de violação**, podendo ser cumulativas em caso de múltiplas violações, nos termos do Art. 416, parágrafo único, do Código Civil Brasileiro.
+
+## CLÁUSULA 5 — FEE DE MARKETPLACE
+
+5.1. **Transações dentro da plataforma.** Nas operações de compra e venda (cessão) de precatórios realizadas dentro da plataforma AuraLOA, aplica-se **fee de marketplace de 5% (cinco por cento) sobre o valor efetivamente negociado**, devido exclusivamente pelo VENDEDOR, distribuído da seguinte forma:
+
+a) **2,5% (dois vírgula cinco por cento)** — destinados à **AuraTECH**, titular da plataforma AuraLOA, pela intermediação tecnológica, due diligence, geração de contrato, assinatura eletrônica e registro imutável da transação;
+
+b) **2,5% (dois vírgula cinco por cento)** — destinados ao **Intermediário** cadastrado na plataforma que houver apresentado comprador ou vendedor ao deal (ex.: escritório de advocacia, assessoria financeira, consultor). Havendo dois intermediários (um para cada ponta), o percentual é dividido em partes iguais.
+
+5.2. **Ausência de intermediário.** Caso a transação não possua intermediário cadastrado, os 5% integrais são devidos à AuraTECH.
+
+5.3. **Retenção automática (escrow).** O COMPRADOR realiza o pagamento integral do valor negociado por meio do sistema de escrow integrado à plataforma (Stripe ou outro meio homologado). A plataforma **retém automaticamente o fee de marketplace** no ato da liquidação e libera ao VENDEDOR o valor líquido (95% do valor negociado), creditando simultaneamente as parcelas do fee às partes devidas.
+
+5.4. **O COMPRADOR não paga fee de marketplace.** Toda a remuneração da plataforma e de intermediários é custeada pelo VENDEDOR, conforme padrão de mercado.
+
+5.5. **Autonomia das partes.** COMPRADOR e VENDEDOR são livres para negociar entre si o **deságio, valor de face, juros, honorários sucumbenciais e demais termos** do contrato de cessão. A plataforma AuraLOA **não interfere** no valor da transação; cobra apenas o fee de marketplace previsto em 5.1 ao final do fechamento.
+
+5.6. **Autorização irrevogável.** O CONTRATANTE autoriza, de forma irrevogável, a retenção automática e o repasse do fee de marketplace no momento do fechamento da transação, independentemente de autorização adicional.
+
+5.2. A AuraTECH se reserva o direito de **apurar violações** mediante:
+
+a) Monitoramento de transações de precatórios nos tribunais (TRF1-6, TJs estaduais);
+b) Cruzamento com dados públicos do Portal da Transparência e DataJud;
+c) Marcação digital (watermark) invisível nos relatórios;
+d) Análise de comportamento de acesso (downloads em massa, IPs anômalos);
+e) Recebimento de denúncias de terceiros envolvidos.
+
+## CLÁUSULA 6 — CADEIA DE CUSTÓDIA E ASSINATURA ELETRÔNICA
+
+6.1. Este NDA é assinado eletronicamente nos termos da **Lei 14.063/2020** (assinatura eletrônica simples) e da **Medida Provisória 2.200-2/2001** (ICP-Brasil), com a seguinte cadeia de custódia digital:
+
+a) **SHA-256** do texto integral do NDA no momento do aceite;
+b) **Endereço IP** do CONTRATANTE no momento do aceite;
+c) **User-Agent** (navegador e sistema operacional);
+d) **Timestamp ISO 8601** com precisão de milissegundos;
+e) **CPF/CNPJ validado** contra a base BrasilAPI/Receita Federal;
+f) **Geolocalização aproximada** (quando autorizada pelo CONTRATANTE);
+g) **Hash de evidência** — SHA-256 de todos os elementos acima concatenados, registrado em banco de dados imutável (append-only).
+
+6.2. Os registros de cadeia de custódia são mantidos pela AuraTECH por prazo mínimo de **10 (dez) anos** após o término do acesso, com conformidade à **Lei 13.964/2019** (Pacote Anticrime).
+
+## CLÁUSULA 7 — PRAZO DE VIGÊNCIA
+
+7.1. As obrigações de confidencialidade deste NDA vigoram:
+
+a) **Durante todo o período de acesso** à plataforma AuraLOA;
+b) **Por 5 (cinco) anos após** o término do acesso, por qualquer motivo (desligamento voluntário, expulsão, não renovação);
+c) **Indefinidamente** para Informações Confidenciais classificadas como **segredo de negócio** (algoritmos, metodologia proprietária, lista de clientes).
+
+## CLÁUSULA 8 — DEVOLUÇÃO E DESTRUIÇÃO DE MATERIAIS
+
+8.1. Ao término do acesso, o CONTRATANTE deverá:
+
+a) Devolver ou destruir todo material impresso, arquivo digital, cópia ou derivado das Informações Confidenciais;
+b) Apagar arquivos de todos os dispositivos pessoais, corporativos e de nuvem;
+c) Enviar **declaração formal** à AuraTECH confirmando a destruição, no prazo máximo de 15 (quinze) dias.
+
+8.2. O descumprimento desta cláusula configura violação autônoma, sujeita à multa da Cláusula 4.1.
+
+## CLÁUSULA 9 — RESPONSABILIDADE SOLIDÁRIA (PESSOA JURÍDICA)
+
+9.1. Caso o CONTRATANTE seja **pessoa jurídica**, **todos os sócios, administradores, procuradores e funcionários com acesso** à plataforma respondem **solidariamente** pelas obrigações e penalidades deste NDA.
+
+9.2. A pessoa jurídica é responsável por garantir que **todos os usuários sob seu CNPJ** tenham tomado ciência e aceitado formalmente este NDA.
+
+## CLÁUSULA 10 — LEI APLICÁVEL E FORO
+
+10.1. Este NDA é regido pela **legislação brasileira**, especialmente:
+
+a) Lei 14.063/2020 (Assinatura Eletrônica);
+b) Lei 13.709/2018 (LGPD);
+c) Lei 10.406/2002 (Código Civil — Arts. 421 a 426, contratos);
+d) Lei 9.279/1996 (Propriedade Industrial);
+e) Lei 9.610/1998 (Direitos Autorais);
+f) Constituição Federal, Art. 5º, incisos IX, X, XII e XIV.
+
+10.2. **Foro:** Fica eleito o foro da Comarca de **São Paulo/SP** para dirimir quaisquer controvérsias, renunciando as Partes a qualquer outro, por mais privilegiado que seja.
+
+10.3. **Arbitragem (opcional):** Mediante acordo das Partes, controvérsias poderão ser submetidas à arbitragem perante a **Câmara de Comércio Brasil-Canadá (CAM-CCBC)**, em São Paulo, em língua portuguesa, com aplicação da lei brasileira.
+
+## CLÁUSULA 11 — DISPOSIÇÕES FINAIS
+
+11.1. A nulidade ou invalidade de qualquer cláusula não prejudica a validade das demais.
+
+11.2. Este NDA **não constitui vínculo empregatício, societário ou de representação** entre as Partes.
+
+11.3. Alterações somente serão válidas mediante **nova assinatura eletrônica** pelas Partes.
+
+11.4. O CONTRATANTE declara ter **lido, compreendido e aceitado integralmente** todas as cláusulas deste NDA, em especial as penalidades previstas nas Cláusulas 4 e 5.
+
+---
+
+## ACEITE ELETRÔNICO
+
+Ao marcar a caixa de aceite e clicar em "**Assinar e Aceitar**", o CONTRATANTE declara:
+
+☐ **Li integralmente este Termo de Confidencialidade**
+☐ **Compreendi e aceito todas as cláusulas, incluindo as penalidades e obrigações previstas neste instrumento**
+☐ **Confirmo que os dados informados são verdadeiros**
+☐ **Autorizo o registro da cadeia de custódia digital (SHA-256, IP, user-agent, timestamp, CPF/CNPJ, geolocalização)**
+☐ **Recebo uma cópia assinada deste NDA no email bruno@fundo.com.br**
+
+---
+
+**HASH DE EVIDÊNCIA (preenchido automaticamente):** `{{EVIDENCIA_SHA256}}`
+**HASH DO TEXTO NDA:** `{{NDA_SHA256}}`
+**TIMESTAMP DE ACEITE:** `2026-04-17T03:40:36.086Z`
+
+---
+
+© 2026 AuraTECH · Todos os direitos reservados &nbsp;&nbsp;|&nbsp;&nbsp; Confidencial &nbsp;&nbsp;|&nbsp;&nbsp; suporte@auradue.com
+
+
+===============================
+EVIDÊNCIA DE ASSINATURA
+===============================
+SHA-256 Texto NDA: 2fd8bd2688d05e1cefb16fd9e3170f779edc03999c4ca39c25cdd77e91cd820f
+SHA-256 Evidência: 0db2b548ed6d55c42fe5d30aa12734d40742e78fc9e38ffa1cc28e27dccb8c02
+Aceites: {
+  "aceite_leitura": true,
+  "aceite_penalidades": true,
+  "aceite_veracidade": true,
+  "aceite_cadeia_custodia": true,
+  "aceite_copia_email": true
+}
+Geolocalização: {"lat":-23.41343967747063,"lng":-46.32979478941135,"acc":102}

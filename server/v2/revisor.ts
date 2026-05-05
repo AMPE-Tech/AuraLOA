@@ -2,6 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { readFileSync, existsSync } from "fs";
 import { resolve } from "path";
 import type { ConsolidacaoResult } from "./consolidador";
+import type { ValidacaoExtracaoResult } from "./revisor_extracao";
 
 const anthropic = new Anthropic();
 const MODEL = "claude-haiku-4-5-20251001";
@@ -33,6 +34,60 @@ export interface ResultadoRevisor {
   tokens_usados?: { input: number; output: number };
   cost_usd?: number;
   duracao_ms: number;
+  complexidade?: ComplexidadeDoc;
+}
+
+// ── Detector de Complexidade (23/04/2026) ─────────────────────────────────
+// Regra Marcos: documento complexo NUNCA bloqueia o pipeline.
+// Extração roda 100%. Depois sinaliza revisão humana por badge.
+// Também detecta "CRÉDITO JÁ CEDIDO" para evitar golpe (vender crédito vendido).
+
+export interface ComplexidadeDoc {
+  nivel: "baixa" | "media" | "alta";
+  sinais: string[];
+  revisao_humana_recomendada: boolean;
+  alerta_golpe_cessao: string | null;
+}
+
+export function detectarComplexidade(consolidacao: ConsolidacaoResult): ComplexidadeDoc {
+  const sinais: string[] = [];
+  const chk = consolidacao.checklist_consolidado;
+  const partes = (chk["partes"]?.valor as any[]) || [];
+  const processos = (chk["processos_identificados"]?.valor as any[]) || [];
+  const docs = (chk["documentos_identificados"]?.valor as any[]) || [];
+
+  const cessionarios = partes.filter((p) => /cessionar/i.test(p?.polo || "") || /cessionar/i.test(p?.qualificacao || "")).length;
+  const fidcs = partes.filter((p) => /FUNDO.*INVESTIMENTO.*DIREITOS CREDIT/i.test(p?.nome || "")).length;
+  const numRequisicoes = docs.filter((d) => /requisicao|oficio/i.test(d?.tipo || "")).length;
+  const valor = Number(chk["valor_rs"]?.valor || 0);
+
+  if (numRequisicoes > 1) sinais.push(`${numRequisicoes} ofícios requisitórios em 1 PDF`);
+  if (cessionarios >= 3) sinais.push(`${cessionarios} cessionários parciais — crédito já fragmentado`);
+  if (fidcs >= 1) sinais.push(`${fidcs} FIDC(s) presentes — mercado secundário ativo`);
+  if (processos.length > 2) sinais.push(`${processos.length} processos relacionados`);
+  if (valor > 100_000_000) sinais.push(`Valor elevado (R$ ${Math.round(valor / 1_000_000)}M)`);
+  const cnj = chk["numero_cnj"]?.valor as string | undefined;
+  if (cnj && /^\d{4,5}-/.test(cnj)) sinais.push(`CNJ formato antigo (pré-2008) — processo de longa duração`);
+
+  const nivel: ComplexidadeDoc["nivel"] =
+    sinais.length >= 3 ? "alta" : sinais.length >= 1 ? "media" : "baixa";
+
+  // ⚠️ Alerta anti-golpe: se há cessionários, o beneficiário principal NÃO detém 100%
+  let alerta_golpe_cessao: string | null = null;
+  if (cessionarios >= 1) {
+    alerta_golpe_cessao =
+      `⚠️ ALERTA ANTI-GOLPE: Este crédito possui ${cessionarios} cessionário(s) parcial(is). ` +
+      `O beneficiário principal NÃO detém 100% do valor. ` +
+      `Se o vendedor oferecer o crédito INTEGRAL, possível tentativa de venda de parte já cedida. ` +
+      `Verificar na decisão/contratos quanto cada cessionário detém antes de negociar.`;
+  }
+
+  return {
+    nivel,
+    sinais,
+    revisao_humana_recomendada: nivel === "alta",
+    alerta_golpe_cessao,
+  };
 }
 
 // ── NÍVEL 1 — Determinístico (heurísticas) ────────────────────────────────
@@ -376,11 +431,62 @@ Use a ferramenta emitir_decisao_revisor para sua resposta estruturada.`;
 
 // ── ENTRY POINT ──────────────────────────────────────────────────────────
 
+// Incorpora resultado do Revisor Pós-Extração: score final = min(consolidação,
+// pior pós-extração). Decisão rebaixada conforme pós-extração.
+// Agregador que recebe uma lista (um pós-extração por doc) e pega o pior.
+function incorporarPosExtracao(
+  base: ResultadoRevisor,
+  posExtracoes: ValidacaoExtracaoResult[],
+): ResultadoRevisor {
+  if (!posExtracoes || posExtracoes.length === 0) return base;
+
+  const pior = posExtracoes.reduce((acc, v) => (v.score < acc.score ? v : acc), posExtracoes[0]);
+  const alertasPos = pior.alertas;
+  const hasAltaPos = alertasPos.some((a) => a.severidade === "alta");
+  const hasCriticaPos = alertasPos.some((a) => (a as any).severidade === "critica");
+
+  const scoreFinal = Math.min(base.score, pior.score);
+
+  let decisao: DecisaoRevisor = base.decisao;
+  if (hasCriticaPos || pior.score < 50) {
+    decisao = "requer_revisao_humana";
+  } else if (hasAltaPos || pior.score < 70) {
+    decisao = decisao === "requer_revisao_humana" ? decisao : "aprovado_com_ressalva";
+  }
+
+  const alertasAgregados = [
+    ...base.alertas,
+    ...alertasPos.map((a) => ({
+      codigo: a.codigo,
+      severidade: a.severidade as AlertaRevisor["severidade"],
+      campo: a.campo,
+      descricao: `[pós-extração] ${a.descricao}`,
+      sugestao: a.sugestao,
+    })),
+  ];
+
+  const deltaJust = pior.score < base.score
+    ? ` Rebaixado pelo Revisor Pós-Extração (score ${pior.score}/100, ${alertasPos.length} alerta(s)).`
+    : "";
+
+  return {
+    ...base,
+    score: scoreFinal,
+    decisao,
+    alertas: alertasAgregados,
+    justificativa: base.justificativa + deltaJust,
+  };
+}
+
 export async function revisarConsolidacao(
   consolidacao: ConsolidacaoResult,
-  opts: { forcarAI?: boolean } = {},
+  opts: { forcarAI?: boolean; posExtracoes?: ValidacaoExtracaoResult[] } = {},
 ): Promise<ResultadoRevisor> {
   const start = Date.now();
+
+  // Detectar complexidade — independe do nível atingido. Revisão humana por
+  // complexidade NÃO bloqueia a decisão, apenas sinaliza badge no relatório.
+  const complexidade = detectarComplexidade(consolidacao);
 
   // Nível 1 sempre roda
   const n1 = revisorDeterministico(consolidacao);
@@ -391,26 +497,30 @@ export async function revisarConsolidacao(
   const hasAlta = n1.alertas.some((a) => a.severidade === "alta");
 
   if (!opts.forcarAI && n1.score >= 70 && !hasCritica && !hasAlta) {
-    return {
+    const base: ResultadoRevisor = {
       nivel_atingido: "deterministico",
       decisao: "aprovado",
       score: n1.score,
       justificativa: `Revisor determinístico aprovou automaticamente: score ${n1.score}/100, ${n1.alertas.length} alertas sem severidade alta/crítica`,
       alertas: n1.alertas,
       duracao_ms: Date.now() - start,
+      complexidade,
     };
+    return incorporarPosExtracao(base, opts.posExtracoes || []);
   }
 
   // Se alerta crítico + partes divergentes → escala direto para humano
   if (hasCritica && consolidacao.provavelmente_mesmo_caso === false) {
-    return {
+    const base: ResultadoRevisor = {
       nivel_atingido: "humano_necessario",
       decisao: "requer_revisao_humana",
       score: n1.score,
       justificativa: "Credores/devedores totalmente diferentes entre documentos — precisa operador humano confirmar se são casos relacionados",
       alertas: n1.alertas,
       duracao_ms: Date.now() - start,
+      complexidade,
     };
+    return incorporarPosExtracao(base, opts.posExtracoes || []);
   }
 
   // Caso contrário: Nível 2 AI com knowledge base
@@ -418,7 +528,7 @@ export async function revisarConsolidacao(
     const n2 = await revisorAI(consolidacao, n1.alertas);
     const todosAlertas = [...n1.alertas, ...n2.alertas_adicionais];
 
-    return {
+    const base: ResultadoRevisor = {
       nivel_atingido: "ai_knowledge",
       decisao: n2.decisao,
       score: n2.score,
@@ -428,16 +538,20 @@ export async function revisarConsolidacao(
       tokens_usados: { input: n2.tokens_input, output: n2.tokens_output },
       cost_usd: n2.cost_usd,
       duracao_ms: Date.now() - start,
+      complexidade,
     };
+    return incorporarPosExtracao(base, opts.posExtracoes || []);
   } catch (err: any) {
     // Se AI falha → escala para humano
-    return {
+    const base: ResultadoRevisor = {
       nivel_atingido: "humano_necessario",
       decisao: "requer_revisao_humana",
       score: n1.score,
       justificativa: `Revisor Nível 1 score ${n1.score} inconclusivo e Nível 2 (AI) falhou: ${err.message}. Escalado para humano.`,
       alertas: n1.alertas,
       duracao_ms: Date.now() - start,
+      complexidade,
     };
+    return incorporarPosExtracao(base, opts.posExtracoes || []);
   }
 }

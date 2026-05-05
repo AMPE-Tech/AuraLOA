@@ -1,0 +1,12 @@
+{
+  "lock_id": "d24f87dc-9a21-4758-83dd-bdf5b143351c",
+  "resource": "pipeline/execucao",
+  "locked_at_iso": "2026-02-23T05:53:55.206Z",
+  "locked_by": "DPO AuraLOA",
+  "reason": "Protecao do pipeline completo",
+  "sha256_at_lock": "520b04bfa810d3993dfeda2e238b5d56381fc73ecc87fa6f79a292e3c7c54719",
+  "status": "LOCKED",
+  "unlock_token": "ef309430b3f5f382475a91bfbf342bf4cfb752bbb690f37150bf0cb10f912850",
+  "unlock_at_iso": null,
+  "unlock_by": null
+}

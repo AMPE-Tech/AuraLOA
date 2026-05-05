@@ -1,0 +1,12 @@
+{
+  "lock_id": "2aef921f-8b5a-4cb4-88ba-0a357df37828",
+  "resource": "pipeline/gap_analysis",
+  "locked_at_iso": "2026-02-23T05:53:55.206Z",
+  "locked_by": "DPO AuraLOA",
+  "reason": "Protecao do pipeline completo",
+  "sha256_at_lock": "a4aeb3ef028df6328b6968af93066fca2c017121b303cc0da7c040a104d8340c",
+  "status": "LOCKED",
+  "unlock_token": "d799fb978e66cfd559986fc67bdf583a2c5b04630f8ea69565d45f56e791e85d",
+  "unlock_at_iso": null,
+  "unlock_by": null
+}

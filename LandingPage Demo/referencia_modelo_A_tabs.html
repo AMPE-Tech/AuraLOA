@@ -1,0 +1,1346 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AuraDUE · Relatório 1503896-55.2022.8.26.0050</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0a0e17;
+  --bg2:     #111827;
+  --bg3:     #1a2333;
+  --bg4:     #0d1520;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text:    #f1f5f9;
+  --text2:   #94a3b8;
+  --text3:   #64748b;
+  --cyan:    #22d3ee;
+  --cyan2:   #06b6d4;
+  --violet:  #a78bfa;
+  --green:   #34d399;
+  --amber:   #fbbf24;
+  --red:     #f87171;
+  --brand:   linear-gradient(135deg,#06b6d4,#7c3aed);
+  --r:       10px;
+  --rsm:     6px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{font-size:14px;}
+body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;line-height:1.6;}
+
+/* ── TOPBAR ── */
+.topbar{position:sticky;top:0;z-index:100;background:rgba(10,14,23,.95);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 32px;display:flex;align-items:center;justify-content:space-between;height:58px;}
+.tb-brand{display:flex;align-items:center;gap:10px;}
+.tb-logo{width:32px;height:32px;border-radius:7px;background:var(--brand);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;color:#fff;}
+.tb-name{font-size:13px;font-weight:600;}
+.tb-sub{font-size:10px;color:var(--text3);}
+.tb-right{display:flex;align-items:center;gap:10px;font-size:11px;color:var(--text3);}
+.tb-cnj{font-family:'Courier New',monospace;color:var(--cyan);font-size:11px;}
+
+/* ── TABS ── */
+.tabs{background:var(--bg4);border-bottom:1px solid var(--border);padding:0 32px;display:flex;overflow-x:auto;scrollbar-width:none;position:sticky;top:58px;z-index:99;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{padding:12px 16px;font-size:11px;font-weight:500;color:var(--text3);background:transparent;border:none;border-bottom:2px solid transparent;cursor:pointer;font-family:'Inter',sans-serif;white-space:nowrap;transition:all .15s;}
+.tab:hover{color:var(--text2);}
+.tab.on{color:var(--cyan);font-weight:600;border-bottom-color:var(--cyan);}
+
+/* ── MAIN ── */
+.page{max-width:1080px;margin:0 auto;padding:28px 32px 60px;}
+.sec{display:none;}
+.sec.on{display:block;animation:fi .2s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+
+/* ── COVER ── */
+.cover{padding:32px 0 28px;border-bottom:1px solid var(--border);margin-bottom:28px;}
+.cover-eyebrow{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;margin-bottom:16px;}
+.cover-line{width:20px;height:2px;border-radius:1px;background:var(--brand);}
+.cover-h1{font-size:26px;font-weight:700;line-height:1.2;letter-spacing:-.02em;margin-bottom:6px;}
+.cover-h2{font-size:16px;font-weight:300;color:var(--text2);margin-bottom:22px;}
+.cover-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:16px;margin-bottom:20px;}
+.cg-item{}
+.cg-label{font-size:9px;font-weight:600;letter-spacing:.08em;color:var(--text3);text-transform:uppercase;margin-bottom:4px;}
+.cg-value{font-size:12px;font-weight:500;color:var(--text);}
+.cg-value.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--cyan);}
+
+/* ── SECTION TITLE ── */
+.sh{margin-bottom:16px;}
+.sh-eye{font-size:10px;font-weight:600;letter-spacing:.1em;color:var(--text3);text-transform:uppercase;display:flex;align-items:center;gap:8px;}
+.sh-eye::before{content:'';display:block;width:3px;height:14px;border-radius:2px;background:var(--cyan);}
+.sh-title{font-size:18px;font-weight:700;margin-top:4px;}
+
+/* ── CARD ── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;margin-bottom:14px;}
+.card-sm{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:12px 14px;margin-bottom:10px;}
+
+/* ── BADGE ── */
+.badge{display:inline-flex;align-items:center;padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.04em;}
+.badge-ok{background:rgba(52,211,153,.12);color:var(--green);border:1px solid rgba(52,211,153,.2);}
+.badge-warn{background:rgba(251,191,36,.1);color:var(--amber);border:1px solid rgba(251,191,36,.2);}
+.badge-fail{background:rgba(248,113,113,.1);color:var(--red);border:1px solid rgba(248,113,113,.2);}
+.badge-info{background:rgba(167,139,250,.1);color:var(--violet);border:1px solid rgba(167,139,250,.2);}
+.badge-muted{background:rgba(100,116,139,.1);color:var(--text3);border:1px solid rgba(100,116,139,.2);}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:20px;}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;}
+.kpi-label{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;margin-bottom:8px;}
+.kpi-val{font-size:28px;font-weight:800;line-height:1;}
+.kpi-val.cyan{color:var(--cyan);}
+.kpi-val.green{color:var(--green);}
+.kpi-val.amber{color:var(--amber);}
+.kpi-val.red{color:var(--red);}
+.kpi-sub{font-size:11px;color:var(--text3);margin-top:5px;}
+
+/* ── ALERT BANNERS ── */
+.alert{display:flex;align-items:flex-start;gap:12px;padding:14px 16px;border-radius:var(--r);margin-bottom:16px;}
+.alert.danger{background:rgba(248,113,113,.08);border:1px solid rgba(248,113,113,.2);}
+.alert.warn{background:rgba(251,191,36,.07);border:1px solid rgba(251,191,36,.18);}
+.alert.ok{background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.18);}
+.alert.info{background:rgba(34,211,238,.06);border:1px solid rgba(34,211,238,.15);}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px;}
+.alert-title{font-size:12px;font-weight:700;margin-bottom:3px;}
+.alert-body{font-size:11px;color:var(--text2);line-height:1.6;}
+
+/* ── TABLE ── */
+.tbl{width:100%;border-collapse:collapse;font-size:12px;}
+.tbl th{font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text3);text-transform:uppercase;text-align:left;padding:8px 10px;border-bottom:1px solid var(--border2);}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:top;}
+.tbl tr:last-child td{border-bottom:none;}
+.tbl tr:hover td{background:rgba(255,255,255,.02);}
+.mono{font-family:'Courier New',monospace;font-size:10px;color:var(--text3);}
+
+/* ── MARKDOWN ── */
+.md h2,.md h3,.md h4{font-weight:700;margin:20px 0 8px;color:var(--text);}
+.md h2{font-size:16px;}
+.md h3{font-size:14px;color:var(--cyan);}
+.md h4{font-size:12px;color:var(--text2);}
+.md p{font-size:12px;color:var(--text2);margin-bottom:10px;line-height:1.7;}
+.md strong{color:var(--text);font-weight:600;}
+.md em{color:var(--violet);}
+.md code{background:var(--bg4);padding:1px 5px;border-radius:3px;font-size:10px;font-family:'Courier New',monospace;color:var(--cyan);}
+.md blockquote{border-left:3px solid var(--amber);padding:10px 14px;background:rgba(251,191,36,.05);border-radius:0 var(--rsm) var(--rsm) 0;margin:12px 0;}
+.md blockquote p{color:var(--amber);margin-bottom:0;}
+.md ul{margin:8px 0 12px 0;padding-left:20px;}
+.md li{font-size:12px;color:var(--text2);margin-bottom:4px;}
+.md hr{border:none;border-top:1px solid var(--border);margin:20px 0;}
+
+/* ── OCR PAGE CARD ── */
+.ocr-page{background:var(--bg3);border:1px solid var(--border);border-radius:var(--rsm);padding:14px;margin-bottom:10px;}
+.ocr-page-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.ocr-page-id{font-size:11px;font-weight:600;color:var(--text);}
+.ocr-page-body{font-size:11px;color:var(--text2);background:var(--bg4);border-radius:var(--rsm);padding:12px;line-height:1.7;white-space:pre-wrap;word-break:break-word;max-height:200px;overflow-y:auto;}
+.ocr-page-body.empty{color:var(--text3);font-style:italic;}
+.ocr-meta{display:flex;gap:12px;font-size:10px;color:var(--text3);flex-wrap:wrap;}
+
+/* ── HASH FOOTER ── */
+.hash-footer{background:var(--bg4);border:1px solid var(--border);border-radius:var(--r);padding:16px 20px;margin-top:32px;}
+.hash-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:11px;}
+.hash-row:last-child{margin-bottom:0;}
+.hash-key{color:var(--text3);min-width:200px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+.hash-val{font-family:'Courier New',monospace;font-size:10px;color:var(--cyan);word-break:break-all;}
+
+/* ── DADOS INSUFICIENTES ── */
+.dados-insuf{background:rgba(100,116,139,.06);border:1px solid rgba(100,116,139,.15);border-radius:var(--rsm);padding:14px 16px;font-size:12px;color:var(--text3);}
+.dados-insuf strong{color:var(--amber);}
+
+@media(max-width:700px){
+  .page{padding:16px;}
+  .cover-grid{grid-template-columns:1fr 1fr;}
+  .kpi-grid{grid-template-columns:1fr 1fr;}
+  .topbar{padding:0 16px;}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="tb-brand">
+    <div class="tb-logo">AD</div>
+    <div>
+      <div class="tb-name">AuraDUE</div>
+      <div class="tb-sub">Due Diligence Criminal · AuraTECH</div>
+    </div>
+  </div>
+  <div class="tb-right">
+    <span class="tb-cnj">1503896-55.2022.8.26.0050</span>
+    <span class="badge badge-info">20/20 páginas OCR</span>
+    <span class="badge badge-ok">OFICIAL</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="show(0,this)">Resumo</button>
+  <button class="tab" onclick="show(1,this)">OCR por Página</button>
+  <button class="tab" onclick="show(2,this)">Análise Macro</button>
+  <button class="tab" onclick="show(3,this)">Cadeia de Custódia</button>
+  <button class="tab" onclick="show(4,this)">Recomendações</button>
+  <button class="tab" onclick="show(5,this)">Hashes &amp; Integridade</button>
+</div>
+
+<div class="page">
+  
+  <div class="sec on" id="s0">
+    <div class="cover">
+      <div class="cover-eyebrow"><span class="cover-line"></span>AuraDUE · Due Diligence Criminal</div>
+      <div class="cover-h1">Relatório de Análise Processual</div>
+      <div class="cover-h2">Processo 1503896-55.2022.8.26.0050 · TJSP</div>
+      <div class="cover-grid">
+        <div class="cg-item"><div class="cg-label">Processo</div><div class="cg-value mono">1503896-55.2022.8.26.0050</div></div>
+        <div class="cg-item"><div class="cg-label">Réu</div><div class="cg-value">Glaidson Tadeu Rosa</div></div>
+        <div class="cg-item"><div class="cg-label">Defensora</div><div class="cg-value">Dra. Márcia Mirtes</div></div>
+        <div class="cg-item"><div class="cg-label">Tribunal</div><div class="cg-value">TJSP · Segredo de Justiça</div></div>
+        <div class="cg-item"><div class="cg-label">Gerado em</div><div class="cg-value">01/04/2026, 17:52</div></div>
+        <div class="cg-item"><div class="cg-label">Acesso</div><div class="cg-value"><span class="badge badge-ok">🔒 MÉTODO OFICIAL</span></div></div>
+      </div>
+    </div>
+
+    
+    <div class="alert ok">
+      <div class="alert-icon">✓</div>
+      <div>
+        <div class="alert-title">OCR com Conteúdo Real — 19 páginas extraídas</div>
+        <div class="alert-body">Dados processuais reais foram extraídos e verificados. Todas as afirmações abaixo têm fonte documental citada.</div>
+      </div>
+    </div>
+    
+
+    <div class="sh"><div class="sh-eye">Métricas do Pipeline</div></div>
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="kpi-label">Peças capturadas</div>
+        <div class="kpi-val cyan">20</div>
+        <div class="kpi-sub">navegadas no eSAJ</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">PDFs verificados</div>
+        <div class="kpi-val cyan">9</div>
+        <div class="kpi-sub">SHA-256 calculado</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Páginas OCR</div>
+        <div class="kpi-val green">20/20</div>
+        <div class="kpi-sub">válidas processadas</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Com conteúdo</div>
+        <div class="kpi-val green">19</div>
+        <div class="kpi-sub">páginas com texto real</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Custo OCR</div>
+        <div class="kpi-val cyan">$0.0214</div>
+        <div class="kpi-sub">Claude Haiku</div>
+      </div>
+      <div class="kpi">
+        <div class="kpi-label">Custo análise</div>
+        <div class="kpi-val cyan">$0.1551</div>
+        <div class="kpi-sub">Claude Sonnet</div>
+      </div>
+    </div>
+
+    <div class="sh"><div class="sh-eye">Inventário de Peças</div></div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Arquivo</th><th>Tamanho</th><th>SHA-256</th><th>Status</th></tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>1</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>2</td>
+            <td class="mono">peca_00002.pdf</td>
+            <td>25 KB</td>
+            <td class="mono">b3ec5a12a24508c3…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>3</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>4</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td class="mono">peca_00005.pdf</td>
+            <td>67 KB</td>
+            <td class="mono">7335ec4b831da6f4…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>6</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td class="mono">peca_00007.pdf</td>
+            <td>42 KB</td>
+            <td class="mono">0d2e2133c972c689…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>8</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td class="mono">peca_00009.pdf</td>
+            <td>57 KB</td>
+            <td class="mono">704e77dca098b0e4…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>10</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td class="mono">peca_00011.pdf</td>
+            <td>47 KB</td>
+            <td class="mono">a1f225d5cd9a93f2…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>12</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td class="mono">peca_00013.pdf</td>
+            <td>62 KB</td>
+            <td class="mono">dfedd7671b9a336f…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>14</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td class="mono">peca_00015.pdf</td>
+            <td>46 KB</td>
+            <td class="mono">3a763bfdb53d8cde…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>16</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>17</td>
+            <td class="mono">peca_00017.pdf</td>
+            <td>448 KB</td>
+            <td class="mono">8b3fba9160efb969…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>18</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+          <tr>
+            <td>19</td>
+            <td class="mono">peca_00019.pdf</td>
+            <td>2.9 MB</td>
+            <td class="mono">ef761e9ff6533c40…</td>
+            <td><span class="badge badge-ok">PDF Válido</span></td>
+          </tr>
+          <tr>
+            <td>20</td>
+            <td class="mono">—</td>
+            <td>—</td>
+            <td class="mono">—</td>
+            <td><span class="badge badge-fail">Inválido</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="sec" id="s1">
+    <div class="sh"><div class="sh-eye">Páginas Processadas — OCR por Página</div><div class="sh-title">Texto Extraído · 20 páginas</div></div>
+
+    
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 2 · Página 1 <span style="color:var(--text3)">(global 1)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>114 palavras</span>
+        <span>$0.00087</span>
+        <span class="mono">SHA-PDF: b3ec5a12a245…</span>
+        <span class="mono">SHA-IMG: 9bd2ef6b737d…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO FIEL - PÁGINA 1
+
+---
+
+**fls. 19518**
+
+---
+
+**SP PODER JUDICIÁRIO**
+
+[LOGO: Tribunal de Justiça - SP]
+
+---
+
+## CIÊNCIA DA INTIMAÇÃO
+
+---
+
+**Autos nº:** 1503896-55.2022.8.26.0050
+
+**Foro:** Foro Central Criminal Barra Funda
+
+---
+
+**Declaramos ciência nesta data, através do acesso ao portal eletrônico, do teor do ato transcrito abaixo.**
+
+---
+
+**Data da Intimação:** 31/03/2026 17:01:58
+
+**Prazo:** 10 dias
+
+**Intimado:** Ministério Público do Estado de São Paulo
+
+**Teor do Ato:** Vista ao Ministério Público.
+
+---
+
+**São Paulo (SP), 31 de Março de 2026**
+
+---
+
+**[CARIMBO LATERAL DIREI
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 5 · Página 1 <span style="color:var(--text3)">(global 2)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>193 palavras</span>
+        <span>$0.00112</span>
+        <span class="mono">SHA-PDF: 7335ec4b831d…</span>
+        <span class="mono">SHA-IMG: b91c58b3a14e…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO PÁGINA 1
+
+**fls. 844**
+
+---
+
+## TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO
+COMARCA DE SÃO PAULO
+FORO CENTRAL CRIMINAL BARRA FUNDA
+DIPO 3 - SEÇÃO 3.1.1
+
+Avenida Doutor Abrao Ribeiro, 313, Avenida D. Sala 484 - 2º Andar - Piso 2,
+Barra Funda - CEP 01133-020, Fone: 2127-9588, São Paulo-SP - E-mail:
+dipo3@tjsp.jus.br
+
+---
+
+## DECISÃO
+
+| Campo | Conteúdo |
+|-------|----------|
+| **Processo nº:** | 1503896-55.2022.8.26.0050 |
+| **Classe - Assunto** | Inquérito Policial - Estelionato |
+| **Autor:** | Justiça Pública |
+| **Averiguado:** | GLAIDSON TADEU ROSA e outro |
+
+---
+
+**Juiz(a) de 
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 7 · Página 1 <span style="color:var(--text3)">(global 3)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>173 palavras</span>
+        <span>$0.00112</span>
+        <span class="mono">SHA-PDF: 0d2e2133c972…</span>
+        <span class="mono">SHA-IMG: 319d129eb71e…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 1
+
+---
+
+**fls. 2386**
+
+**TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO**
+**COMARCA DE SÃO PAULO**
+**FORO CENTRAL CRIMINAL BARRA FUNDA**
+**1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL**
+
+Avenida Doutor Abraao Ribeiro - São Paulo-SP - CEP 01133-020
+Horário de Atendimento ao Público: das 13h00min às17h00min
+
+---
+
+## DECISÃO
+
+| Campo | Conteúdo |
+|-------|----------|
+| **Processo Digital nº:** | 1503896-55.2022.8.26.0050 |
+| **Classe - Assunto** | Inquérito Policial - Estelionato |
+| **Documento de Origem:** | Inquérito Policial, 
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 9 · Página 1 <span style="color:var(--text3)">(global 4)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>162 palavras</span>
+        <span>$0.00108</span>
+        <span class="mono">SHA-PDF: 704e77dca098…</span>
+        <span class="mono">SHA-IMG: d0d4fb95a233…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 1
+
+---
+
+**fls. 9199**
+
+**TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO**
+**COMARCA DE SÃO PAULO**
+**FORO CENTRAL CRIMINAL BARRA FUNDA**
+**1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL**
+
+Avenida Doutor Abraao Ribeiro - São Paulo-SP - CEP 01133-020
+Horário de Atendimento ao Público: das 13h00min às17h00min
+
+---
+
+## DECISÃO
+
+| Campo | Informação |
+|-------|-----------|
+| Processo Digital nº: | 1503896-55.2022.8.26.0050 |
+| Classe - Assunto | Inquérito Policial - Estelionato |
+| Documento de Origem: | Inquérito Policial, Inquérito
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 9 · Página 2 <span style="color:var(--text3)">(global 5)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>212 palavras</span>
+        <span>$0.00101</span>
+        <span class="mono">SHA-PDF: 704e77dca098…</span>
+        <span class="mono">SHA-IMG: c5edf8c9e3ba…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 2
+
+---
+
+páginas, sendo que as investigações apontam para existência de milhares de vítimas. Desse modo é certo que a habilitação de todas as vítimas nesse momento processual, causaria grande tumulto no andamento das investigações, prejudicando assim a colheita das provas e condução do inquérito.
+
+Ressalto que o inquérito possui elevada quantidade de informações protegidas pelo sigilo bancário e fiscal, e certamente outras informações sigilosas ainda serão trazidas aos autos, considerando-se que as investigações ainda não se findaram, não sendo prudente a concessão de ac
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 9 · Página 3 <span style="color:var(--text3)">(global 6)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>151 palavras</span>
+        <span>$0.00102</span>
+        <span class="mono">SHA-PDF: 704e77dca098…</span>
+        <span class="mono">SHA-IMG: 9b78840230ed…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO - PÁGINA 3
+
+---
+
+**fls. 9201**
+
+**TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO**
+
+**COMARCA DE SÃO PAULO**
+
+**FORO CENTRAL CRIMINAL BARRA FUNDA**
+
+**1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL**
+
+Avenida Doutor Abraao Ribeiro - São Paulo-SP - CEP 01133-020
+
+Horário de Atendimento ao Público: das 13h00min às17h00min
+
+das investigações.
+
+---
+
+Intime-se.
+
+São Paulo, 12 de agosto de 2022.
+
+---
+
+**DOCUMENTO ASSINADO DIGITALMENTE NOS TERMOS DA LEI 11.419/2006, CONFORME IMPRESSÃO À MARGEM DIREITA**
+
+---
+
+**Elementos adicionais identificados:
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 11 · Página 1 <span style="color:var(--text3)">(global 7)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>157 palavras</span>
+        <span>$0.00105</span>
+        <span class="mono">SHA-PDF: a1f225d5cd9a…</span>
+        <span class="mono">SHA-IMG: 624ff1205fa6…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO
+## COMARCA DE SÃO PAULO
+### FORO CENTRAL CRIMINAL BARRA FUNDA
+**1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL**
+
+Avenida Doutor Abraao Ribeiro - São Paulo-SP - CEP 01133-020
+**Horário de Atendimento ao Público: das 13h00min às17h00min**
+
+---
+
+## DECISÃO
+
+| Campo | Informação |
+|-------|-----------|
+| **Processo Digital nº:** | 1503896-55.2022.8.26.0050 |
+| **Classe - Assunto** | Inquérito Policial - Estelionato |
+| **Documento de Origem:** | Inquérito Policial, Inquérito Policial, Portaria - 2036659/2022
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 13 · Página 1 <span style="color:var(--text3)">(global 8)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>173 palavras</span>
+        <span>$0.00106</span>
+        <span class="mono">SHA-PDF: dfedd7671b9a…</span>
+        <span class="mono">SHA-IMG: 327b169f2f90…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO
+## COMARCA DE SÃO PAULO
+### FORO CENTRAL CRIMINAL BARRA FUNDA
+#### 1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL
+
+Avenida Doutor Abraao Ribeiro, Bom Retiro - CEP 01133-020, Fone: .,
+São Paulo-SP - E-mail: sp1crimetrib@tjsp.jus.br
+
+**Horário de Atendimento ao Público: das 13h00min às17h00min**
+
+---
+
+## DECISÃO
+
+| Campo | Conteúdo |
+|-------|----------|
+| Processo Digital nº: | 1503896-55.2022.8.26.0050 |
+| Classe - Assunto | Inquérito Policial - Estelionato |
+| Autor: | Justiça Pública |
+| Averiguado: | G
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 13 · Página 2 <span style="color:var(--text3)">(global 9)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>250 palavras</span>
+        <span>$0.00157</span>
+        <span class="mono">SHA-PDF: dfedd7671b9a…</span>
+        <span class="mono">SHA-IMG: c94b608463d5…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO - PÁGINA 2
+
+**fls. 10073**
+
+---
+
+**TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO**
+**COMARCA DE SÃO PAULO**
+**FORO CENTRAL CRIMINAL BARRA FUNDA**
+**1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL**
+
+Avenida Doutor Abraao Ribeiro, Bom Retiro - CEP 01133-020, Fone: .,
+São Paulo-SP - E-mail: sp1crimetrib@tjsp.jus.br
+
+**Horário de Atendimento ao Público: das 13h00min às17h00min**
+
+---
+
+IX) 3DvNBae4nMLsgeq2cjvUnr4GN7D3fim2HEh
+
+X) be1qdt3t3h3qxkwur9dt4gdqrj857tac882lyw7jhu
+
+XI) 36oRUNjpsVQAQnvGEsv7JP13c5xzNjPCLN
+
+XII) 36pgetTUQmaJgmiLAuy2vNeD3je
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 13 · Página 3 <span style="color:var(--text3)">(global 10)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>237 palavras</span>
+        <span>$0.00142</span>
+        <span class="mono">SHA-PDF: dfedd7671b9a…</span>
+        <span class="mono">SHA-IMG: 76de7dfccc2c…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 3 - fls. 10074
+
+---
+
+**TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO**
+**COMARCA DE SÃO PAULO**
+**FORO CENTRAL CRIMINAL BARRA FUNDA**
+**1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL**
+
+Avenida Doutor Abraao Ribeiro, Bom Retiro - CEP 01133-020, Fone: .,
+São Paulo-SP - E-mail: sp1crimetrib@tjsp.jus.br
+
+**Horário de Atendimento ao Público: das 13h00min às17h00min**
+
+---
+
+**o. - BrasilBitcoin - (Brasil Bitcoin Serviços Digitais Ltda) - CNPJ 29.519.837/0001-23, gisele@eficacy.com.br, (11) 4224-6346;**
+
+**p. - Bitcoin Trade - (Peerbi
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 15 · Página 1 <span style="color:var(--text3)">(global 11)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>185 palavras</span>
+        <span>$0.00110</span>
+        <span class="mono">SHA-PDF: 3a763bfdb53d…</span>
+        <span class="mono">SHA-IMG: beb3f32067b6…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRIBUNAL DE JUSTIÇA DO ESTADO DE SÃO PAULO
+## COMARCA DE SÃO PAULO
+### FORO CENTRAL CRIMINAL BARRA FUNDA
+#### 1ª VARA DE CRIMES TRIBUTÁRIOS, ORGANIZAÇÃO CRIMINOSA E LAVAGEM DE BENS E VALORES DA CAPITAL
+
+**Avenida Doutor Abraao Ribeiro, Bom Retiro - CEP 01133-020, Fone: .,**
+**São Paulo-SP - E-mail: sp1crimetrib@tjsp.jus.br**
+
+**Horário de Atendimento ao Público: das 13h00min às17h00min**
+
+---
+
+## DECISÃO
+
+| Campo | Conteúdo |
+|-------|----------|
+| **Processo Digital nº** | 1503896-55.2022.8.26.0050 |
+| **Classe - Assunto** | Inquérito Policial - Estelionato |
+| **Autor** | Justiça Pública |
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 17 · Página 1 <span style="color:var(--text3)">(global 12)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>150 palavras</span>
+        <span>$0.00104</span>
+        <span class="mono">SHA-PDF: 8b3fba9160ef…</span>
+        <span class="mono">SHA-IMG: cd969d962026…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DOCUMENTO JUDICIAL - PÁGINA 1
+
+**fls. 11382**
+
+---
+
+## CABEÇALHO INSTITUCIONAL
+
+**SECRETARIA DA SEGURANÇA PÚBLICA**
+**SUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA**
+**INSTITUTO DE CRIMINALÍSTICA**
+**&quot;PERITO CRIMINAL DR. OCTAVIO EDUARDO DE BRITO ALVARENGA&quot;**
+**IC - CP - Núcleo de Perícia de Informática**
+
+---
+
+## DADOS DA ORIGEM
+
+**PROTOCOLO:** NPI_EP_IN 1976/2022
+
+**REGISTRO DE ENTRADA:** 40328/2022
+
+**BQ:** FE2715-1/2022 - DIICC - 02ª DEL.POL. - SÃO PAULO
+
+**REQUISITANTE:** Exmo(a). Sr(a). Delegado(a) **JOSÉ MARIANO DE ARAÚJO FILHO**
+
+---
+
+## IDENTIFICAÇÃO DO LAUDO
+
+**Identifi
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 17 · Página 2 <span style="color:var(--text3)">(global 13)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-muted">Sem conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>220 palavras</span>
+        <span>$0.00111</span>
+        <span class="mono">SHA-PDF: 8b3fba9160ef…</span>
+        <span class="mono">SHA-IMG: 4ef75393589b…</span>
+      </div>
+      
+      <div class="ocr-page-body empty"># TRANSCRIÇÃO DA PÁGINA 2
+
+---
+
+**Laudo**
+
+Aos 04 de outubro de 2022, na cidade de São Paulo e no Instituto de Criminalística, da SPTC Superintendência de Polícia Técnico Científica, da Secretaria de Segurança Pública do Estado de São Paulo, em conformidade com o Decreto nº 159 da Lei nº 11690 de 09 de junho de 2008, pela Perícia Criminal Diretor deste I.C., Dr. Samuel Alves de Melo Neto, foi designado o Perito Criminal Marcelo Cirilo de Souza para proceder ao exame supra especificado, em atendimento à requisição do(a) Delegado(a) de Polícia José Mariano de Araújo Filho do(a) DIICC - 024 DEL.P
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 17 · Página 3 <span style="color:var(--text3)">(global 14)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>131 palavras</span>
+        <span>$0.00085</span>
+        <span class="mono">SHA-PDF: 8b3fba9160ef…</span>
+        <span class="mono">SHA-IMG: 9e70731707a7…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 3
+
+**SECRETARIA DA SEGURANÇA PÚBLICA**
+**SUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA**
+**INSTITUTO DE CRIMINALÍSTICA**
+**IC – CP – NÚCLEO DE PERÍCIAS DE INFORMÁTICA**
+
+fls. 11384
+
+---
+
+**Figura 2 - Lacre**
+
+1. Um (1) computador, do tipo CPU, sem marca aparente, com a numeração suprimida. Contendo um disco rígido (SSD) da marca &quot;SANDISK&quot;, com capacidade nominal de 120 GB e número de série **&quot;184512803677&quot;**.
+
+---
+
+**[NOTA DO TRANSCRITOR]:**
+
+A página apresenta qualidade de digitalização baixa, com imagens em preto e branco de difícil legibilidade. A &quot;Figura 2 - Lacre&quot;
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 17 · Página 4 <span style="color:var(--text3)">(global 15)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>146 palavras</span>
+        <span>$0.00097</span>
+        <span class="mono">SHA-PDF: 8b3fba9160ef…</span>
+        <span class="mono">SHA-IMG: 8c593af4571b…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 4
+
+---
+
+**[Cabeçalho do documento]**
+
+SECRETARIA DA SEGURANÇA PÚBLICA
+SUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA
+INSTITUTO DE CRIMINALÍSTICA
+IC – CP – NÚCLEO DE PERÍCIAS DE INFORMÁTICA
+
+fls. 11385
+
+---
+
+**[Imagem]**
+
+Figura 4- SSD da peça recebida
+
+---
+
+## III.Dos Exames
+
+Para extração e análise das informações armazenadas no dispositivo foram utilizados os softwares forenses FTK Imager 4.3 e AXIOM 6.5 para exames de extração e análise das informações armazenadas em dispositivo.
+
+Os dados contidos na mídia original foram duplicados em um computador de laboratório, c
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 17 · Página 5 <span style="color:var(--text3)">(global 16)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>178 palavras</span>
+        <span>$0.00106</span>
+        <span class="mono">SHA-PDF: 8b3fba9160ef…</span>
+        <span class="mono">SHA-IMG: 9c2473730138…</span>
+      </div>
+      
+      <div class="ocr-page-body "># PÁGINA 5 - TRANSCRIÇÃO
+
+---
+
+Este laudo vai impresso com capa e no anverso de quatro (4) folhas deste papel. Ficando armazenado digitalmente no Sistema Gestor de Documentos e Laudos (GDL) da Superintendência da Polícia Técnico-Científica, não havendo backup de mídia ou dados duplicados. Assinado digitalmente conforme impressão à margem direita.
+
+ACOMPANHA(M) A(S) PEÇA(S) DESCRITA(S) NO CORPO DO LAUDO, QUE DEVERA(ÃO) SER PRESERVADA(S) PARA EVENTUAIS EXAMES POSTERIORES, ACONDICIONADA(S) EM UMA (1) SACO PLÁSTICO COM O LACRE Nº 0100973 Ano 2022.*
+
+---
+
+São Paulo, 17 de outubro de 2022.
+
+---
+
+**M
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 19 · Página 1 <span style="color:var(--text3)">(global 17)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>119 palavras</span>
+        <span>$0.00096</span>
+        <span class="mono">SHA-PDF: ef761e9ff653…</span>
+        <span class="mono">SHA-IMG: c78cc7888d15…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO - PÁGINA 1
+
+---
+
+**Dados da Origem:**
+
+**PROTOCOLO:** NCPT_EP_PT 5167/2022
+
+**REGISTRO DE ENTRADA:** 40355/2022
+
+**BO:** FE2715-1/2022 - DIICC - 02ª DEL.POL. - SÃO PAULO
+
+**REQUISITANTE:** Exmo(a). Sr(a). Delegado(a) JOSE MARIANO DE ARAUJO FILHO
+
+---
+
+**Identificação do Laudo:**
+
+IC - CP - Crimes Contra o Patrimônio
+
+**LAUDO PERICIAL 310.595/2022**
+
+---
+
+**Dados da Ocorrência:**
+
+**NATUREZA:** CUMPRIMENTO DE MANDADO BUSCA E APREENSÃO
+
+**LOCAL DO FATO:** ALAMEDA RUSSIA, 88 - São Paulo
+
+**DATA DA OCORRÊNCIA:** 18/08/2022
+
+---
+
+**Cabeçalho Institucional:**
+
+SECRETARIA DA SEGURANÇA P
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 19 · Página 2 <span style="color:var(--text3)">(global 18)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>156 palavras</span>
+        <span>$0.00098</span>
+        <span class="mono">SHA-PDF: ef761e9ff653…</span>
+        <span class="mono">SHA-IMG: 5602263af668…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRICÃO DA PÁGINA 2
+
+---
+
+**fls. 11388**
+
+**SECRETARIA DA SEGURANÇA PÚBLICA**
+**SUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA**
+**INSTITUTO DE CRIMINALÍSTICA**
+**&quot;PERITO CRIMINAL DR. OCTÁVIO EDUARDO DE BRITO ALVARENGA&quot;**
+**NÚCLEO DE PERÍCIAS EM CRIMES CONTRA O PATRIMÔNIO**
+
+---
+
+## LAUDO Nº 310.595/2022
+
+**NATUREZA DO EXAME:** Exame em peças
+
+**B.O. nº FE2715-1/2022**
+
+---
+
+Aos 28 dias do mês de setembro de 2022, na cidade de São Paulo e no **INSTITUTO DE CRIMINALÍSTICA**, da Superintendência da Polícia Técnico Científica, da Secretaria da Segurança Pública do Estado de São Paulo, de co
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 19 · Página 3 <span style="color:var(--text3)">(global 19)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>147 palavras</span>
+        <span>$0.00097</span>
+        <span class="mono">SHA-PDF: ef761e9ff653…</span>
+        <span class="mono">SHA-IMG: 9c3c862bdd8d…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO DA PÁGINA 3
+
+**Referência do documento:** fls_11389
+
+---
+
+## CABEÇALHO
+
+**SECRETARIA DA SEGURANÇA PÚBLICA**
+
+**SUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA**
+
+**INSTITUTO DE CRIMINALÍSTICA**
+
+**&quot;PERITO CRIMINAL DR. OCTÁVIO EDUARDO DE BRITO ALVARENGA&quot;**
+
+**NÚCLEO DE PERÍCIAS EM CRIMES CONTRA O PATRIMÔNIO**
+
+---
+
+## SEÇÃO 2 - DA(S) PEÇA(S) E DOS EXAMES
+
+Aqui veio para exames, encaminhada(s) pela Autoridade Policial requisitante, lacrada(s) sob nº **00003820**, a(s) seguinte(s) peça(s):
+
+---
+
+## OBSERVAÇÕES IMPORTANTES
+
+A página apresenta uma imagem/fotografia de baixa qualidade (
+[…]</div>
+      
+    </div>
+    <div class="ocr-page">
+      <div class="ocr-page-header">
+        <span class="ocr-page-id">Peça 19 · Página 4 <span style="color:var(--text3)">(global 20)</span></span>
+        <span class="badge badge-ok">✓ VÁLIDA</span>
+        <span class="badge badge-ok">Com conteúdo</span>
+      </div>
+      <div class="ocr-meta">
+        <span>163 palavras</span>
+        <span>$0.00103</span>
+        <span class="mono">SHA-PDF: ef761e9ff653…</span>
+        <span class="mono">SHA-IMG: 8e74226d310d…</span>
+      </div>
+      
+      <div class="ocr-page-body "># TRANSCRIÇÃO - PÁGINA 4
+
+**fls. 11390**
+
+---
+
+**SECRETARIA DA SEGURANÇA PÚBLICA**
+
+**SUPERINTENDÊNCIA DA POLÍCIA TÉCNICO-CIENTÍFICA**
+
+**INSTITUTO DE CRIMINALÍSTICA**
+
+**&quot;PERITO CRIMINAL DR. OCTÁVIO EDUARDO DE BRITO ALVARENGA&quot;**
+
+*NÚCLEO DE PERÍCIAS EM CRIMES CONTRA O PATRIMÔNIO*
+
+---
+
+branca; 01 (um) CABO ELÉTRICO com conetores SATA e USB, na cor preta; 01
+
+(um) DISPOSITIVO ELETRÔNICO, na cor preta, com interface/conecto USB; 01
+
+(uma) BOLSA, do tipo &quot;Saco&quot;, constituído de material sintético, na cor preta,
+
+dimensões planas medindo 125x90 milímetros, com fechamento por cordão; 01
+
+(um) CARTÃ
+[…]</div>
+      
+    </div>
+  </div>
+  
+  <div class="sec" id="s2">
+    <div class="sh"><div class="sh-eye">Análise Jurídica · Claude Sonnet</div><div class="sh-title">Análise Macro dos Documentos</div></div>
+
+    <div class="alert info">
+      <div class="alert-icon">ℹ️</div>
+      <div>
+        <div class="alert-title">Integridade da Análise</div>
+        <div class="alert-body">
+          Gerada por claude-sonnet-4-6 em 01/04/2026, 17:52 · Base: 20 páginas OCR
+          <br>SHA-256 texto base: <span style="font-family:monospace;font-size:10px;color:var(--cyan)">1ba43b4782db1e35ffd8e183b2dea629c4e1ab450bca180bd645f8d742665ad7</span>
+          <br>SHA-256 desta análise: <span style="font-family:monospace;font-size:10px;color:var(--cyan)">64eec32d8dfc853470e5e89417bfeea3954a7631470b490f6df6fe160cae9786</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card md">
+      <blockquote>Todas as afirmações têm fonte documental citada. Dados sem fonte = [DADOS INSUFICIENTES].</blockquote></p><p><hr></p><p><h2>ANÁLISE JURÍDICO-PROCESSUAL PENAL</h2><br><h3>Processo nº 1503896-55.2022.8.26.0050</h3><br><h4>Elaborado para: Dra. Márcia Mirtes — Defensora de Glaidson Tadeu Rosa</h4><br><h4>Base documental: 20 páginas extraídas via OCR (Peças 2, 5, 7, 9, 11, 13, 15, 17, 19)</h4></p><p><hr></p><p><blockquote>⚠️ <strong>AVISO DE INTEGRIDADE JURÍDICA:</strong> Esta análise baseia-se <strong>exclusivamente</strong> nas 20 páginas fornecidas. Toda inferência está marcada com <strong>[INFERÊNCIA]</strong> e sua base documental. Informações ausentes estão sinalizadas como <strong>[DADOS INSUFICIENTES]</strong>. Nenhum dado foi extrapolado, inventado ou presumido sem lastro textual.</blockquote></p><p><hr></p><p><h3>SEÇÃO 1 — PARTES E IDENTIFICAÇÃO</h3></p><p><h4>1.1 — RÉU PRINCIPAL</h4><br>| Campo | Dado | Fonte |<br>|---|---|---|<br>| Nome | GLAIDSON TADEU ROSA | Peça 5, Pág. 1; Peça 7, Pág. 1; Peça 9, Pág. 1; Peça 11, Pág. 1; Peça 13, Pág. 1; Peça 15, Pág. 1 |<br>| CPF | 273.830.478-85 | Peça 13, Pág. 2 |<br>| Qualificação adicional | "e outro" (corréu não identificado nominalmente nas páginas analisadas) | Peça 5, Pág. 1 |</p><p><h4>1.2 — CORRÉUS / INVESTIGADOS</h4><br>| Nome | CPF | Papel | Fonte |<br>|---|---|---|---|<br>| Carlos Eduardo de Lucas | 205.119.098-45 | Investigado (destinatário de ofício a corretoras de criptoativos) | Peça 13, Pág. 2 |<br>| Fernando Fernandes Gomes | 348.980.818-51 | Investigado (destinatário de ofício a corretoras de criptoativos) | Peça 13, Pág. 2 |</p><p><h4>1.3 — AUTORIDADES JUDICIAIS</h4><br>| Nome | Cargo | Ato | Fonte |<br>|---|---|---|---|<br>| Dr. Rafael Dahne Strenger | Juiz de Direito — DIPO 3, Seção 3.1.1 | Redistribuição do feito (fls. 739/743) | Peça 5, Pág. 1 |<br>| Dr. Thiago Baldani Gomes De Filippo | Juiz de Direito — 1ª Vara de Crimes Tributários | Redistribuição com urgência (fl. 2.328) | Peça 7, Pág. 1 |<br>| Dr. Guilherme Eduardo Martins Kellner | Juiz de Direito — 1ª Vara de Crimes Tributários | Múltiplas decisões interlocutórias (fls. 9199–11104) | Peças 9, 11, 13, 15 |</p><p><h4>1.4 — AUTORIDADE POLICIAL</h4><br>| Nome | Cargo | Ato | Fonte |<br>|---|---|---|---|<br>| José Mariano de Araújo Filho | Delegado de Polícia — DIICC, 02ª DEL.POL. | Requisitante dos Laudos Periciais 308.636/2022 e 310.595/2022 | Peça 17, Pág. 1; Peça 19, Pág. 1 |</p><p><h4>1.5 — PERITOS OFICIAIS</h4><br>| Nome | Cargo | Laudo | Fonte |<br>|---|---|---|---|<br>| Marcelo Cirilo de Souza | Perito Criminal — IC/CP/NPI | Laudo Pericial 308.636/2022 (Perícia de Informática) | Peça 17, Págs. 2–5 |<br>| Samuel Alves de Melo Neto | Diretor do Instituto de Criminalística (designante) | Designação do perito relator | Peça 17, Pág. 2 |<br>| [DADOS INSUFICIENTES] | Perito Criminal — IC/CP/NCCP | Laudo Pericial 310.595/2022 (Crimes contra o Patrimônio) — perito não nomeado nas páginas analisadas | Peça 19, Págs. 1–4 |</p><p><h4>1.6 — MINISTÉRIO PÚBLICO</h4><br>| Dado | Fonte |<br>|---|---|<br>| Parte: Ministério Público do Estado de São Paulo (Justiça Pública) | Peça 5, Pág. 1 |<br>| Intimado em 31/03/2026 com prazo de 10 dias | Peça 2, Pág. 1 |<br>| Manifestou-se pelo indeferimento de habilitações de advogados (fls. 9342) | Peça 11, Pág. 1; Peça 13, Pág. 1 |</p><p><h4>1.7 — TERCEIROS RELEVANTES</h4><br>| Nome | Papel | Contexto | Fonte |<br>|---|---|---|---|<br>| Osvaldo T. Gomes | Titular de cartão bancário (Itaú, nº 5526 4004 3153 1041) — estabelecimento "Magic World E Comercial" | Item apreendido em busca e apreensão | Peça 19, Pág. 4 |<br>| P. H. M. P. G., P. A. M. P. G. e C. L. G. | Requerentes de habilitação nos autos (fls. 9585/9590) — identidade completa não revelada nas páginas | Possíveis vítimas ou representantes | Peça 15, Pág. 1 |</p><p><h4>1.8 — VÍTIMAS</h4><br><blockquote><strong>[DADOS INSUFICIENTES — páginas analisadas não individualizam vítimas]</strong></blockquote><br><blockquote>Os documentos mencionam genericamente "milhares de vítimas" e "elevado número de lesados", sem identificação nominal. <em>(Peça 9, Págs. 2–3; Peça 13, Pág. 1)</em></blockquote></p><p><hr></p><p><h3>SEÇÃO 2 — CRONOLOGIA DE ATOS PROCESSUAIS</h3></p><p>| Data | Tipo de Ato | Autoridade Responsável | Conteúdo Resumido | Fonte |<br>|---|---|---|---|---|<br>| 2022 (data exata não identificada) | <strong>Instauração do Inquérito Policial</strong> | Del. José Mariano de Araújo Filho — DIICC, 02ª DEL.POL. | Portaria nº 2036659/2022; BO FE2715-1/2022 | Peça 7, Pág. 1; Peça 17, Pág. 1 |<br>| Anterior a 31/08/2022 | <strong>Redistribuição (1ª)</strong> | Dr. Rafael Dahne Strenger (DIPO 3) | Redistribuição às Varas de Crimes Tributários/Lavagem, nos termos da Resolução TJ 811/2019 (fls. 739/743) | Peça 5, Pág. 1 |<br>| 31/08/2022 | <strong>Redistribuição (2ª) — com urgência</strong> | Dr. Thiago Baldani Gomes De Filippo — 1ª Vara de Crimes Tributários | Redistribuição por dependência (fl. 2.328); carimbo: 31/08/2022 às 17h08 | Peça 7, Pág. 1 |<br>| <strong>18/08/2022</strong> | <strong>Cumprimento de Mandado de Busca e Apreensão</strong> | Autoridade Policial (DIICC) | Local: Alameda Rússia, 88 — São Paulo; BO FE2715-1/2022 | Peça 19, Pág. 1 |<br>| <strong>12/08/2022</strong> | <strong>Decisão Judicial</strong> | Dr. Guilherme Eduardo Martins Kellner | Sigilo do feito — restrição de acesso a vítimas durante investigações; referência ao § 11 do art. 7º (lei não identificada integralmente) | Peça 9, Págs. 2–3 |<br>| <strong>15/08/2022</strong> (protocolo) | <strong>Liberação nos autos</strong> | Sistema — Juízo Kellner | Código 2252623.9 / processo 1503896-55.2022.8.26.0050 | Peça 9, Pág. 3 |<br>| <strong>28/09/2022</strong> | <strong>Laudo Pericial 310.595/2022</strong> | Perito Criminal — IC/CP/NCCP (nome não identificado) | Exame em peças — local: Alameda Rússia, 88 — SP; BO FE2715-1/2022 | Peça 19, Pág. 2 |<br>| <strong>04/10/2022</strong> | <strong>Início do Laudo Pericial 308.636/2022</strong> | Perito Criminal Marcelo Cirilo de Souza — IC/CP/NPI | Designação para exame de informática; protocolo NPI_EP_IN 1976/2022 | Peça 17, Pág. 2 |<br>| <strong>17/10/2022</strong> | <strong>Conclusão e assinatura do Laudo Pericial 308.636/2022</strong> | Perito Criminal Marcelo Cirilo de Souza | Laudo de informática — CPU/SSD 120GB; lacre final nº 0100973/2022 | Peça 17, Pág. 5 |<br>| <strong>03/11/2022</strong> | <strong>Protocolo/Autuação</strong> (carimbo) | Instituto de Criminalística | Protocolamento do Laudo 308.636/2022 nos autos | Peça 17, Pág. 1 |<br>| Data não especificada (fls. 9309/9310 e 9342) | <strong>Decisão de Habilitação</strong> | Dr. Guilherme Eduardo Martins Kellner | Deferimento de habilitação nos autos (concordância do MP às fls. 9342) | Peça 11, Pág. 1 |<br>| Data não especificada (fls. 9737, 9739 e 9753) | <strong>Decisão de Indeferimento de Habilitações</strong> | Dr. Guilherme Eduardo Martins Kellner | Indeferimento de pedidos — elevado número de vítimas; critério de representatividade sugerido pelo MP | Peça 13, Pág. 1 |<br>| Data não especificada (fls. 10049, 10054, 10059) | <strong>Vista ao MP</strong> | Dr. Guilherme Eduardo Martins Kellner | Manifestação sobre petições; ofícios a corretoras de criptoativos; remessa de autos à delegacia por 60 dias | Peça 13, Pág. 3 |<br>| Data não especificada (fls. 10076 e 9585/9590) | <strong>Deliberação sobre habilitação</strong> | Dr. Guilherme Eduardo Martins Kellner | Pedido de habilitação de P.H.M.P.G., P.A.M.P.G. e C.L.G. — MP manifestou-se pelo indeferimento | Peça 15, Pág. 1 |<br>| <strong>31/03/2026</strong> | <strong>Intimação do MP</strong> | Sistema eletrônico — Foro Central Criminal Barra Funda | Vista ao Ministério Público; prazo: 10 dias | Peça 2, Pág. 1 |</p><p><blockquote>⚠️ <strong>ALERTA:</strong> A última data processual identificada é <strong>31/03/2026</strong> (Peça 2, Pág. 1), indicando que o processo está em fase processual avançada. Há um lapso temporal significativo entre os atos de 2022 e este ato de 2026 que <strong>não é coberto pelas páginas analisadas</strong>.</blockquote></p><p><hr></p><p><h3>SEÇÃO 3 — CADEIA DE CUSTÓDIA (FOCO PRIMÁRIO DO MANDATO)</h3></p><p><blockquote><strong>Base legal:</strong> Arts. 158-A a 158-F do CPP (introduzidos pela Lei nº 13.964/2019 — "Pacote Anticrime")</blockquote><br><blockquote><strong>Parâmetros de verificação:</strong> (i) agente competente; (ii) registro de hora, local e condições; (iii) lacração, numeração e rastreabilidade; (iv) transferências documentadas; (v) laudo assinado por perito oficial habilitado.</blockquote></p><p><hr></p><p><h4>PROVA 1 — CPU com SSD SanDisk 120GB (nº de série 184512803677)</h4><br><strong>Laudo:</strong> Pericial 308.636/2022 | <strong>Protocolo:</strong> NPI_EP_IN 1976/2022 | <strong>Registro de entrada:</strong> 40328/2022</p><p>| Critério CPP | Verificação | Avaliação | Fonte |<br>|---|---|---|---|<br>| <strong>Agente competente</strong> | Perito Criminal Marcelo Cirilo de Souza, designado pelo Diretor do IC, Dr. Samuel Alves de Melo Neto | ✅ Competência formal demonstrada | Peça 17, Pág. 2 |<br>| <strong>Registro de hora e local de coleta</strong> | Local do fato: "Alameda Rússia — Votorantim"; data da ocorrência: <strong>"N/C" (não consta)</strong> | ⚠️ <strong>IRREGULAR — data da apreensão não registrada no laudo</strong> | Peça 17, Pág. 1 |<br>| <strong>Lacração e numeração</strong> | Lacre de recebimento: <strong>00003802</strong> (invólucro plástico); lacre final: <strong>0100973/Ano 2022</strong> (saco plástico) | ✅ Lacres numerados e documentados | Peças 17, Págs. 2 e 5 |<br>| <strong>Rastreabilidade</strong> | Número de série do SSD: 184512803677; protocolo NPI e registro de entrada identificados | ✅ Rastreabilidade do item garantida | Peça 17, Pág. 3 |<br>| <strong>Transferências documentadas</strong> | Recebimento: "através da chefia deste Núcleo de Perícias de Informática" — sem identificação nominal do responsável pela transferência | ⚠️ <strong>INCONCLUSIVO — art. 158-C CPP exige identificação do responsável pela transferência</strong> | Peça 17, Pág. 2 |<br>| <strong>Metodologia forense</strong> | FTK Imager 4.3 e AXIOM 6.5; bloqueio de escrita; procedimentos SENASP; sem cópias armazenadas após exame | ✅ Metodologia adequada e documentada | Peça 17, Pág. 4 |<br>| <strong>Laudo assinado por perito habilitado</strong> | Marcelo Cirilo de Souza — Perito Criminal; assinado digitalmente em 17/10/2022 (Lei 11.419/2006) | ✅ Regular | Peça 17, Pág. 5 |<br>| <strong>Requisição da autoridade policial</strong> | Delegado José Mariano de Araújo Filho, DIICC — 02ª DEL.POL. | ✅ Regular | Peça 17, Pág. 1 |</p><p><blockquote><strong>⚠️ IRREGULARIDADE IDENTIFICADA nº 1 — DATA DA OCORRÊNCIA: "N/C"</strong></blockquote><br><blockquote>O campo "DATA DA OCORRÊNCIA" do Laudo 308.636/2022 consta como <strong>"N/C" (não consta)</strong> (Peça 17, Pág. 1). O Art. 158-B, inciso I, do CPP exige o registro do momento da coleta como etapa obrigatória da cadeia de custódia. A ausência dessa informação constitui <strong>vício formal na rastreabilidade temporal</strong> da prova, comprometendo a verificação da integridade do material desde sua origem.</blockquote></p><p><blockquote><strong>⚠️ IRREGULARIDADE IDENTIFICADA nº 2 — RESPONSÁVEL PELA TRANSFERÊNCIA NÃO IDENTIFICADO</strong></blockquote><br><blockquote>O laudo menciona que as peças foram "recebidas por este Perito Relator, através da chefia deste Núcleo" (Peça 17, Pág. 2), sem individualização do agente responsável pela entrega. O Art. 158-C, § 1º, do CPP determina que o agente público que coleta ou transfere a prova deve ser identificado. Essa lacuna <strong>interrompe formalmente a cadeia de transferência</strong>.</blockquote></p><p><blockquote><strong>📋 STATUS DA CUSTÓDIA — PROVA 1: IRREGULAR (parcialmente)</strong></blockquote><br><blockquote>Fundamento: Art. 158-B, I (data da ocorrência "N/C") e Art. 158-C, §1º (transferência sem identificação do agente) do CPP.</blockquote></p><p><hr></p><p><h4>PROVA 2 — Itens apreendidos em Busca e Apreensão (Alameda Rússia, 88 — SP)</h4><br><strong>Laudo:</strong> Pericial 310.595/2022 | <strong>Protocolo:</strong> NCPT_EP_PT 5167/2022 | <strong>Registro de entrada:</strong> 40355/2022</p><p>| Critério CPP | Verificação | Avaliação | Fonte |<br>|---|---|---|---|<br>| <strong>Agente competente</strong> | IC/CP — Núcleo de Crimes Contra o Patrimônio; requisitante: Del. José Mariano de Araújo Filho | ✅ Instituição competente identificada; <strong>perito relator não nomeado nas páginas analisadas</strong> | Peça 19, Págs. 1–2 |<br>| <strong>Registro de hora e local</strong> | Local: Alameda Rússia, 88 — São Paulo; <strong>data da ocorrência: 18/08/2022</strong> | ✅ Data e local registrados | Peça 19, Pág. 1 |<br>| <strong>Lacração e numeração</strong> | Lacre de recebimento: <strong>00003820</strong> | ✅ Lacre numerado identificado | Peça 19, Pág. 3 |<br>| <strong>Descrição dos itens</strong> | Cabo elétrico SATA/USB; dispositivo eletrônico USB; bolsa sintética (125x90mm); cartão bancário Itaú (MAGIC WORLD E COMERCIAL / OSVALDO T. GOMES, nº 5526 4004 3153 1041); 5 cartões chip SIM sem os respectivos itens complementares | ✅ Itens descritos com especificidade | Peça 19, Pág. 4 |<br>| <strong>Transferências documentadas</strong> | [DADOS INSUFICIENTES — páginas analisadas não contêm o histórico de transferência de custódia] | ⚠️ INCONCLUSIVO | — |<br>| <strong>Laudo assinado por perito habilitado</strong> | [DADOS INSUFICIENTES — perito relator não nomeado nas páginas disponíveis; laudo iniciado em 28/09/2022] | ⚠️ INCONCLUSIVO | Peça 19, Pág. 2 |<br>| <strong>Requisição da autoridade policial</strong> | Delegado José Mariano de Araújo Filho, DIICC — 02ª DEL.POL. | ✅ Regular | Peça 19, Pág. 1 |</p><p><blockquote><strong>⚠️ IRREGULARIDADE IDENTIFICADA nº 3 — PERITO RELATOR NÃO IDENTIFICADO NAS PÁGINAS ANALISADAS</strong></blockquote><br><blockquote>Diferentemente do Laudo 308.636/2022, as páginas do Laudo 310.595/2022 não contêm o nome do perito relator. A <strong>identificação do expert é requisito de validade do laudo</strong> (Art. 159, § 1º, CPP; Art. 158-D, CPP). A ausência dessa informação nas páginas analisadas <strong>impede a verificação da regularidade formal do documento</strong>. Recomenda-se verificação nas páginas seguintes dos autos.</blockquote></p><p><blockquote><strong>⚠️ PONTO DE ATENÇÃO — CARTÃO BANCÁRIO EM NOME DE TERCEIRO</strong></blockquote><br><blockquote>O cartão bancário apreendido (nº 5526 4004 3153 1041) está em nome de <strong>"OSVALDO T. GOMES"</strong> vinculado ao estabelecimento <strong>"MAGIC WORLD E COMERCIAL"</strong> (Peça 19, Pág. 4). [INFERÊNCIA — base: Peça 19, Pág. 4] A presença de um item financeiro em nome de terceiro não identificado como investigado nas páginas analisadas pode indicar conexão patrimonial relevante, mas também pode ensejar questionamento sobre <strong>pertinência da apreensão e nexo com os fatos imputados ao réu Glaidson</strong>, a ser explorado na Resposta à Acusação.</blockquote></p><p><blockquote><strong>📋 STATUS DA CUSTÓDIA — PROVA 2: INCONCLUSIVO</strong></blockquote><br><blockquote>Fundamento: Impossibilidade de verificação completa diante das páginas disponíveis — perito relator e cadeia de transferência não identificados.</blockquote></p><p><hr></p><p><h4>PROVA 3 — Endereços de Carteiras de Criptoativos</h4><br><strong>Contexto:</strong> Decisão judicial determinando ofícios a corretoras para rastreamento de ativos digitais.</p><p>| Critério CPP | Verificação | Avaliação | Fonte |<br>|---|---|---|---|<br>| <strong>Identificação dos endereços</strong> | 11 endereços de carteiras identificados (itens IX a XII visíveis); endereço "1F6H4oLnchnY8H3fr1oVmkDfRKSdvpKDMt" especificamente mencionado | ✅ Identificação presente | Peça 13, Págs. 2–3 |<br>| <strong>Autorização judicial</strong> | Determinação do Juiz Dr. Kellner para ofícios às corretoras | ✅ Regular — autorização judicial presente | Peça 13, Págs. 2–3 |<br>| <strong>Procedimento de custódia digital</strong> | [DADOS INSUFICIENTES — as respostas das corretoras e o tratamento posterior dos dados não constam nas páginas analisadas] | ⚠️ INCONCLUSIVO | — |<br>| <strong>Nexo com os investigados</strong> | Ofício direciona pesquisa a Glaidson Tadeu Rosa (CPF 273.830.478-85), Carlos Eduardo de Lucas e Fernando Fernandes Gomes | ✅ Conexão formal presente | Peça 13, Pág. 2 |</p><p><blockquote><strong>📋 STATUS DA CUSTÓDIA — PROVA 3: INCONCLUSIVO</strong></blockquote><br><blockquote>Fundamento: Dados das páginas analisadas cobrem apenas a determinação judicial de coleta; não há registro de recebimento, tratamento ou documentação das respostas das corretoras.</blockquote></p><p><hr></p><p><h3>SEÇÃO 4 — NULIDADES E VÍCIOS PROCESSUAIS</h3></p><p><h4>4.1 — QUADRO GERAL DE NULIDADES IDENTIFICADAS</h4></p><p>| Nº | Tipo | Fundamento Legal | Descrição | Gravidade | Fonte |<br>|---|---|---|---|---|---|<br>| <strong>N-01</strong> | Vício na cadeia de custódia — ausência de data de coleta | Art. 158-B, I, CPP; Art. 157, CPP | Campo "DATA DA OCORRÊNCIA" constando como "N/C" no Laudo 308.636/2022 | <strong>ABSOLUTA potencial</strong> — prova pode ser declarada ilícita por derivação | Peça 17, Pág. 1 |<br>| <strong>N-02</strong> | Vício na cadeia de custódia — transferência sem identificação do agente | Art. 158-C, §1º, CPP | Recebimento das peças "através da chefia" sem identificação nominal do responsável | <strong>RELATIVA</strong> — pode ser sanada por complementação documental | Peça 17, Pág. 2 |<br>| <strong>N-03</strong> | Laudo pericial incompleto — perito não identificado | Art. 159, §1º, CPP; Art. 158-D, CPP | Laudo 310.595/2022 não apresenta, nas páginas analisadas, o nome do perito relator | <strong>INCONCLUSIVO</strong> — necessita verificação das demais páginas | Peça 19, Págs. 1–4 |<br>| <strong>N-04</strong> | Potencial cerceamento de defesa — restrição de acesso aos autos | Art. 5º, LV, CF/88; Art. 7º, XIV, Lei 8.906/94 (EOAB); Art. 20, CPP | O Juiz Kellner manteve sigilo externo do inquérito, restringindo o acesso de advogados de vítimas — extensão do sigilo em relação à defesa do acusado <strong>não está esclarecida</strong> nas páginas analisadas | <strong>RELATIVA</strong> — depende de verificação sobre o acesso concedido à defesa | Peça 9, Págs. 2–3 |<br>| <strong>N-05</strong> | Localização divergente no Laudo 308.636/2022 | Art. 158-B, I, CPP | Laudo 308.636/2022 registra local do fato como "Alameda Rússia — <strong>Votorantim</strong>" (Peça 17, Pág. 1), enquanto o Laudo 310.595/2022 registra "Alameda Rússia, 88 — <strong>São Paulo</strong>" (Peça 19, Pág. 1); mesma rua, cidades diferentes — possível inconsistência geográfica | <strong>RELATIVA</strong> — necessita esclarecimento pericial | Peça 17, Pág. 1; Peça 19, Pág. 1 |</p><p><hr></p><p><h4>4.2 — ANÁLISE APROFUNDADA DA NULIDADE N-01 (PRIORITÁRIA)</h4></p><p><blockquote><strong>NULIDADE N-01 — DATA DE OCORRÊNCIA "N/C" NO LAUDO DE INFORMÁTICA</strong></blockquote></p><p>A ausência de data de coleta no Laudo Pericial 308.636/2022 (Peça 17, Pág. 1) afronta diretamente o Art. 158-B do CPP, que estabelece:</p><p><blockquote><em>"Art. 158-B. A cadeia de custódia compreende o rastreamento do vestígio nas seguintes etapas: I - reconhecimento; II - isolamento; III - fixação; IV - coleta; V - acondicionamento; VI - transporte; VII - recebimento; VIII - processamento; IX - armazenamento; X - descarte."</em></blockquote></p><p>O <strong>momento da coleta</strong> é pressuposto lógico-jurídico para verificar: (a) se o material foi coletado em momento anterior ou posterior a eventos processuais relevantes; (b) se havia autorização vigente; (c) se houve tempo hábil para eventual contaminação ou alteração.</p><p><strong>Jurisprudência aplicável [INFERÊNCIA — necessita confirmação nos repositórios do STJ/STF]:</strong><br><ul><li>O STJ tem decidido que a <strong>quebra da cadeia de custódia</strong> pode levar à ilicitude da prova (cf. HC 653.515/RJ — padrão decisório sobre cadeia de custódia digital), devendo a defesa arguir expressamente a nulidade com demonstração do prejuízo concreto.</li><br></ul><br><hr></p><p><h4>4.3 — ANÁLISE APROFUNDADA DA NULIDADE N-05 (DIVERGÊNCIA GEOGRÁFICA)</h4></p><p><blockquote><strong>NULIDADE N-05 — INCONSISTÊNCIA DE LOCAL ENTRE OS DOIS LAUDOS</strong></blockquote></p><p>| Laudo | Local registrado | Fonte |<br>|---|---|---|<br>| Laudo 308.636/2022 (Informática) | "Alameda Rússia — <strong>Votorantim</strong>" | Peça 17, Pág. 1 |<br>| Laudo 310.595/2022 (Patrimônio) | "Alameda Rússia, 88 — <strong>São Paulo</strong>" | Peça 19, Pág. 1 |</p><p>Ambos os laudos derivam do mesmo BO (FE2715-1/2022) e da mesma requisição do Delegado José Mariano de Araújo Filho (DIICC, 02ª DEL.POL.). A divergência quanto à cidade — <strong>Votorantim vs. São Paulo</strong> — em laudos vinculados à mesma diligência é <strong>materialmente relevante</strong> para a cadeia de custódia, pois:<br>1. Coloca em dúvida a unicidade do local de apreensão;<br>2. Pode indicar confusão ou mistura de materiais de diligências distintas;<br>3. Afeta a rastreabilidade geográfica exigida pelo Art. 158-B, I, do CPP.</p><p><hr></p><p><h3>SEÇÃO 5 — SUBSÍDIOS PARA RESPOSTA À ACUSAÇÃO</h3></p><p><h4>5.1 — CONTRADIÇÕES ENTRE PROVAS OU VERSÕES</h4></p><p>| Nº | Contradição identificada | Relevância defensiva | Fonte |<br>|---|---|---|---|<br>| <strong>C-01</strong> | Divergência de local nos laudos vinculados ao mesmo BO: "Votorantim" (Laudo 308.636) vs. "São Paulo" (Laudo 310.595) | Alta — questiona a integridade dos vestígios e a possibilidade de que itens de locais distintos tenham sido tratados conjuntamente | Peça 17, Pág. 1; Peça 19, Pág. 1 |<br>| <strong>C-02</strong> | Ausência de data de ocorrência no Laudo 308.636/2022 ("N/C") enquanto o Laudo 310.595/2022 registra data de 18/08/2022 | Alta — sugere deficiência documental seletiva no laudo de informática, exatamente o de maior potencial incriminatório | Peça 17, Pág. 1; Peça 19, Pág. 1 |<br>| <strong>C-03</strong> | O lacre inicial de recebimento da peça (nº 00003802 — Laudo de Informática) e o lacre final de devolução (nº 0100973) são distintos, como esperado; porém a cadeia de transferência entre eles não está documentada nas páginas analisadas | Média — a ruptura não documentada entre os dois lacres é ponto de vulnerabilidade argumentativa | Peça 17, Págs. 2 e 5 |</p><p><hr></p><p><h4>5.2 — AUSÊNCIA DE ELEMENTOS ESSENCIAIS</h4></p><p>| Elemento ausente | Relevância | Fonte |<br>|---|---|---|<br>| Mandado de busca e apreensão não identificado nas páginas analisadas | <strong>Alta</strong> — o cumprimento do mandado (18/08/2022) é mencionado, mas o instrumento autorizador não consta nas páginas fornecidas | Peça 19, Pág. 1 |<br>| Identificação do perito do Laudo 310.595/2022 | Alta — sem identificação do expert, não é possível verificar habilitação e imparcialidade | Peça 19, Págs. 1–4 |<br>| Auto de Apreensão dos itens físicos | Alta — não identificado nas páginas analis
+    </div>
+  </div>
+  
+  <div class="sec" id="s3">
+    <div class="sh"><div class="sh-eye">Mandato Principal · Dra. Márcia Mirtes</div><div class="sh-title">Cadeia de Custódia — CPP Arts. 158-A a 158-F</div></div>
+
+    
+    <div class="card md">
+      <h3 style="margin-bottom:12px">Análise CPP 158-A a 158-F</h3>
+      <p>[Seção não encontrada na análise]</p>
+    </div>
+    
+
+    <div class="sh" style="margin-top:24px"><div class="sh-eye">Base Legal de Referência</div></div>
+    <div class="card-sm">
+      <table class="tbl">
+        <thead><tr><th>Artigo</th><th>Requisito</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>CPP 158-A</td><td>Hash SHA-256 na apreensão</td><td><span class="badge badge-muted">Verificação pendente</span></td></tr>
+          <tr><td>CPP 158-B</td><td>Responsável em cada etapa</td><td><span class="badge badge-muted">Verificação pendente</span></td></tr>
+          <tr><td>CPP 158-C</td><td>Lacre e documentação de mídia</td><td><span class="badge badge-muted">Verificação pendente</span></td></tr>
+          <tr><td>CPP 158-D</td><td>Laudo de integridade pericial</td><td><span class="badge badge-muted">Verificação pendente</span></td></tr>
+          <tr><td>CPP 158-E</td><td>Custódia centralizada</td><td><span class="badge badge-muted">Verificação pendente</span></td></tr>
+          <tr><td>CPP 158-F</td><td>Laudo assinado por perito oficial</td><td><span class="badge badge-muted">Verificação pendente</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+  
+  <div class="sec" id="s4">
+    <div class="sh"><div class="sh-eye">Ação Imediata</div><div class="sh-title">Recomendações para a Defesa</div></div>
+
+    <div class="card md">
+      <p>[Seção SEÇÃO 6 não encontrada na análise]</p>
+    </div>
+  </div>
+  
+  <div class="sec" id="s5">
+    <div class="sh"><div class="sh-eye">Integridade do Relatório</div><div class="sh-title">Cadeia de Verificação</div></div>
+
+    <div class="alert ok">
+      <div class="alert-icon">🔒</div>
+      <div>
+        <div class="alert-title">Método de acesso: OFICIAL</div>
+        <div class="alert-body">
+          Autenticação realizada com senha oficial do processo (TJSP_SENHA).
+          Todas as peças foram baixadas em sessão autenticada e os hashes calculados no momento do download.
+        </div>
+      </div>
+    </div>
+
+    <div class="hash-footer">
+      <div class="hash-row"><span class="hash-key">SHA-256 OCR Checkpoint</span><span class="hash-val">cc7a597549613d44a0114711a29eb8c2f7bea1541106bd23be2bada89cc4166e</span></div>
+      <div class="hash-row"><span class="hash-key">SHA-256 Texto Base (Análise)</span><span class="hash-val">1ba43b4782db1e35ffd8e183b2dea629c4e1ab450bca180bd645f8d742665ad7</span></div>
+      <div class="hash-row"><span class="hash-key">SHA-256 Análise Macro</span><span class="hash-val">64eec32d8dfc853470e5e89417bfeea3954a7631470b490f6df6fe160cae9786</span></div>
+      <div class="hash-row"><span class="hash-key">SHA-256 Este Relatório</span><span class="hash-val">8b264c6b78cebc182f1f726555aa52dd6349bda92a90be8812e21bd148ef1367</span></div>
+      <div class="hash-row"><span class="hash-key">Gerado em</span><span class="hash-val">2026-04-01T20:52:41.010Z</span></div>
+      <div class="hash-row"><span class="hash-key">Modelo OCR</span><span class="hash-val">claude-haiku-4-5-20251001</span></div>
+      <div class="hash-row"><span class="hash-key">Modelo Análise</span><span class="hash-val">claude-sonnet-4-6</span></div>
+    </div>
+
+    <div class="sh" style="margin-top:24px"><div class="sh-eye">Hashes por Peça</div></div>
+    <div class="card">
+      <table class="tbl">
+        <thead><tr><th>Peça</th><th>Arquivo</th><th>Tamanho</th><th>SHA-256 (completo)</th></tr></thead>
+        <tbody>
+          
+          <tr>
+            <td>2</td>
+            <td class="mono">peca_00002.pdf</td>
+            <td>25 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">b3ec5a12a24508c3fa68a27867aadfd4480201fd77992598090faa00a0b47517</td>
+          </tr>
+          <tr>
+            <td>5</td>
+            <td class="mono">peca_00005.pdf</td>
+            <td>67 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">7335ec4b831da6f4b2c301a23b0925cbb61de22031b173b06a91edbf57bfae45</td>
+          </tr>
+          <tr>
+            <td>7</td>
+            <td class="mono">peca_00007.pdf</td>
+            <td>42 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">0d2e2133c972c689b1ebe44cc59b12966d1d9b1c6d1dcfc647cf4fcbe22a00f2</td>
+          </tr>
+          <tr>
+            <td>9</td>
+            <td class="mono">peca_00009.pdf</td>
+            <td>57 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">704e77dca098b0e48fa61c921d5e152a37d09ffb537b56002526a27547d05fc5</td>
+          </tr>
+          <tr>
+            <td>11</td>
+            <td class="mono">peca_00011.pdf</td>
+            <td>47 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">a1f225d5cd9a93f28c527ff0190548d0d6f8416e809ade6858cb89bf1f508596</td>
+          </tr>
+          <tr>
+            <td>13</td>
+            <td class="mono">peca_00013.pdf</td>
+            <td>62 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">dfedd7671b9a336ff2ae3ce494de01c3aee31e155ca3b4760de9941c63d62803</td>
+          </tr>
+          <tr>
+            <td>15</td>
+            <td class="mono">peca_00015.pdf</td>
+            <td>46 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">3a763bfdb53d8cde4f35d75547a69228bf09f8eb393bdb9e6f21c7a1f5f36eb5</td>
+          </tr>
+          <tr>
+            <td>17</td>
+            <td class="mono">peca_00017.pdf</td>
+            <td>448 KB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">8b3fba9160efb96950a2b335c3f07b917fdb54de3ae8e43b9e8e22172d07cd26</td>
+          </tr>
+          <tr>
+            <td>19</td>
+            <td class="mono">peca_00019.pdf</td>
+            <td>2.9 MB</td>
+            <td class="mono" style="font-size:9px;word-break:break-all;">ef761e9ff6533c407dec5f3cd45ee1ef4a813a451da640100cd9c527ca3ff1e4</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+function show(idx,btn){
+  document.querySelectorAll('.sec').forEach((s,i)=>s.classList.toggle('on',i===idx));
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
+}
+</script>
+</body>
+</html>

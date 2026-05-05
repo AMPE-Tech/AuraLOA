@@ -43,9 +43,11 @@
   --chart-3: 24 90% 45%;
   --chart-4: 280 75% 42%;
   --chart-5: 340 82% 40%;
-  --font-sans: "DM Sans", Inter, sans-serif;
-  --font-serif: Georgia, serif;
-  --font-mono: JetBrains Mono, monospace;
+  /* Pareamento editorial Vogue: Playfair Display (display) + Lora (body) */
+  --font-sans: "Lora", Georgia, "Times New Roman", serif;
+  --font-serif: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-body: "Lora", Georgia, "Times New Roman", serif;
   --radius: .5rem;
   --shadow-2xs: 0px 2px 0px 0px hsl(220 8% 20% / 0.00);
   --shadow-xs: 0px 2px 0px 0px hsl(220 8% 20% / 0.00);

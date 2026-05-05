@@ -1,0 +1,1400 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA — Due Diligence — Santa Casa de Misericórdia de Presidente Prudente</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d1117; --surface: #162032; --surface2: #1c2a3f; --border: #1e3a5f;
+    --card: #162032; --card-alt: #1c2a3f;
+    --border-hover: rgba(34,211,238,.25);
+    --cyan: #22d3ee; --violet: #a78bfa; --green: #34d399; --amber: #fbbf24; --red: #f87171;
+    --text: #e2e8f0; --text-muted: #94a3b8; --text-dim: #64748b; --text2: #94a3b8; --text3: #64748b;
+    --cyan-bg: rgba(34,211,238,0.08); --violet-bg: rgba(167,139,250,0.08);
+    --green-bg: rgba(52,211,153,0.08); --amber-bg: rgba(251,191,36,0.08); --red-bg: rgba(248,113,113,0.08);
+  }
+  html{scroll-behavior:smooth}
+  body { font-family: 'Inter', system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; overflow-x:hidden; -webkit-font-smoothing:antialiased; }
+
+  /* Topbar */
+  .topbar {
+    position: sticky; top: 0; z-index: 100; background: rgba(17,24,39,0.95);
+    backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,.06);
+    padding: 14px 28px; display: flex; align-items: center; gap: 1.5rem;
+  }
+  .topbar-logo { font-size: 1.25rem; font-weight: 800; background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .topbar-cnj { font-size: 0.88rem; color: var(--text-muted); font-family: 'Courier New', monospace; letter-spacing: 0.03em; background: rgba(255,255,255,0.04); padding: 5px 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.06); display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: border-color .2s; }
+  .topbar-cnj:hover { border-color: rgba(34,211,238,0.3); }
+  .topbar-cnj .copy-icon { opacity: 0.4; transition: opacity .2s; }
+  .topbar-cnj:hover .copy-icon { opacity: 0.8; }
+  .topbar-cnj.copied { border-color: var(--green); }
+  .topbar-cnj.copied .copy-icon { opacity: 1; }
+  .topbar-right { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
+
+  /* Language dropdown */
+  .lang-btn { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 8px 14px; border-radius: 10px; font-size: 12px; font-weight: 600; border: 1px solid rgba(255,255,255,.1); background: transparent; color: var(--text-muted); cursor: pointer; font-family: 'Inter', sans-serif; transition: all .2s; }
+  .lang-btn:hover { border-color: rgba(255,255,255,.25); color: var(--text); }
+  .lang-btn svg { width: 14px; height: 14px; }
+  .lang-menu { position: absolute; top: calc(100% + 6px); right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 6px; min-width: 150px; display: none; box-shadow: 0 8px 32px rgba(0,0,0,0.4); z-index: 200; }
+  .lang-menu.open { display: block; }
+  .lang-option { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 7px; font-size: 12px; font-weight: 500; color: var(--text-muted); cursor: pointer; transition: background .15s; border: none; background: none; width: 100%; text-align: left; font-family: 'Inter', sans-serif; }
+  .lang-option:hover { background: rgba(255,255,255,0.05); color: var(--text); }
+  .lang-option.active { color: var(--cyan); background: var(--cyan-bg); }
+
+  /* Badges */
+  .badge { display: inline-flex; align-items: center; gap: 0.3rem; padding: 0.2rem 0.65rem; border-radius: 999px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .badge-ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(52,211,153,0.2); }
+  .badge-warn { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(251,191,36,0.2); }
+  .badge-fail { background: var(--red-bg); color: var(--red); border: 1px solid rgba(248,113,113,0.2); }
+  .badge-info { background: var(--cyan-bg); color: var(--cyan); border: 1px solid rgba(34,211,238,0.2); }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); padding: 0 2rem; background: var(--card-alt); }
+  .tab { padding: 0.85rem 1.5rem; font-size: 0.82rem; font-weight: 600; color: var(--text-dim); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; }
+  .tab:hover { color: var(--text-muted); }
+  .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); }
+
+  /* Content */
+  .content { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* Cards */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; margin-bottom: 1.25rem; transition: border-color .3s, box-shadow .3s; }
+  .card:hover { border-color: rgba(34,211,238,.25); box-shadow: 0 0 24px rgba(34,211,238,.05); }
+  .card-title { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 1rem; }
+
+  /* Cover */
+  .cover-eyebrow { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; color: var(--cyan); margin-bottom: 0.5rem; }
+  .cover-title { font-size: 2rem; font-weight: 800; margin-bottom: 0.25rem; }
+  .cover-subtitle { font-size: 1rem; color: var(--text-muted); margin-bottom: 2rem; }
+
+  /* Cover grid */
+  .cover-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: 2rem; }
+  .cover-grid-item { background: var(--card-alt); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+  .cover-grid-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.25rem; }
+  .cover-grid-value { font-size: 0.95rem; font-weight: 600; color: var(--text); }
+
+  /* KPI Grid */
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; position:relative; overflow:hidden; transition: border-color .3s, box-shadow .3s; }
+  .kpi:hover { border-color: rgba(34,211,238,.25); box-shadow: 0 0 24px rgba(34,211,238,.05); }
+  .kpi-label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--text3); margin-bottom: 8px; }
+  .kpi-val { font-size: 28px; font-weight: 800; letter-spacing: -1px; }
+  .kpi-val.cyan { color: var(--cyan); }
+  .kpi-val.green { color: var(--green); }
+  .kpi-val.amber { color: var(--amber); }
+  .kpi-val.violet { color: var(--violet); }
+
+  /* Alert */
+  .alert { display: flex; align-items: center; gap: 0.75rem; padding: 1rem 1.25rem; border-radius: 10px; margin-bottom: 1.5rem; font-size: 0.85rem; font-weight: 500; }
+  .alert-warn { background: var(--amber-bg); border: 1px solid rgba(251,191,36,0.2); color: var(--amber); }
+  .alert-icon { font-size: 1.2rem; flex-shrink: 0; }
+
+  /* Data grid (2 cols) */
+  .data-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .data-field { padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+  .data-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); margin-bottom: 0.2rem; }
+  .data-value { font-size: 0.9rem; font-weight: 500; color: var(--text); }
+
+  /* Subject pills */
+  .pills { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.5rem; }
+  .pill { background: var(--violet-bg); color: var(--violet); border: 1px solid rgba(139,92,246,0.2); padding: 0.2rem 0.7rem; border-radius: 999px; font-size: 0.72rem; font-weight: 600; }
+
+  /* Status cards (3 cols) */
+  .status-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-top: 1.5rem; }
+
+  /* Table */
+  .tbl { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .tbl thead th { text-align: left; font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-dim); padding: 0.75rem 1rem; border-bottom: 1px solid var(--border); }
+  .tbl tbody td { padding: 0.7rem 1rem; border-bottom: 1px solid var(--border); color: var(--text-muted); }
+  .tbl tbody tr:hover { background: rgba(255,255,255,0.02); }
+  .tbl .mono { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--text-dim); }
+
+  /* Evidence */
+  .hash-display { background: rgba(52,211,153,0.06); border: 1px solid rgba(52,211,153,0.15); border-radius: 8px; padding: 1rem; margin-bottom: 1rem; }
+  .hash-label { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--green); margin-bottom: 0.3rem; }
+  .hash-value { font-family: 'Courier New', monospace; font-size: 0.78rem; color: var(--green); word-break: break-all; line-height: 1.8; }
+  .evidence-row { display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid var(--border); }
+  .evidence-label { font-size: 0.75rem; font-weight: 600; color: var(--text-dim); }
+  .evidence-value { font-size: 0.85rem; font-weight: 500; color: var(--text); }
+  .disclaimer { font-size: 0.75rem; color: var(--text-dim); line-height: 1.7; margin-top: 1.5rem; padding: 1rem; background: var(--card-alt); border-radius: 8px; border: 1px solid var(--border); }
+
+  /* Footer */
+  .hash-footer { background: var(--surface2); border-top: 1px solid rgba(255,255,255,.06); padding: 14px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; margin-top: 3rem; }
+  .footer-brand { font-size: 1rem; font-weight: 800; background: linear-gradient(135deg, var(--cyan), var(--violet)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .footer-meta { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .footer-copy { font-size: 0.7rem; color: var(--text-dim); }
+
+  /* Blockquote */
+  .blockquote { background: var(--card-alt); border-left: 3px solid var(--cyan); padding: 1rem 1.25rem; border-radius: 0 8px 8px 0; font-size: 0.88rem; color: var(--text-muted); line-height: 1.7; font-style: italic; margin: 1rem 0; }
+
+  /* Highlight row */
+  .tbl tbody tr.highlight { background: var(--amber-bg); }
+  .tbl tbody tr.highlight td { color: var(--amber); font-weight: 600; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .topbar { padding: 0.5rem 1rem; flex-wrap: wrap; }
+    .tabs { padding: 0 0.5rem; overflow-x: auto; }
+    .tab { padding: 0.7rem 1rem; font-size: 0.75rem; white-space: nowrap; }
+    .content { padding: 1rem; }
+    .cover-grid { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+    .data-grid { grid-template-columns: 1fr; }
+    .status-grid { grid-template-columns: 1fr; }
+    .cover-title { font-size: 1.4rem; }
+    .hash-footer { flex-direction: column; align-items: flex-start; }
+  }
+
+  /* PDF Buttons */
+  .btn-pdf {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 8px 18px; border-radius: 10px; font-size: 12px; font-weight: 600;
+    border: 1px solid rgba(255,255,255,.1); cursor: pointer;
+    letter-spacing: 0.02em; transition: all .25s ease;
+    font-family: 'Inter', system-ui, sans-serif;
+  }
+  .btn-pdf svg { width: 15px; height: 15px; flex-shrink: 0; }
+  .btn-pdf-export {
+    background: linear-gradient(135deg, rgba(34,211,238,0.12), rgba(139,92,246,0.12));
+    color: var(--cyan); border-color: rgba(34,211,238,0.25);
+  }
+  .btn-pdf-export:hover {
+    background: linear-gradient(135deg, rgba(34,211,238,0.22), rgba(139,92,246,0.22));
+    border-color: rgba(34,211,238,0.5); box-shadow: 0 0 20px rgba(34,211,238,0.15);
+    transform: translateY(-1px);
+  }
+  .btn-pdf-save {
+    background: linear-gradient(135deg, rgba(52,211,153,0.12), rgba(34,211,238,0.08));
+    color: var(--green); border-color: rgba(52,211,153,0.25);
+  }
+  .btn-pdf-save:hover {
+    background: linear-gradient(135deg, rgba(52,211,153,0.22), rgba(34,211,238,0.15));
+    border-color: rgba(52,211,153,0.5); box-shadow: 0 0 20px rgba(52,211,153,0.15);
+    transform: translateY(-1px);
+  }
+
+  /* Print */
+  @media print {
+    body { background: #fff; color: #1a1a1a; }
+    .topbar { position: static; background: #fff; border-bottom: 2px solid #e5e7eb; }
+    .topbar-logo { -webkit-text-fill-color: #0a0e17; }
+    .tabs { display: none; }
+    .tab-panel { display: block !important; page-break-inside: avoid; }
+    .card { background: #fff; border-color: #e5e7eb; }
+    .kpi { background: #f9fafb; border-color: #e5e7eb; }
+    .kpi-val { color: #0a0e17 !important; }
+    .badge { border-color: #d1d5db; }
+    .tbl tbody tr:hover { background: none; }
+    .hash-footer { background: #f9fafb; border-color: #e5e7eb; }
+    .footer-brand { -webkit-text-fill-color: #0a0e17; }
+    .cover-grid-item { background: #f9fafb; border-color: #e5e7eb; }
+    .hash-display { background: #f0fdf4; border-color: #bbf7d0; }
+    .hash-value, .hash-label { color: #166534; }
+    .alert-warn { background: #fffbeb; border-color: #fde68a; color: #92400e; }
+    .disclaimer { background: #f9fafb; border-color: #e5e7eb; color: #4b5563; }
+    .btn-pdf, .topbar-right a[href] { display: none !important; }
+    .topbar-right button { display: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Topbar -->
+<header class="topbar">
+  <div style="display:flex;align-items:center;gap:12px;">
+    <div style="width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,#3b82f6,#6366f1);display:flex;align-items:center;justify-content:center;flex-shrink:0">
+      <svg viewBox="0 0 24 24" fill="none" width="20" height="20"><path d="M12 2L4 6v6c0 5.5 3.4 10.7 8 12 4.6-1.3 8-6.5 8-12V6l-8-4z" stroke="white" stroke-width="1.5"/><path d="M9 12l2 2 4-4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <span class="topbar-logo">AuraLOA</span>
+      <div style="font-size:9px;color:var(--text-dim);margin-top:-2px;letter-spacing:0.04em;">An&aacute;lise Inteligente de Precat&oacute;rios</div>
+    </div>
+  </div>
+  <span class="topbar-cnj" onclick="copiarCNJ(this)" title="Copiar CNJ">
+    1061297-10.2020.4.01.3400
+    <svg class="copy-icon" viewBox="0 0 16 16" width="14" height="14" fill="none"><rect x="5" y="5" width="8" height="8" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M3 11V3.5A1.5 1.5 0 0 1 4.5 2H11" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+  </span>
+  <div class="topbar-right">
+    <!-- Exportar PDF -->
+    <button class="btn-pdf btn-pdf-export" onclick="exportarPDF()" title="Exportar PDF via impress&atilde;o">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M4 13h8M8 3v7M5 7l3 3 3-3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Exportar PDF
+    </button>
+    <!-- Salvar PDF -->
+    <button class="btn-pdf btn-pdf-save" onclick="salvarPDF()" title="Salvar como PDF">
+      <svg viewBox="0 0 16 16" fill="none"><path d="M3 10v2.5A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5V10M8 2v8M5 5l3-3 3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Salvar PDF
+    </button>
+    <!-- Idioma -->
+    <div style="position:relative;">
+      <button class="lang-btn" onclick="toggleLangMenu(event)">
+        <svg viewBox="0 0 16 16" fill="none"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.2"/><path d="M2 8h12M8 2c-2 2-2 4-2 6s0 4 2 6M8 2c2 2 2 4 2 6s0 4-2 6" stroke="currentColor" stroke-width="1.2"/></svg>
+        PT
+        <svg viewBox="0 0 10 6" width="8" height="5" fill="none" style="margin-left:2px;"><path d="M1 1l4 4 4-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <div class="lang-menu" id="langMenu">
+        <button class="lang-option active" onclick="setLang('pt')">&#127463;&#127479; Portugu&ecirc;s</button>
+        <button class="lang-option" onclick="setLang('en')">&#127468;&#127463; English</button>
+        <button class="lang-option" onclick="setLang('es')">&#127466;&#127480; Espa&ntilde;ol</button>
+      </div>
+    </div>
+    <!-- Sair -->
+    <button onclick="localStorage.removeItem('auraloa_token');window.location.href='/due-diligence/santacasa-pp'" style="padding:8px 20px;border-radius:10px;font-size:12px;font-weight:600;border:1px solid rgba(255,255,255,.1);background:rgba(248,113,113,0.08);color:var(--red);cursor:pointer;display:inline-flex;align-items:center;gap:6px;letter-spacing:0.01em;font-family:'Inter',sans-serif;transition:all .2s;" onmouseover="this.style.borderColor='rgba(248,113,113,0.4)';this.style.background='rgba(248,113,113,0.15)'" onmouseout="this.style.borderColor='rgba(255,255,255,.1)';this.style.background='rgba(248,113,113,0.08)'">
+      <svg viewBox="0 0 16 16" width="14" height="14" fill="none"><path d="M6 2H4a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2M10 11l3-3-3-3M13 8H6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Sair
+    </button>
+  </div>
+</header>
+
+<!-- Tabs -->
+<nav class="tabs">
+  <div class="tab active" data-tab="resumo">Resumo</div>
+  <div class="tab" data-tab="dados">Dados do Processo</div>
+  <div class="tab" data-tab="movimentacoes">Movimenta&ccedil;&otilde;es</div>
+  <div class="tab" data-tab="incidental">Processo Incidental</div>
+  <div class="tab" data-tab="auditoria">Auditoria</div>
+  <div class="tab" data-tab="evidencia">Evid&ecirc;ncia</div>
+  <div class="tab" data-tab="contatos">Contatos</div>
+</nav>
+
+<!-- ===================== Tab 1: Resumo ===================== -->
+<div class="content">
+<section class="tab-panel active" id="tab-resumo">
+  <div class="card" style="border-left: 3px solid var(--cyan);">
+    <div class="cover-eyebrow">RELAT&Oacute;RIO PROFISSIONAL &middot; AURALOA</div>
+    <div class="cover-title">Due Diligence &mdash; Precat&oacute;rio Federal</div>
+    <div class="cover-subtitle">Santa Casa de Miseric&oacute;rdia de Presidente Prudente &mdash; R$ 235.492.820,70</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:1.5rem;">
+      <span class="badge badge-info">Precat&oacute;rio</span>
+      <span class="badge badge-warn">Aguardando Publica&ccedil;&atilde;o do Ac&oacute;rd&atilde;o</span>
+      <span class="badge badge-ok">Dados Verificados</span>
+      <span class="badge badge-info">TRF1 &mdash; 1&ordf; Regi&atilde;o</span>
+      <span class="badge" style="background:var(--violet-bg);color:var(--violet);border:1px solid rgba(167,139,250,0.2);">N&atilde;o-Alimentar</span>
+    </div>
+
+    <!-- Linha 1: Credor (avatar+ring) + Devedor (escudo) + Score Gauge -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:16px;">
+
+      <!-- CREDOR — Avatar ring com iniciais + barra de participação -->
+      <div class="cover-grid-item" style="border-radius:12px;padding:20px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(34,211,238,0.06),transparent);"></div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+          <!-- Avatar ring SVG -->
+          <div style="position:relative;width:52px;height:52px;flex-shrink:0;">
+            <svg viewBox="0 0 52 52" style="width:100%;height:100%;">
+              <circle cx="26" cy="26" r="23" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+              <circle cx="26" cy="26" r="23" fill="none" stroke="url(#credorRing)" stroke-width="3" stroke-linecap="round"
+                stroke-dasharray="115" stroke-dashoffset="23" style="transform:rotate(-90deg);transform-origin:center;"/>
+              <defs><linearGradient id="credorRing" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#34d399"/></linearGradient></defs>
+            </svg>
+            <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:var(--cyan);letter-spacing:-0.5px;">SC</div>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--cyan);margin-bottom:3px;">Credor</div>
+            <div style="font-size:0.82rem;font-weight:600;color:var(--text);line-height:1.4;">Santa Casa de Miseric&oacute;rdia de Presidente Prudente</div>
+          </div>
+        </div>
+        <div style="font-size:0.7rem;color:var(--text-dim);font-family:'Inter',monospace;margin-bottom:10px;">CNPJ 55.344.337/0001-08</div>
+        <!-- Mini bar: participação 80% do crédito -->
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="flex:1;height:6px;border-radius:3px;background:rgba(255,255,255,0.06);overflow:hidden;">
+            <div style="height:100%;width:80%;border-radius:3px;background:linear-gradient(90deg,var(--cyan),var(--green));"></div>
+          </div>
+          <span style="font-size:10px;font-weight:700;color:var(--cyan);">80%</span>
+        </div>
+        <div style="font-size:0.62rem;color:var(--text-dim);margin-top:3px;">Participa&ccedil;&atilde;o no cr&eacute;dito &mdash; R$ 188,4M</div>
+      </div>
+
+      <!-- DEVEDOR — Escudo governo SVG + tipo precatório -->
+      <div class="cover-grid-item" style="border-radius:12px;padding:20px;position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-20px;right:-20px;width:100px;height:100px;border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,0.06),transparent);"></div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+          <!-- Escudo SVG -->
+          <div style="width:52px;height:52px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+            <svg viewBox="0 0 40 46" width="38" height="44">
+              <path d="M20,2 L36,10 L36,22 C36,34 20,44 20,44 C20,44 4,34 4,22 L4,10 Z" fill="none" stroke="url(#shieldGrad)" stroke-width="2.5" stroke-linejoin="round"/>
+              <path d="M14,20 L20,14 L26,20 L20,26 Z" fill="rgba(167,139,250,0.3)" stroke="var(--violet)" stroke-width="1.2"/>
+              <defs><linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#818cf8"/></linearGradient></defs>
+            </svg>
+          </div>
+          <div>
+            <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.2px;color:var(--violet);margin-bottom:3px;">Devedor</div>
+            <div style="font-size:0.88rem;font-weight:700;color:var(--text);line-height:1.4;">Uni&atilde;o Federal</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;">
+          <span class="badge badge-info" style="font-size:8px;">TRF1 &mdash; 1&ordf; Regi&atilde;o</span>
+          <span class="badge" style="font-size:8px;background:var(--violet-bg);color:var(--violet);border:1px solid rgba(167,139,250,0.2);">N&atilde;o-Alimentar</span>
+        </div>
+        <!-- Mini ring: LOA inscrito? -->
+        <div style="display:flex;align-items:center;gap:10px;">
+          <svg viewBox="0 0 28 28" width="28" height="28">
+            <circle cx="14" cy="14" r="11" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="3"/>
+            <circle cx="14" cy="14" r="11" fill="none" stroke="var(--amber)" stroke-width="3" stroke-linecap="round"
+              stroke-dasharray="46" stroke-dashoffset="23" style="transform:rotate(-90deg);transform-origin:center;"/>
+          </svg>
+          <div>
+            <div style="font-size:10px;font-weight:700;color:var(--amber);">LOA 2026</div>
+            <div style="font-size:0.62rem;color:var(--text-dim);">Aguardando Publica&ccedil;&atilde;o</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- SCORE DE VIABILIDADE — Gauge SVG (vermelho→amarelo→verde) -->
+      <div class="cover-grid-item" style="border-radius:12px;padding:24px 16px 18px;text-align:center;border:1px solid rgba(52,211,153,0.25);background:rgba(52,211,153,0.03);">
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:14px;">Score de Viabilidade</div>
+        <div style="position:relative;width:140px;height:85px;margin:0 auto;">
+          <svg viewBox="0 0 140 85" style="width:100%;height:100%;">
+            <!-- Arco fundo completo -->
+            <path d="M15,75 A55,55 0 0,1 125,75" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-linecap="round"/>
+            <!-- Arco preenchido 75% — gradiente vermelho→amarelo→verde -->
+            <path d="M15,75 A55,55 0 0,1 125,75" fill="none" stroke="url(#gaugeGradCover)" stroke-width="10" stroke-linecap="round"
+              stroke-dasharray="173" stroke-dashoffset="43"/>
+            <defs>
+              <linearGradient id="gaugeGradCover" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#f87171"/>
+                <stop offset="35%" stop-color="#fbbf24"/>
+                <stop offset="70%" stop-color="#34d399"/>
+                <stop offset="100%" stop-color="#22d3ee"/>
+              </linearGradient>
+            </defs>
+          </svg>
+          <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center;">
+            <div style="font-size:30px;font-weight:900;color:var(--green);letter-spacing:-1px;line-height:1;">75</div>
+            <div style="font-size:9px;color:var(--text3);font-weight:600;margin-top:1px;">/100</div>
+          </div>
+        </div>
+        <div style="margin-top:10px;"><span class="badge badge-ok" style="font-size:9px;">Favor&aacute;vel</span></div>
+      </div>
+    </div>
+
+    <!-- Linha 2: Pagamento (radar) + Gravames (escudo) + Movimentações (sparkline) -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+
+      <!-- PAGAMENTO — Ring 0% + pulso -->
+      <div class="cover-grid-item" style="border-radius:12px;padding:20px;text-align:center;border:1px solid rgba(251,191,36,0.2);background:rgba(251,191,36,0.02);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:50%;left:50%;width:140px;height:140px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(251,191,36,0.04),transparent);"></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:10px;">Pagamento Detectado</div>
+        <div style="position:relative;width:80px;height:80px;margin:0 auto;">
+          <svg viewBox="0 0 80 80" style="width:100%;height:100%;">
+            <!-- Anel externo tracejado (radar) -->
+            <circle cx="40" cy="40" r="35" fill="none" stroke="rgba(251,191,36,0.12)" stroke-width="2" stroke-dasharray="4 4"/>
+            <!-- Anel progresso 0% -->
+            <circle cx="40" cy="40" r="28" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="40" cy="40" r="28" fill="none" stroke="var(--amber)" stroke-width="5" stroke-linecap="round"
+              stroke-dasharray="176" stroke-dashoffset="176" style="transform:rotate(-90deg);transform-origin:center;"/>
+            <!-- X central -->
+            <line x1="33" y1="33" x2="47" y2="47" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+            <line x1="47" y1="33" x2="33" y2="47" stroke="var(--amber)" stroke-width="2.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div style="font-size:0.78rem;font-weight:800;color:var(--amber);margin-top:6px;">Nenhum dep&oacute;sito</div>
+        <div style="font-size:0.62rem;color:var(--text-dim);margin-top:2px;">Aguardando publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o</div>
+      </div>
+
+      <!-- GRAVAMES — Escudo com check -->
+      <div class="cover-grid-item" style="border-radius:12px;padding:20px;text-align:center;border:1px solid rgba(52,211,153,0.2);background:rgba(52,211,153,0.02);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:50%;left:50%;width:140px;height:140px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(52,211,153,0.04),transparent);"></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:10px;">Gravames</div>
+        <div style="position:relative;width:80px;height:80px;margin:0 auto;">
+          <svg viewBox="0 0 80 90" style="width:100%;height:100%;">
+            <!-- Escudo -->
+            <path d="M40,6 L68,18 L68,40 C68,62 40,80 40,80 C40,80 12,62 12,40 L12,18 Z" fill="rgba(52,211,153,0.08)" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round"/>
+            <!-- Checkmark -->
+            <path d="M28,42 L36,52 L54,32" fill="none" stroke="var(--green)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+        <div style="font-size:0.78rem;font-weight:800;color:var(--green);margin-top:4px;">Livre</div>
+        <div style="font-size:0.62rem;color:var(--text-dim);margin-top:2px;">Sem penhora, bloqueio ou arresto</div>
+      </div>
+
+      <!-- MOVIMENTAÇÕES — Sparkline bar chart -->
+      <div class="cover-grid-item" style="border-radius:12px;padding:20px;text-align:center;border:1px solid rgba(167,139,250,0.2);background:rgba(167,139,250,0.02);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:50%;left:50%;width:140px;height:140px;transform:translate(-50%,-50%);border-radius:50%;background:radial-gradient(circle,rgba(167,139,250,0.04),transparent);"></div>
+        <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:10px;">Movimenta&ccedil;&otilde;es</div>
+        <!-- Número grande -->
+        <div style="font-size:36px;font-weight:900;color:var(--violet);letter-spacing:-1px;line-height:1;">35</div>
+        <!-- Sparkline: distribuição por ano (2020-2026) -->
+        <div style="display:flex;align-items:flex-end;justify-content:center;gap:4px;height:36px;margin:10px auto 0;max-width:140px;">
+          <div style="flex:1;background:rgba(167,139,250,0.25);border-radius:2px 2px 0 0;height:30%;" title="2020: 3"></div>
+          <div style="flex:1;background:rgba(167,139,250,0.35);border-radius:2px 2px 0 0;height:55%;" title="2021: 8"></div>
+          <div style="flex:1;background:rgba(167,139,250,0.45);border-radius:2px 2px 0 0;height:40%;" title="2022: 5"></div>
+          <div style="flex:1;background:rgba(167,139,250,0.35);border-radius:2px 2px 0 0;height:25%;" title="2023: 4"></div>
+          <div style="flex:1;background:rgba(167,139,250,0.55);border-radius:2px 2px 0 0;height:65%;" title="2024: 7"></div>
+          <div style="flex:1;background:rgba(167,139,250,0.45);border-radius:2px 2px 0 0;height:35%;" title="2025: 4"></div>
+          <div style="flex:1;background:var(--violet);border-radius:2px 2px 0 0;height:100%;" title="2026: 4"></div>
+        </div>
+        <div style="display:flex;justify-content:center;gap:4px;max-width:140px;margin:4px auto 0;">
+          <span style="flex:1;font-size:7px;color:var(--text-dim);">20</span>
+          <span style="flex:1;font-size:7px;color:var(--text-dim);">21</span>
+          <span style="flex:1;font-size:7px;color:var(--text-dim);">22</span>
+          <span style="flex:1;font-size:7px;color:var(--text-dim);">23</span>
+          <span style="flex:1;font-size:7px;color:var(--text-dim);">24</span>
+          <span style="flex:1;font-size:7px;color:var(--text-dim);">25</span>
+          <span style="flex:1;font-size:7px;color:var(--violet);font-weight:700;">26</span>
+        </div>
+        <div style="font-size:0.62rem;color:var(--text-dim);margin-top:6px;">&Uacute;ltima: 22/03/2026</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hero Value -->
+  <div class="card" style="text-align:center;padding:32px 24px;background:linear-gradient(135deg,rgba(34,211,238,0.04),rgba(139,92,246,0.04));border:1px solid rgba(34,211,238,0.15);">
+    <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--text3);margin-bottom:8px;">Valor Total Requisitado</div>
+    <div style="font-size:52px;font-weight:900;background:linear-gradient(135deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:-2px;line-height:1;">R$ 235.492.820,70</div>
+    <div style="font-size:0.8rem;color:var(--text2);margin-top:10px;">Of&iacute;cio Requisit&oacute;rio N&ordm; 2024.3400.006.001056 &mdash; 01/04/2024</div>
+  </div>
+
+  <!-- Análise Introdutória -->
+  <div class="card" style="border-left:3px solid var(--cyan);">
+    <div class="card-title" style="color:var(--cyan);">An&aacute;lise do Cr&eacute;dito</div>
+    <p style="font-size:0.85rem;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      A Santa Casa de Miseric&oacute;rdia de Presidente Prudente possui um <strong style="color:var(--text);">cr&eacute;dito reconhecido e formalizado</strong> perante a Uni&atilde;o Federal, referente ao reajuste da Tabela do SUS para procedimentos ambulatoriais e hospitalares. O valor foi requisitado pela 6&ordf; Vara Federal de Bras&iacute;lia (Ju&iacute;za Ivani Silva da Luz) em 01/04/2024, com tr&acirc;nsito em julgado desde 28/06/2022.
+    </p>
+    <p style="font-size:0.85rem;color:var(--text2);line-height:1.8;margin-bottom:16px;">
+      Em <strong style="color:var(--amber);">08/04/2026</strong>, a 6&ordf; Turma do TRF1 proferiu ac&oacute;rd&atilde;o <strong style="color:var(--green);">parcialmente favor&aacute;vel</strong> (2&times;1), confirmando parte dos pedidos da Santa Casa contra a Uni&atilde;o. O ac&oacute;rd&atilde;o aguarda publica&ccedil;&atilde;o no DJe. Ap&oacute;s publicado, a suspens&atilde;o do processo principal ser&aacute; levantada e o pagamento poder&aacute; prosseguir.
+    </p>
+    <p style="font-size:0.85rem;color:var(--text2);line-height:1.8;">
+      Para conhecer o valor exato do &ldquo;parcial provimento&rdquo;, &eacute; necess&aacute;rio acessar o <strong style="color:var(--text);">inteiro teor do voto da Relatora Katia Balbino</strong>, que definir&aacute; se o montante do precat&oacute;rio ser&aacute; mantido, ajustado ou recalculado. <span class="badge badge-warn">Aguardando Publica&ccedil;&atilde;o</span>
+    </p>
+  </div>
+
+  <!-- Divisão de Valores — Gráfico Donut SVG -->
+  <div class="card">
+    <div class="card-title">Composi&ccedil;&atilde;o do Cr&eacute;dito Requisitado</div>
+    <div style="display:grid;grid-template-columns:240px 1fr;gap:32px;align-items:center;">
+      <!-- Donut Chart SVG -->
+      <div style="position:relative;width:220px;height:220px;margin:0 auto;">
+        <svg viewBox="0 0 42 42" style="width:100%;height:100%;transform:rotate(-90deg);">
+          <!-- Fundo -->
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="3.5"/>
+          <!-- Principal: 55.92% = R$131.6M -->
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="#22d3ee" stroke-width="3.5"
+            stroke-dasharray="55.92 44.08" stroke-dashoffset="0" stroke-linecap="round"/>
+          <!-- Juros/Selic: 24.09% = R$56.7M -->
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="#a78bfa" stroke-width="3.5"
+            stroke-dasharray="24.09 75.91" stroke-dashoffset="-55.92" stroke-linecap="round"/>
+          <!-- Honor&aacute;rios: 20.0% = R$47.1M -->
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="#fbbf24" stroke-width="3.5"
+            stroke-dasharray="20.0 80.0" stroke-dashoffset="-80.01" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+          <div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;">Total</div>
+          <div style="font-size:16px;font-weight:800;color:var(--text);letter-spacing:-0.5px;">R$ 235,4M</div>
+        </div>
+      </div>
+      <!-- Legenda -->
+      <div>
+        <!-- Principal -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);">
+          <div style="width:12px;height:12px;border-radius:3px;background:var(--cyan);flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);">Valor Principal (Santa Casa)</div>
+            <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;">Cr&eacute;dito l&iacute;quido do benefici&aacute;rio principal</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.1rem;font-weight:800;color:var(--cyan);">R$ 131.661.817,74</div>
+            <div style="font-size:0.7rem;color:var(--text3);">55,9%</div>
+          </div>
+        </div>
+        <!-- Juros/Selic -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);">
+          <div style="width:12px;height:12px;border-radius:3px;background:var(--violet);flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);">Juros / Selic EC 113/2021</div>
+            <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;">Corre&ccedil;&atilde;o monet&aacute;ria sobre o principal</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.1rem;font-weight:800;color:var(--violet);">R$ 56.732.438,83</div>
+            <div style="font-size:0.7rem;color:var(--text3);">24,1%</div>
+          </div>
+        </div>
+        <!-- Subtotal Santa Casa -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;border-bottom:1px solid var(--border);background:rgba(34,211,238,0.03);margin:0 -24px;padding-left:36px;padding-right:24px;">
+          <div style="width:12px;height:12px;flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--cyan);">Subtotal L&iacute;quido Santa Casa</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.2rem;font-weight:900;color:var(--cyan);">R$ 188.394.256,57</div>
+            <div style="font-size:0.7rem;color:var(--text3);">80,0%</div>
+          </div>
+        </div>
+        <!-- Honorários -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 0;">
+          <div style="width:12px;height:12px;border-radius:3px;background:var(--amber);flex-shrink:0;"></div>
+          <div style="flex:1;">
+            <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text3);">Honor&aacute;rios Contratuais (20%)</div>
+            <div style="font-size:0.82rem;color:var(--text2);margin-top:2px;">Nilo &amp; Almeida Advogados Associados</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.1rem;font-weight:800;color:var(--amber);">R$ 47.098.564,13</div>
+            <div style="font-size:0.7rem;color:var(--text3);">20,0%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Barra horizontal de composição -->
+  <div class="card">
+    <div class="card-title">Distribui&ccedil;&atilde;o Visual do Cr&eacute;dito</div>
+    <div style="display:flex;border-radius:8px;overflow:hidden;height:36px;margin-bottom:12px;">
+      <div style="width:55.92%;background:var(--cyan);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0d1117;">R$ 131,6M</div>
+      <div style="width:24.09%;background:var(--violet);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0d1117;">R$ 56,7M</div>
+      <div style="width:20%;background:var(--amber);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#0d1117;">R$ 47,1M</div>
+    </div>
+    <div style="display:flex;gap:20px;font-size:0.72rem;color:var(--text3);">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--cyan);vertical-align:middle;margin-right:4px;"></span>Principal</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--violet);vertical-align:middle;margin-right:4px;"></span>Juros/Selic</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:var(--amber);vertical-align:middle;margin-right:4px;"></span>Honor&aacute;rios (20%)</span>
+    </div>
+  </div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi" style="border-top:3px solid var(--cyan);">
+      <div class="kpi-label">L&iacute;quido Santa Casa</div>
+      <div class="kpi-val cyan" style="font-size:1.3rem;">R$ 188,4M</div>
+      <div style="font-size:0.68rem;color:var(--text3);margin-top:4px;">80% do total requisitado</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid var(--amber);">
+      <div class="kpi-label">Honor&aacute;rios Advocat&iacute;cios</div>
+      <div class="kpi-val amber" style="font-size:1.3rem;">R$ 47,1M</div>
+      <div style="font-size:0.68rem;color:var(--text3);margin-top:4px;">20% &mdash; Nilo &amp; Almeida</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid var(--violet);">
+      <div class="kpi-label">Movimenta&ccedil;&otilde;es</div>
+      <div class="kpi-val violet" style="font-size:1.3rem;">35</div>
+      <div style="font-size:0.68rem;color:var(--text3);margin-top:4px;">&Uacute;ltima: 22/03/2026</div>
+    </div>
+    <div class="kpi" style="border-top:3px solid var(--green);">
+      <div class="kpi-label">Decis&atilde;o Recente</div>
+      <div class="kpi-val green" style="font-size:1.3rem;">2 &times; 1</div>
+      <div style="font-size:0.68rem;color:var(--text3);margin-top:4px;">Parcial provimento</div>
+    </div>
+  </div>
+
+  <!-- Timeline do Processo — Bar Chart vertical (padrão 7.2) -->
+  <div class="card">
+    <div class="card-title" style="display:flex;align-items:center;gap:8px;"><span style="width:8px;height:8px;border-radius:50%;background:var(--violet);"></span>Linha do Tempo do Processo</div>
+    <div style="display:flex;align-items:flex-end;height:200px;gap:6px;padding:0 8px;">
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--text3);font-weight:600;">Ajuizamento</div>
+        <div style="width:100%;background:var(--cyan);border-radius:3px 3px 0 0;height:30%;min-height:20px;"></div>
+        <div style="font-size:9px;color:var(--text3);font-weight:600;">2020</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--text3);font-weight:600;">Ac&oacute;rd&atilde;o</div>
+        <div style="width:100%;background:var(--violet);border-radius:3px 3px 0 0;height:50%;"></div>
+        <div style="font-size:9px;color:var(--text3);font-weight:600;">2021</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--green);font-weight:600;">Tr&acirc;nsito</div>
+        <div style="width:100%;background:var(--green);border-radius:3px 3px 0 0;height:65%;"></div>
+        <div style="font-size:9px;color:var(--text3);font-weight:600;">2022</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--text3);font-weight:600;">Execu&ccedil;&atilde;o</div>
+        <div style="width:100%;background:var(--amber);border-radius:3px 3px 0 0;height:45%;opacity:0.7;"></div>
+        <div style="font-size:9px;color:var(--text3);font-weight:600;">2023</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--amber);font-weight:600;">Of&iacute;cio</div>
+        <div style="width:100%;background:var(--amber);border-radius:3px 3px 0 0;height:80%;"></div>
+        <div style="font-size:9px;color:var(--text3);font-weight:600;">2024</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--text3);font-weight:600;">Embargos</div>
+        <div style="width:100%;background:rgba(248,113,113,0.6);border-radius:3px 3px 0 0;height:40%;"></div>
+        <div style="font-size:9px;color:var(--text3);font-weight:600;">2025</div>
+      </div>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;">
+        <div style="font-size:7px;color:var(--green);font-weight:700;">Julgamento</div>
+        <div style="width:100%;background:linear-gradient(180deg,var(--green),var(--cyan));border-radius:3px 3px 0 0;height:100%;position:relative;">
+          <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:8px;font-weight:800;color:#0d1117;white-space:nowrap;">2&times;1</div>
+        </div>
+        <div style="font-size:9px;color:var(--green);font-weight:700;">2026</div>
+      </div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:16px;justify-content:center;font-size:0.7rem;color:var(--text3);">
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--cyan);vertical-align:middle;margin-right:4px;"></span>Fase inicial</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--green);vertical-align:middle;margin-right:4px;"></span>Marco favor&aacute;vel</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--amber);vertical-align:middle;margin-right:4px;"></span>Requisi&ccedil;&atilde;o</span>
+      <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:rgba(248,113,113,0.6);vertical-align:middle;margin-right:4px;"></span>Impedimento</span>
+    </div>
+  </div>
+
+  <!-- Status Grid — 3 cards visuais (padrão 7.3 progress + gauge) -->
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:1.25rem;">
+
+    <!-- Gauge: Score de Viabilidade (vermelho→amarelo→verde) -->
+    <div class="card" style="text-align:center;padding:28px 16px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:16px;">Score de Viabilidade</div>
+      <div style="position:relative;width:160px;height:95px;margin:0 auto;">
+        <svg viewBox="0 0 140 85" style="width:100%;height:100%;">
+          <path d="M15,75 A55,55 0 0,1 125,75" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="10" stroke-linecap="round"/>
+          <path d="M15,75 A55,55 0 0,1 125,75" fill="none" stroke="url(#gaugeGrad)" stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="173" stroke-dashoffset="43"/>
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#f87171"/>
+              <stop offset="35%" stop-color="#fbbf24"/>
+              <stop offset="70%" stop-color="#34d399"/>
+              <stop offset="100%" stop-color="#22d3ee"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <div style="position:absolute;bottom:2px;left:50%;transform:translateX(-50%);text-align:center;">
+          <div style="font-size:34px;font-weight:900;color:var(--green);letter-spacing:-1px;line-height:1;">75</div>
+          <div style="font-size:9px;color:var(--text3);font-weight:600;margin-top:2px;">/100</div>
+        </div>
+      </div>
+      <div style="margin-top:12px;"><span class="badge badge-ok">Favor&aacute;vel</span></div>
+      <div style="font-size:0.68rem;color:var(--text3);margin-top:8px;">Cr&eacute;dito real, tr&acirc;nsito julgado,<br>ac&oacute;rd&atilde;o parcial favor&aacute;vel</div>
+    </div>
+
+    <!-- Progress: Etapas concluídas -->
+    <div class="card" style="padding:24px 16px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:16px;text-align:center;">Etapas do Pagamento</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:4px;"><span style="color:var(--text2);">Tr&acirc;nsito em julgado</span><span class="badge badge-ok" style="font-size:8px;">OK</span></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06);"><div style="height:100%;width:100%;border-radius:3px;background:var(--green);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:4px;"><span style="color:var(--text2);">Of&iacute;cio requisit&oacute;rio</span><span class="badge badge-ok" style="font-size:8px;">OK</span></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06);"><div style="height:100%;width:100%;border-radius:3px;background:var(--green);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:4px;"><span style="color:var(--text2);">Inclus&atilde;o na LOA</span><span class="badge badge-warn" style="font-size:8px;">Pendente</span></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06);"><div style="height:100%;width:60%;border-radius:3px;background:var(--amber);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:4px;"><span style="color:var(--text2);">Publica&ccedil;&atilde;o ac&oacute;rd&atilde;o</span><span class="badge badge-fail" style="font-size:8px;">Aguardando</span></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06);"><div style="height:100%;width:20%;border-radius:3px;background:var(--red);"></div></div>
+        </div>
+        <div>
+          <div style="display:flex;justify-content:space-between;font-size:0.7rem;margin-bottom:4px;"><span style="color:var(--text2);">Dep&oacute;sito judicial</span><span class="badge badge-fail" style="font-size:8px;">Pendente</span></div>
+          <div style="height:6px;border-radius:3px;background:rgba(255,255,255,0.06);"><div style="height:100%;width:0%;border-radius:3px;background:var(--red);"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut mini: Credor vs Honorários -->
+    <div class="card" style="text-align:center;padding:24px 16px;">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--text3);margin-bottom:12px;">Credor vs Honor&aacute;rios</div>
+      <div style="position:relative;width:130px;height:130px;margin:0 auto;">
+        <svg viewBox="0 0 42 42" style="width:100%;height:100%;transform:rotate(-90deg);">
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="rgba(255,255,255,0.04)" stroke-width="4"/>
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="var(--cyan)" stroke-width="4"
+            stroke-dasharray="80 20" stroke-dashoffset="0" stroke-linecap="round"/>
+          <circle cx="21" cy="21" r="15.91" fill="none" stroke="var(--amber)" stroke-width="4"
+            stroke-dasharray="20 80" stroke-dashoffset="-80" stroke-linecap="round"/>
+        </svg>
+        <div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;">
+          <div style="font-size:18px;font-weight:900;color:var(--cyan);">80%</div>
+          <div style="font-size:8px;color:var(--text3);">Credor</div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:0.68rem;">
+        <span style="color:var(--cyan);font-weight:600;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--cyan);vertical-align:middle;margin-right:3px;"></span>R$ 188,4M</span>
+        <span style="color:var(--amber);font-weight:600;"><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:var(--amber);vertical-align:middle;margin-right:3px;"></span>R$ 47,1M</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Alert -->
+  <div class="card" style="border-left:3px solid var(--amber);margin-bottom:1.25rem;">
+    <div class="card-title" style="color:var(--amber);">Atualiza&ccedil;&atilde;o Processual &mdash; 08/04/2026</div>
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:12px 16px;font-size:0.85rem;">
+      <span style="color:var(--text-dim);font-weight:600;">Julgamento</span>
+      <span>6&ordf; Turma TRF1 &mdash; Sess&atilde;o Ordin&aacute;ria de <strong>08/04/2026</strong></span>
+      <span style="color:var(--text-dim);font-weight:600;">Resultado</span>
+      <span><span class="badge badge-ok">Parcialmente Favor&aacute;vel</span> &mdash; maioria <strong>2 &times; 1</strong></span>
+      <span style="color:var(--text-dim);font-weight:600;">Decis&atilde;o</span>
+      <span>Parcial provimento ao agravo de instrumento. Agravo interno julgado prejudicado.</span>
+      <span style="color:var(--text-dim);font-weight:600;">Relatora</span>
+      <span>Des. Federal Katia Balbino de Carvalho Ferreira</span>
+      <span style="color:var(--text-dim);font-weight:600;">Status</span>
+      <span><span class="badge badge-warn">Aguardando Publica&ccedil;&atilde;o do Ac&oacute;rd&atilde;o</span></span>
+      <span style="color:var(--text-dim);font-weight:600;">Pr&oacute;ximo passo</span>
+      <span>Ap&oacute;s publica&ccedil;&atilde;o &rarr; levantamento da suspens&atilde;o &rarr; pagamento do precat&oacute;rio</span>
+    </div>
+  </div>
+  <div class="alert alert-warn">
+    <span class="alert-icon">&#9888;</span>
+    <span>Processo esteve suspenso de 22/03/2026 a 12/04/2026. Ac&oacute;rd&atilde;o <strong>parcialmente favor&aacute;vel</strong> proferido em 08/04/2026 (2&times;1), assinado em 12/04/2026. Aguardando publica&ccedil;&atilde;o no DJe para formalizar levantamento da suspens&atilde;o e prosseguimento do pagamento.</span>
+  </div>
+
+  <!-- Classification -->
+  <div class="card">
+    <div class="card-title">Classifica&ccedil;&atilde;o</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Tipo de Requisi&ccedil;&atilde;o</div>
+        <div class="data-value">Precat&oacute;rio (valor superior a 60 sal&aacute;rios m&iacute;nimos)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Natureza</div>
+        <div class="data-value">N&atilde;o-Alimentar &mdash; Reajuste da Tabela do SUS</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">N&ordm; Requisi&ccedil;&atilde;o</div>
+        <div class="data-value" style="font-family: monospace;">2024.3400.006.001056</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">N&ordm; Precat&oacute;rio TRF1</div>
+        <div class="data-value" style="font-family: monospace;">(PRC) 0201566-46.2024.4.01.9198</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Tab 2: Dados do Processo ===================== -->
+<section class="tab-panel" id="tab-dados">
+  <div class="card">
+    <div class="card-title">Dados Completos do Processo</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">N&uacute;mero CNJ</div>
+        <div class="data-value" style="font-family: monospace;">1061297-10.2020.4.01.3400</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Of&iacute;cio Requisit&oacute;rio</div>
+        <div class="data-value">N&ordm; 2024.3400.006.001056 &mdash; 01/04/2024</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Tribunal</div>
+        <div class="data-value">Tribunal Regional Federal da 1&ordf; Regi&atilde;o</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Classe</div>
+        <div class="data-value">Cumprimento de Senten&ccedil;a contra Fazenda P&uacute;blica</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Situa&ccedil;&atilde;o</div>
+        <div class="data-value"><span class="badge badge-info">Aguardando Publica&ccedil;&atilde;o do Ac&oacute;rd&atilde;o</span></div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Valor Total Requisitado</div>
+        <div class="data-value" style="font-weight: 700; color: var(--cyan);">R$ 235.492.820,70</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Valor Principal (Credor)</div>
+        <div class="data-value">R$ 188.394.256,57</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Valor Honor&aacute;rios</div>
+        <div class="data-value">R$ 47.098.564,13</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Ju&iacute;za Requisitante</div>
+        <div class="data-value">Ivani Silva da Luz</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Data Ajuizamento</div>
+        <div class="data-value">29/10/2020</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Tr&acirc;nsito em Julgado</div>
+        <div class="data-value">28/06/2022</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">&Uacute;ltima Movimenta&ccedil;&atilde;o</div>
+        <div class="data-value">22/03/2026</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Juros</div>
+        <div class="data-value">Selic EC 113/2021</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Data Base</div>
+        <div class="data-value">01/12/2022</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Partes -->
+  <div class="card">
+    <div class="card-title">Partes do Processo</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Credor</div>
+        <div class="data-value">Santa Casa de Miseric&oacute;rdia de Presidente Prudente<br><span style="font-size: 0.78rem; color: var(--text-dim);">CNPJ 55.344.337/0001-08</span></div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Honor&aacute;rios</div>
+        <div class="data-value">Nilo &amp; Almeida Advogados Associados<br><span style="font-size: 0.78rem; color: var(--text-dim);">CNPJ 22.964.948/0001-08</span></div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Devedor</div>
+        <div class="data-value">Uni&atilde;o Federal</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Advogado</div>
+        <div class="data-value">Edvaldo Nilo de Almeida<br><span style="font-size: 0.78rem; color: var(--text-dim);">OAB DF29502 &mdash; CPF 808.872.955-68</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Assuntos -->
+  <div class="card">
+    <div class="card-title">Assuntos</div>
+    <div class="pills">
+      <span class="pill">Reajuste da Tabela do SUS</span>
+      <span class="pill">Sa&uacute;de</span>
+      <span class="pill">Servi&ccedil;os</span>
+      <span class="pill">Administrativo</span>
+    </div>
+  </div>
+
+  <!-- Status cards -->
+  <div class="status-grid">
+    <div class="card" style="text-align: center;">
+      <div class="card-title">Pagamento Detectado</div>
+      <div class="kpi-val amber" style="font-size: 1.2rem;">N&Atilde;O</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem;">Nenhum dep&oacute;sito identificado</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="card-title">Gravames</div>
+      <div class="kpi-val green" style="font-size: 1.2rem;">N&Atilde;O</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem;">Nenhuma penhora ou bloqueio detectado</div>
+    </div>
+    <div class="card" style="text-align: center;">
+      <div class="card-title">Total Movimenta&ccedil;&otilde;es</div>
+      <div class="kpi-val violet" style="font-size: 1.2rem;">35</div>
+      <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.5rem;">&Uacute;ltima em 22/03/2026</div>
+    </div>
+  </div>
+
+  <!-- Outros Precatórios -->
+  <div class="card" style="margin-top: 1.5rem;">
+    <div class="card-title">Outros Precat&oacute;rios da Entidade</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Precat&oacute;rio</th><th>Proc. Origin&aacute;rio</th><th>Parte</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="mono">(PRC)0181820-42.2017.4.01.9198</td>
+          <td class="mono">2002.34.00.036764-1/DF</td>
+          <td>IRMANDADE DA SANTA CASA</td>
+        </tr>
+        <tr>
+          <td class="mono">(PRC)0477119-23.2021.4.01.9198</td>
+          <td class="mono">0036695-02.2002.4.01.3400/DF</td>
+          <td>SANTA CASA</td>
+        </tr>
+        <tr class="highlight">
+          <td class="mono">(PRC)0201566-46.2024.4.01.9198</td>
+          <td class="mono">1061297-10.2020.4.01.3400/DF</td>
+          <td>SANTA CASA &mdash; R$ 235M &larr; ESTE</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ===================== Tab 3: Movimentações ===================== -->
+<section class="tab-panel" id="tab-movimentacoes">
+  <div class="card">
+    <div class="card-title">Hist&oacute;rico de Movimenta&ccedil;&otilde;es (35)</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Data</th><th>Descri&ccedil;&atilde;o</th></tr>
+      </thead>
+      <tbody>
+        <tr class="highlight"><td class="mono">22/03/2026</td><td>Processo suspenso por depender do julgamento de outra causa (1048421-33.2023.4.01.0000)</td></tr>
+        <tr><td class="mono">07/03/2026</td><td>Decorrido prazo de UNI&Atilde;O FEDERAL</td></tr>
+        <tr><td class="mono">04/02/2026</td><td>Decorrido prazo de EDVALDO NILO DE ALMEIDA</td></tr>
+        <tr><td class="mono">12/12/2025</td><td>Publicado Intima&ccedil;&atilde;o polo ativo</td></tr>
+        <tr><td class="mono">12/12/2025</td><td>Disponibilizado no DJ Eletr&ocirc;nico</td></tr>
+        <tr><td class="mono">11/12/2025</td><td>Expedi&ccedil;&atilde;o de Publica&ccedil;&atilde;o ao DJE Nacional</td></tr>
+        <tr><td class="mono">10/12/2025</td><td>Expedi&ccedil;&atilde;o de Publica&ccedil;&atilde;o ao DJE Nacional</td></tr>
+        <tr><td class="mono">10/12/2025</td><td>Expedida/certificada a comunica&ccedil;&atilde;o eletr&ocirc;nica</td></tr>
+        <tr><td class="mono">05/12/2025</td><td>Processo devolvido &agrave; Secretaria</td></tr>
+        <tr><td class="mono">05/12/2025</td><td>Embargos de Declara&ccedil;&atilde;o N&atilde;o-acolhidos</td></tr>
+        <tr><td class="mono">04/12/2025</td><td>Decis&atilde;o</td></tr>
+        <tr><td class="mono">24/10/2025</td><td>Conclusos para decis&atilde;o</td></tr>
+        <tr><td class="mono">12/09/2025</td><td>Juntada de contrarraz&otilde;es</td></tr>
+        <tr><td class="mono">25/08/2025</td><td>Expedi&ccedil;&atilde;o de Outros documentos</td></tr>
+        <tr><td class="mono">22/08/2025</td><td>Processo devolvido &agrave; Secretaria</td></tr>
+        <tr><td class="mono">22/08/2025</td><td>Proferido despacho de mero expediente</td></tr>
+        <tr><td class="mono">22/08/2025</td><td>Despacho</td></tr>
+        <tr><td class="mono">22/08/2025</td><td>DESPACHO</td></tr>
+        <tr><td class="mono">11/06/2025</td><td>DECIS&Atilde;O</td></tr>
+        <tr><td class="mono">01/04/2024</td><td>DECIS&Atilde;O (data do of&iacute;cio requisit&oacute;rio)</td></tr>
+        <tr><td class="mono">08/01/2024</td><td>DESPACHO</td></tr>
+        <tr><td class="mono">06/10/2023</td><td>DECIS&Atilde;O</td></tr>
+        <tr><td class="mono">22/08/2023</td><td>ATO ORDINAT&Oacute;RIO</td></tr>
+        <tr><td class="mono">01/08/2023</td><td>DECIS&Atilde;O</td></tr>
+        <tr><td class="mono">30/05/2023</td><td>ATO ORDINAT&Oacute;RIO</td></tr>
+        <tr><td class="mono">31/03/2023</td><td>DESPACHO</td></tr>
+        <tr><td class="mono">12/07/2022</td><td>DESPACHO</td></tr>
+        <tr><td class="mono">18/08/2021</td><td>DECIS&Atilde;O</td></tr>
+        <tr><td class="mono">18/08/2021</td><td>DECIS&Atilde;O</td></tr>
+        <tr><td class="mono">29/07/2021</td><td>AC&Oacute;RD&Atilde;O</td></tr>
+        <tr><td class="mono">27/07/2021</td><td>CERTID&Atilde;O DE JULGAMENTO</td></tr>
+        <tr><td class="mono">29/07/2021</td><td>VOTO</td></tr>
+        <tr><td class="mono">29/10/2020</td><td>Distribui&ccedil;&atilde;o (ajuizamento)</td></tr>
+      </tbody>
+    </table>
+    <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.75rem; text-align: right;">33 movimenta&ccedil;&otilde;es listadas &mdash; 2 movimenta&ccedil;&otilde;es internas n&atilde;o dispon&iacute;veis no PJe p&uacute;blico</div>
+  </div>
+</section>
+
+<!-- ===================== Tab 4: Processo Incidental ===================== -->
+<section class="tab-panel" id="tab-incidental">
+  <div class="card" style="border-left: 3px solid var(--amber);">
+    <div class="card-title">Processo Incidental &mdash; Bloqueador do Pagamento</div>
+  </div>
+
+  <!-- Alert -->
+  <div class="alert alert-warn">
+    <span class="alert-icon">&#9888;</span>
+    <span>AGUARDANDO PUBLICA&Ccedil;&Atilde;O DO AC&Oacute;RD&Atilde;O &mdash; Este processo foi julgado em 08/04/2026 pela 6&ordf; Turma do TRF1. A publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o completo ainda n&atilde;o foi realizada. O levantamento da suspens&atilde;o do processo principal depende desta publica&ccedil;&atilde;o.</span>
+  </div>
+
+  <!-- Dados do processo incidental -->
+  <div class="card">
+    <div class="card-title">Dados do Processo Incidental</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">CNJ</div>
+        <div class="data-value" style="font-family: monospace;">1048421-33.2023.4.01.0000</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Classe</div>
+        <div class="data-value">Agravo Interno C&iacute;vel (1208)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Assunto</div>
+        <div class="data-value">Reajuste da tabela do SUS</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Agravante</div>
+        <div class="data-value">Santa Casa de Miseric&oacute;rdia de Presidente Prudente e outros (2)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Agravado</div>
+        <div class="data-value">Uni&atilde;o Federal</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Relatora</div>
+        <div class="data-value">Des. Federal Katia Balbino de Carvalho Ferreira</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Presidente da Sess&atilde;o</div>
+        <div class="data-value">Des. Federal Jo&atilde;o Carlos Mayer Soares</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Procuradora</div>
+        <div class="data-value">Dra. Adriana Costa Brockes</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Data Sess&atilde;o</div>
+        <div class="data-value">08/04/2026</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Resultado</div>
+        <div class="data-value"><span class="badge badge-warn" style="font-size: 0.78rem;">PARCIAL PROVIMENTO</span> <span style="font-size: 0.78rem; color: var(--text-dim);">(por maioria, 2x1)</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Votação -->
+  <div class="card">
+    <div class="card-title">Vota&ccedil;&atilde;o</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Desembargador</th><th>Voto</th><th>Resultado</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Katia Balbino de Carvalho Ferreira <span style="font-size: 0.7rem; color: var(--text-dim);">(Relatora)</span></td>
+          <td>Parcial provimento</td>
+          <td><span class="badge badge-ok">Vencedora</span></td>
+        </tr>
+        <tr>
+          <td>Fl&aacute;vio Jaime de Moraes Jardim</td>
+          <td>Acompanhou relatora</td>
+          <td><span class="badge badge-ok">Vencedor</span></td>
+        </tr>
+        <tr>
+          <td>Jo&atilde;o Carlos Mayer Soares <span style="font-size: 0.7rem; color: var(--text-dim);">(Presidente)</span></td>
+          <td>Voto-vista divergente</td>
+          <td><span class="badge badge-fail">Vencido</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Decisão -->
+  <div class="card">
+    <div class="card-title">Decis&atilde;o</div>
+    <div class="blockquote">
+      &ldquo;A Turma, por maioria, vencido o Desembargador Federal Jo&atilde;o Carlos Mayer, deu parcial provimento ao agravo de instrumento e julgou prejudicado o agravo interno, nos termos do voto da relatora.&rdquo;
+    </div>
+  </div>
+
+  <!-- Significado -->
+  <div class="card">
+    <div class="card-title">Significado (linguagem simples)</div>
+    <ul style="list-style: none; padding: 0;">
+      <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+        <span style="color: var(--green); margin-right: 0.5rem;">&#10003;</span> A Santa Casa ganhou parcialmente o recurso
+      </li>
+      <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+        <span style="color: var(--green); margin-right: 0.5rem;">&#10003;</span> O tribunal aceitou parte dos argumentos e reformou decis&atilde;o anterior
+      </li>
+      <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+        <span style="color: var(--green); margin-right: 0.5rem;">&#10003;</span> O agravo interno perdeu o objeto (julgado prejudicado)
+      </li>
+      <li style="padding: 0.5rem 0; border-bottom: 1px solid var(--border); font-size: 0.88rem;">
+        <span style="color: var(--green); margin-right: 0.5rem;">&#10003;</span> O processo incidental est&aacute; ENCERRADO
+      </li>
+      <li style="padding: 0.5rem 0; font-size: 0.88rem;">
+        <span style="color: var(--amber); margin-right: 0.5rem;">&#9654;</span> Pr&oacute;ximo passo: publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o e levantamento da suspens&atilde;o
+      </li>
+    </ul>
+  </div>
+
+  <!-- Documento -->
+  <div class="card">
+    <div class="card-title">Documento</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Assinado por</div>
+        <div class="data-value">Rosilene Vieira da Silva (Secret&aacute;ria da Sess&atilde;o)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Data assinatura</div>
+        <div class="data-value" style="font-family: monospace;">12/04/2026 18:48:24</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">ID do documento</div>
+        <div class="data-value" style="font-family: monospace;">260412181426719000</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">URL verifica&ccedil;&atilde;o</div>
+        <div class="data-value" style="font-size: 0.78rem; word-break: break-all;"><a href="https://pje2g-consultapublica.trf1.jus.br:443/consultapublica/Processo/ConsultaDocumento/listView.seam" target="_blank" style="color: var(--cyan); text-decoration: none;">pje2g-consultapublica.trf1.jus.br/.../listView.seam</a></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Tab 6: Auditoria ===================== -->
+<section class="tab-panel" id="tab-auditoria">
+
+  <div class="card" style="border-left: 3px solid var(--cyan);">
+    <div class="cover-eyebrow">CHECKLIST DE AUDITORIA</div>
+    <div class="cover-title">Verifica&ccedil;&atilde;o de Integridade</div>
+    <div class="cover-subtitle">3 caminhos oficiais &mdash; PJe + CJF + Portal da Transpar&ecirc;ncia &mdash; 13/04/2026</div>
+  </div>
+
+  <!-- Checklist principal -->
+  <div class="card">
+    <div class="card-title">Checklist de Verifica&ccedil;&atilde;o</div>
+    <table class="tbl">
+      <thead>
+        <tr><th>Verifica&ccedil;&atilde;o</th><th>Status</th><th>Evid&ecirc;ncia</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Precat&oacute;rio existe no TRF1?</td><td><span class="badge badge-ok">CONFIRMADO</span></td><td>CNPJ &rarr; 3 PRCs listados, PRC 2024 match com of&iacute;cio</td></tr>
+        <tr><td>CNJ origin&aacute;rio confere com of&iacute;cio?</td><td><span class="badge badge-ok">CONFIRMADO</span></td><td>1061297-10.2020.4.01.3400/DF</td></tr>
+        <tr><td>Of&iacute;cio requisit&oacute;rio existe?</td><td><span class="badge badge-ok">CONFIRMADO</span></td><td>PDF fornecido, datado 01/04/2024, Ju&iacute;za Ivani Silva da Luz</td></tr>
+        <tr><td>Processo ativo no PJe?</td><td><span class="badge badge-ok">CONFIRMADO</span></td><td>35 movimenta&ccedil;&otilde;es extra&iacute;das via Rob&ocirc; PJe</td></tr>
+        <tr><td>Pagamento efetuado?</td><td><span class="badge badge-warn">N&Atilde;O</span></td><td>Nenhum c&oacute;digo 12217 (dep&oacute;sito), nenhuma OB no Portal</td></tr>
+        <tr><td>Gravames / penhoras?</td><td><span class="badge badge-ok">N&Atilde;O DETECTADOS</span></td><td>Parser n&atilde;o encontrou termos de gravame nas movimenta&ccedil;&otilde;es</td></tr>
+        <tr><td>CNPJ do credor ativo?</td><td><span class="badge badge-ok">CONFIRMADO</span></td><td>Portal da Transpar&ecirc;ncia &mdash; entidade ativa, recebe FNS</td></tr>
+        <tr><td>CNPJ honor&aacute;rios recebeu pagamento?</td><td><span class="badge badge-warn">N&Atilde;O</span></td><td>Nilo &amp; Almeida (22.964.948/0001-08) &mdash; zero pagamentos 2026</td></tr>
+        <tr><td>Processo incidental julgado?</td><td><span class="badge badge-ok">SIM</span></td><td>08/04/2026, parcial provimento, maioria 2x1</td></tr>
+        <tr><td>Ac&oacute;rd&atilde;o publicado?</td><td><span class="badge badge-fail">N&Atilde;O</span></td><td>&Uacute;ltima mov. = certid&atilde;o de julgamento, sem publica&ccedil;&atilde;o DJe</td></tr>
+        <tr><td>Consta na LOA conciliada?</td><td><span class="badge badge-warn">N&Atilde;O ENCONTRADO</span></td><td>Grep no CSV LOA_FULL_CONCILIADO retornou vazio</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Caminho A -->
+  <div class="card">
+    <div class="card-title">Caminho A &mdash; Movimenta&ccedil;&otilde;es PJe</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Processo Principal (PJe 1g)</div>
+        <div class="data-value">35 movimenta&ccedil;&otilde;es. Nenhum c&oacute;digo 12217 (dep&oacute;sito). <span class="badge badge-warn">PENDENTE</span></div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Processo Incidental (PJe 2g)</div>
+        <div class="data-value">Julgado 08/04/2026. Ac&oacute;rd&atilde;o n&atilde;o publicado. <span class="badge badge-fail">AGUARDANDO</span></div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">C&oacute;digos de Pagamento Monitorados</div>
+        <div class="data-value" style="font-family: monospace; font-size: 0.8rem;">12217 (dep&oacute;sito), 12218 (parcial), 60 (expedi&ccedil;&atilde;o doc), 40900 (valor depositado), 40910 (saque)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Ferramenta</div>
+        <div class="data-value">Rob&ocirc; PJe &mdash; server/scripts/robo_pje/ (Playwright headless)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Caminho B -->
+  <div class="card">
+    <div class="card-title">Caminho B &mdash; Cronograma CJF</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">CJF Libera&ccedil;&atilde;o 2026</div>
+        <div class="data-value">R$ 17,83 bi para TRF1 (30.422 processos). Liberado em 31/03/2026.</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Este precat&oacute;rio consta no cronograma?</div>
+        <div class="data-value"><span class="badge badge-warn">N&Atilde;O VERIFIC&Aacute;VEL</span> &mdash; CJF n&atilde;o publica lista individual de precat&oacute;rios</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Caminho C -->
+  <div class="card">
+    <div class="card-title">Caminho C &mdash; Portal da Transpar&ecirc;ncia (API)</div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Pagamentos ao CNPJ 55.344.337/0001-08</div>
+        <div class="data-value">Apenas conv&ecirc;nios SUS regulares (FNS/Minist&eacute;rio da Sa&uacute;de). Nenhuma OB judicial.</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">2024</div>
+        <div class="data-value">~R$ 864 mil (FNS + CEF Programas MS)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">2025</div>
+        <div class="data-value">~R$ 4,8 milh&otilde;es (FNS)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">2026 (jan-mar)</div>
+        <div class="data-value">~R$ 1,3 milh&atilde;o (FNS)</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Pagamento de Precat&oacute;rio Detectado?</div>
+        <div class="data-value"><span class="badge badge-warn">N&Atilde;O</span> &mdash; Nenhuma UG do Judici&aacute;rio ou CJF como pagadora</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">A&ccedil;&atilde;o Or&ccedil;ament&aacute;ria Verificada</div>
+        <div class="data-value" style="font-family: monospace; font-size: 0.8rem;">218Y (precat&oacute;rios federais) &mdash; n&atilde;o encontrada para este CNPJ</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Conclusão -->
+  <div class="card" style="border-left: 3px solid var(--amber);">
+    <div class="card-title">Conclus&atilde;o da Auditoria</div>
+    <div class="alert alert-warn">
+      <span class="alert-icon">&#9888;</span>
+      <span>Precat&oacute;rio de R$ 235M &eacute; <strong>REAL, VERIFICADO e N&Atilde;O PAGO</strong>. Aguardando publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o (julgado favoravelmente em 08/04/2026, assinado 12/04/2026). Sem gravames, sem pagamento parcial, sem provisionamento vis&iacute;vel no Portal da Transpar&ecirc;ncia.</span>
+    </div>
+    <div class="data-grid">
+      <div class="data-field">
+        <div class="data-label">Pr&oacute;xima A&ccedil;&atilde;o</div>
+        <div class="data-value">Monitorar publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o no PJe 2g e levantamento da suspens&atilde;o no PJe 1g</div>
+      </div>
+      <div class="data-field">
+        <div class="data-label">Data da Auditoria</div>
+        <div class="data-value">13/04/2026 &mdash; AuraLOA v2.1</div>
+      </div>
+    </div>
+  </div>
+
+</section>
+
+<!-- ===================== Tab 6: Evidência ===================== -->
+<section class="tab-panel" id="tab-evidencia">
+  <div class="card">
+    <div class="card-title">Cadeia de Cust&oacute;dia Digital</div>
+
+    <div class="hash-display" style="background: rgba(251,191,36,0.06); border-color: rgba(251,191,36,0.15);">
+      <div class="hash-label" style="color: var(--amber);">SHA-256 do Relat&oacute;rio</div>
+      <div class="hash-value" style="color: var(--amber);">PENDENTE &mdash; ser&aacute; calculado ap&oacute;s publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o</div>
+    </div>
+
+    <div class="evidence-row">
+      <span class="evidence-label">Timestamp (ISO 8601)</span>
+      <span class="evidence-value" style="font-family: monospace; font-size: 0.8rem;">2026-04-13T22:00:00-03:00</span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Conformidade</span>
+      <span class="evidence-value"><span class="badge badge-ok">Lei 13.964/2019</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Fonte dos Dados</span>
+      <span class="evidence-value"><span class="badge badge-info">Fontes Oficiais &mdash; TRF1 PJe 1g + PJe 2g + Portal da Transpar&ecirc;ncia</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Motor de An&aacute;lise</span>
+      <span class="evidence-value">AuraLOA v2.1 &mdash; Rob&ocirc; PJe + Pipeline DD</span>
+    </div>
+    <div class="evidence-row" style="border-bottom: none;">
+      <span class="evidence-label">Integridade</span>
+      <span class="evidence-value"><span class="badge badge-warn">Parcial &mdash; Aguardando publica&ccedil;&atilde;o</span></span>
+    </div>
+  </div>
+
+  <!-- Evidence details -->
+  <div class="card">
+    <div class="card-title">Verifica&ccedil;&otilde;es Realizadas</div>
+
+    <div class="evidence-row">
+      <span class="evidence-label">Of&iacute;cio Requisit&oacute;rio</span>
+      <span class="evidence-value">Verificado (PDF fornecido pelo cliente) <span class="badge badge-ok" style="margin-left: 0.5rem;">OK</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Processo PJe 1g</span>
+      <span class="evidence-value">Verificado (35 movimenta&ccedil;&otilde;es extra&iacute;das) <span class="badge badge-ok" style="margin-left: 0.5rem;">OK</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Precat&oacute;rio TRF1</span>
+      <span class="evidence-value">Confirmado via CNPJ (PRC 0201566-46.2024) <span class="badge badge-ok" style="margin-left: 0.5rem;">OK</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Processo Incidental</span>
+      <span class="evidence-value">Julgado 08/04/2026 &mdash; Aguardando publica&ccedil;&atilde;o <span class="badge badge-warn" style="margin-left: 0.5rem;">PENDENTE</span></span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Pagamento</span>
+      <span class="evidence-value">Pendente &mdash; Nenhum dep&oacute;sito detectado <span class="badge badge-warn" style="margin-left: 0.5rem;">PENDENTE</span></span>
+    </div>
+    <div class="evidence-row" style="border-bottom: none;">
+      <span class="evidence-label">Portal Transpar&ecirc;ncia</span>
+      <span class="evidence-value">CNPJ ativo, pagamentos SUS regulares confirmados <span class="badge badge-ok" style="margin-left: 0.5rem;">OK</span></span>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Aviso Legal:</strong> Este relat&oacute;rio foi gerado pela plataforma AuraLOA com base em dados obtidos de fontes oficiais (TRF1 PJe 1g e 2g, Portal da Transpar&ecirc;ncia, of&iacute;cio requisit&oacute;rio fornecido pelo cliente). STATUS: PARCIAL &mdash; aguardando publica&ccedil;&atilde;o do ac&oacute;rd&atilde;o do processo incidental 1048421-33.2023.4.01.0000. As informa&ccedil;&otilde;es refletem o estado em 13/04/2026. A AuraTECH n&atilde;o se responsabiliza por diverg&ecirc;ncias decorrentes de atualiza&ccedil;&otilde;es posteriores.
+    </div>
+  </div>
+</section>
+
+<!-- ===================== Tab 6: Contatos ===================== -->
+<section class="tab-panel" id="tab-contatos">
+  <div class="card">
+    <div class="card-title">Santa Casa de Miseric&oacute;rdia de Presidente Prudente</div>
+    <div style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Setor Administrativo / Geral</div>
+
+    <div class="evidence-row">
+      <span class="evidence-label">Telefone Principal</span>
+      <span class="evidence-value" style="font-family: 'Inter', monospace; font-size: 0.9rem;">(18) 3901-8000 &nbsp;/&nbsp; (18) 3901-8030</span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">Telefone / WhatsApp (Agendamentos)</span>
+      <span class="evidence-value" style="font-family: 'Inter', monospace; font-size: 0.9rem;">(18) 3901-8077</span>
+    </div>
+    <div class="evidence-row" style="border-bottom: none;">
+      <span class="evidence-label">E-mail Administrativo</span>
+      <span class="evidence-value"><a href="mailto:contabilidade@santacasaprudente.org.br" style="color: var(--cyan); text-decoration: none;">contabilidade@santacasaprudente.org.br</a></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Nilo &amp; Almeida Advogados Associados</div>
+    <div style="font-size: 0.78rem; color: var(--text-dim); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Escrit&oacute;rio do Processo</div>
+
+    <div class="evidence-row">
+      <span class="evidence-label">Telefone</span>
+      <span class="evidence-value" style="font-family: 'Inter', monospace; font-size: 0.9rem;">(61) 3043-8065</span>
+    </div>
+    <div class="evidence-row">
+      <span class="evidence-label">E-mail</span>
+      <span class="evidence-value"><a href="mailto:angela@niloalmeidaadvogados.com" style="color: var(--cyan); text-decoration: none;">angela@niloalmeidaadvogados.com</a></span>
+    </div>
+    <div class="evidence-row" style="border-bottom: none;">
+      <span class="evidence-label">Endere&ccedil;o (Sede)</span>
+      <span class="evidence-value">SAUS Quadra 5, Bloco K, Edif&iacute;cio OK Office Tower, Asa Sul &mdash; Bras&iacute;lia/DF</span>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <strong>Fonte:</strong> Contatos oficiais vinculados aos CNPJs presentes no of&iacute;cio requisit&oacute;rio do tribunal.
+  </div>
+</section>
+</div>
+
+<!-- Footer -->
+<footer style="padding:14px 32px;border-top:1px solid rgba(255,255,255,.06);display:flex;align-items:center;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.3);background:var(--bg);">
+  <span>&copy; 2026 AuraTECH. Todos os direitos reservados. &mdash; <a href="mailto:suporte@auradue.com" style="color:rgba(255,255,255,.45);text-decoration:none;">suporte@auradue.com</a></span>
+  <span>Cadeia de Cust&oacute;dia Digital &mdash; Lei 13.964/2019</span>
+</footer>
+
+<script>
+  // Tab switching
+  document.querySelectorAll('.tab').forEach(function(tab) {
+    tab.addEventListener('click', function() {
+      document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      var panelId = 'tab-' + tab.getAttribute('data-tab');
+      document.getElementById(panelId).classList.add('active');
+    });
+  });
+
+  // Copiar CNJ
+  function copiarCNJ(el) {
+    var cnj = '1061297-10.2020.4.01.3400';
+    navigator.clipboard.writeText(cnj).then(function() {
+      el.classList.add('copied');
+      var icon = el.querySelector('.copy-icon');
+      var orig = icon.innerHTML;
+      icon.innerHTML = '<polyline points="3 8 6 11 13 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>';
+      setTimeout(function() { el.classList.remove('copied'); icon.innerHTML = orig; }, 1500);
+    });
+  }
+
+  // Exportar PDF (abre todas as abas e imprime)
+  function exportarPDF() {
+    // Ativa todas as abas para impressao completa
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = 'block'; });
+    window.print();
+    // Restaura abas apos impressao
+    setTimeout(function() {
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = ''; });
+    }, 500);
+  }
+
+  // Salvar PDF (mesma funcao, nome diferente — salva via dialogo do navegador)
+  function salvarPDF() {
+    // Ativa todas as abas
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = 'block'; });
+    // Sugere salvar como PDF no titulo
+    var origTitle = document.title;
+    document.title = 'DD_SantaCasa_PP_' + new Date().toISOString().slice(0,10);
+    window.print();
+    setTimeout(function() {
+      document.title = origTitle;
+      document.querySelectorAll('.tab-panel').forEach(function(p) { p.style.display = ''; });
+    }, 500);
+  }
+
+  // Language menu
+  function toggleLangMenu(e) {
+    e.stopPropagation();
+    var menu = document.getElementById('langMenu');
+    menu.classList.toggle('open');
+  }
+  document.addEventListener('click', function() {
+    document.getElementById('langMenu').classList.remove('open');
+  });
+
+  function setLang(lang) {
+    var labels = { pt: 'PT', en: 'EN', es: 'ES' };
+    document.querySelector('.lang-btn').childNodes[2].textContent = ' ' + labels[lang] + ' ';
+    document.querySelectorAll('.lang-option').forEach(function(o) { o.classList.remove('active'); });
+    event.target.classList.add('active');
+    document.getElementById('langMenu').classList.remove('open');
+    // Placeholder: internacionalizacao futura
+  }
+</script>
+</body>
+</html>

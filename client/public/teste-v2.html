@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA V2 — Teste Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: #0d1117;
+  color: #e2e8f0;
+  min-height: 100vh;
+  padding: 32px 16px;
+}
+.container { max-width: 1100px; margin: 0 auto; }
+header { margin-bottom: 28px; text-align: center; }
+h1 {
+  font-size: 28px; font-weight: 800;
+  background: linear-gradient(135deg, #06b6d4, #7c3aed);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  margin-bottom: 4px;
+}
+.subtitle { color: #64748b; font-size: 13px; }
+.card {
+  background: #162032;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 14px;
+}
+.dropzone {
+  border: 2px dashed rgba(34,211,238,0.3);
+  border-radius: 10px;
+  padding: 40px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: rgba(34,211,238,0.03);
+}
+.dropzone:hover, .dropzone.drag-over {
+  border-color: rgba(34,211,238,0.6);
+  background: rgba(34,211,238,0.08);
+}
+.dropzone .icon {
+  font-size: 40px; margin-bottom: 10px; opacity: 0.7;
+}
+.dropzone .primary { font-size: 15px; font-weight: 600; color: #22d3ee; }
+.dropzone .hint { font-size: 12px; color: #64748b; margin-top: 6px; }
+#file-input { display: none; }
+
+.file-list { margin-top: 14px; }
+.file-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 10px 14px;
+  background: rgba(255,255,255,0.03);
+  border-radius: 8px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+.file-row .name { flex: 1; color: #cbd5e1; }
+.file-row .size { color: #64748b; font-family: 'JetBrains Mono', monospace; font-size: 11px; }
+.file-row .remove { color: #f87171; cursor: pointer; font-weight: bold; padding: 0 6px; }
+
+.lgpd {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px;
+  background: rgba(251,191,36,0.08);
+  border: 1px solid rgba(251,191,36,0.2);
+  border-radius: 8px;
+  font-size: 12px; color: #fcd34d;
+  margin: 14px 0;
+}
+.lgpd input[type=checkbox] { margin-top: 2px; }
+.lgpd label { cursor: pointer; line-height: 1.5; }
+
+button.primary-btn {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, #06b6d4, #7c3aed);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px; font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+button.primary-btn:hover:not(:disabled) { opacity: 0.9; }
+button.primary-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.phases { margin-top: 24px; display: none; }
+.phases.active { display: block; }
+
+.progress-wrap {
+  background: #162032;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 12px;
+  padding: 18px;
+  margin-bottom: 14px;
+}
+.progress-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 10px;
+}
+.progress-header .title { font-size: 13px; font-weight: 600; color: #22d3ee; }
+.progress-header .pct { font-size: 13px; font-weight: 700; color: #e2e8f0; font-family: 'JetBrains Mono', monospace; }
+.progress-bar-bg {
+  width: 100%; height: 10px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+.progress-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #06b6d4, #7c3aed);
+  border-radius: 10px;
+  width: 0%;
+  transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  position: relative;
+  overflow: hidden;
+}
+.progress-bar-fill::after {
+  content: "";
+  position: absolute; inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  animation: shimmer 1.8s infinite;
+}
+@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
+.progress-status {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #94a3b8;
+  display: flex; justify-content: space-between;
+}
+.progress-status .elapsed { font-family: 'JetBrains Mono', monospace; }
+.progress-bar-fill.done::after { animation: none; }
+.phase {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,0.02);
+  border-left: 3px solid #334155;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.phase.pending { border-color: #334155; color: #64748b; }
+.phase.running { border-color: #22d3ee; color: #22d3ee; background: rgba(34,211,238,0.05); }
+.phase.ok { border-color: #10b981; color: #34d399; }
+.phase.error { border-color: #ef4444; color: #f87171; }
+.phase .status-icon { font-size: 16px; width: 20px; text-align: center; }
+.phase .label { flex: 1; font-weight: 500; }
+.phase .detail { font-size: 11px; color: #64748b; font-family: 'JetBrains Mono', monospace; }
+
+.spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(34,211,238,0.2);
+  border-top: 2px solid #22d3ee;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.result { margin-top: 20px; display: none; }
+.result.active { display: block; }
+.result-actions { display: flex; gap: 10px; margin-top: 14px; }
+.result-actions a {
+  flex: 1;
+  padding: 12px;
+  text-align: center;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 13px;
+  border: 1px solid;
+}
+.result-actions a.paid {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+  color: white;
+  border-color: transparent;
+}
+.result-actions a.free {
+  background: rgba(34,211,238,0.1);
+  color: #22d3ee;
+  border-color: rgba(34,211,238,0.3);
+}
+
+.log {
+  margin-top: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 12px;
+  background: #0a0f1a;
+  border-radius: 6px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: #94a3b8;
+  white-space: pre-wrap;
+}
+
+.error-box {
+  margin-top: 14px;
+  padding: 14px;
+  background: rgba(239,68,68,0.1);
+  border: 1px solid rgba(239,68,68,0.3);
+  border-radius: 8px;
+  color: #fca5a5;
+  font-size: 13px;
+  display: none;
+}
+.error-box.active { display: block; }
+
+footer {
+  text-align: center;
+  margin-top: 30px;
+  font-size: 10px;
+  color: #475569;
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>🔍 AuraLOA V2 — Pipeline de Teste</h1>
+    <div class="subtitle">Upload de até 5 PDFs · Extração Haiku · Consolidação · Revisor · Enriquecimento · Relatório</div>
+  </header>
+
+  <div class="card">
+    <div class="dropzone" id="dropzone">
+      <div class="icon">📄</div>
+      <div class="primary">Arraste PDFs ou clique para selecionar</div>
+      <div class="hint">Até 5 arquivos · ofício requisitório, certidão, sentença, acórdão, despacho ou qualquer peça processual</div>
+    </div>
+    <input type="file" id="file-input" accept="application/pdf" multiple>
+
+    <div class="file-list" id="file-list"></div>
+
+    <div class="lgpd">
+      <input type="checkbox" id="lgpd-check">
+      <label for="lgpd-check">
+        <strong>LGPD — Autorização de tratamento de dados:</strong> autorizo o AuraLOA a processar
+        o documento para análise forense e armazená-lo para futuras consultas. Servidor em Hetzner (Alemanha),
+        conforme GDPR/LGPD.
+      </label>
+    </div>
+
+    <button id="analyze-btn" class="primary-btn" disabled>Analisar documentos</button>
+
+    <div class="error-box" id="error-box"></div>
+  </div>
+
+  <div class="phases" id="phases">
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="title" id="progress-title">⚙️ Analisando documento…</span>
+        <span class="pct" id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-status">
+        <span id="progress-current">Iniciando…</span>
+        <span class="elapsed" id="progress-elapsed">00:00</span>
+      </div>
+    </div>
+    <h2 style="font-size:14px; color:#22d3ee; margin-bottom:10px;">📋 Fases</h2>
+    <div class="phase pending" data-phase="1"><span class="status-icon">○</span><span class="label">1. Upload dos PDFs</span><span class="detail"></span></div>
+    <div class="phase pending" data-phase="2"><span class="status-icon">○</span><span class="label">2. Extração (Claude Haiku 4.5)</span><span class="detail"></span></div>
+    <div class="phase pending" data-phase="3"><span class="status-icon">○</span><span class="label">3. Consolidação por CNJ + Revisor</span><span class="detail"></span></div>
+    <div class="phase pending" data-phase="4"><span class="status-icon">○</span><span class="label">4. Confirmação</span><span class="detail"></span></div>
+    <div class="phase pending" data-phase="5"><span class="status-icon">○</span><span class="label">5. Enriquecimento (F1/F2/F3 + URL oficial)</span><span class="detail"></span></div>
+    <div class="phase pending" data-phase="6"><span class="status-icon">○</span><span class="label">6. Relatório HTML</span><span class="detail"></span></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="card" style="border-color: rgba(16,185,129,0.3);">
+      <h2 style="font-size:16px; color:#34d399; margin-bottom:10px;">✅ Análise completa</h2>
+      <div id="result-summary" style="font-size:13px; color:#cbd5e1; line-height:1.6;"></div>
+      <div class="result-actions">
+        <a id="link-free" class="free" target="_blank">👁️ Ver HTML FREE</a>
+        <a id="link-paid" class="paid" target="_blank">🔓 Ver HTML COMPLETO</a>
+      </div>
+      <div class="result-actions" style="margin-top:8px;">
+        <a id="link-pdf-free" class="free" target="_blank">📄 Baixar PDF FREE (ABNT)</a>
+        <a id="link-pdf-paid" class="paid" target="_blank">📄 Baixar PDF COMPLETO (ABNT)</a>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    AuraLOA V2 · Pipeline de teste em localhost:5001 · Branch feat/v2-pipeline-freemium
+  </footer>
+</div>
+
+<script>
+const API = "/api/v2";
+const dropzone = document.getElementById("dropzone");
+const fileInput = document.getElementById("file-input");
+const fileList = document.getElementById("file-list");
+const lgpdCheck = document.getElementById("lgpd-check");
+const analyzeBtn = document.getElementById("analyze-btn");
+const phasesBox = document.getElementById("phases");
+const resultBox = document.getElementById("result");
+const errorBox = document.getElementById("error-box");
+const log = document.getElementById("log");
+
+let selectedFiles = [];
+
+function renderFiles() {
+  fileList.innerHTML = selectedFiles.map((f, i) => `
+    <div class="file-row">
+      <span>📄</span>
+      <span class="name">${escapeHtml(f.name)}</span>
+      <span class="size">${(f.size / 1024).toFixed(1)} KB</span>
+      <span class="remove" data-i="${i}">✕</span>
+    </div>
+  `).join("");
+  updateBtn();
+}
+
+fileList.addEventListener("click", (e) => {
+  const i = e.target?.dataset?.i;
+  if (i !== undefined) {
+    selectedFiles.splice(parseInt(i, 10), 1);
+    renderFiles();
+  }
+});
+
+function addFiles(files) {
+  for (const f of files) {
+    if (f.type !== "application/pdf") continue;
+    if (selectedFiles.length >= 5) break;
+    selectedFiles.push(f);
+  }
+  renderFiles();
+}
+
+dropzone.addEventListener("click", () => fileInput.click());
+fileInput.addEventListener("change", (e) => addFiles(e.target.files));
+
+dropzone.addEventListener("dragover", (e) => { e.preventDefault(); dropzone.classList.add("drag-over"); });
+dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag-over"));
+dropzone.addEventListener("drop", (e) => {
+  e.preventDefault();
+  dropzone.classList.remove("drag-over");
+  addFiles(e.dataTransfer.files);
+});
+
+lgpdCheck.addEventListener("change", updateBtn);
+function updateBtn() {
+  analyzeBtn.disabled = selectedFiles.length === 0 || !lgpdCheck.checked;
+}
+
+function escapeHtml(s) {
+  return String(s || "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
+}
+
+function logMsg(msg) {
+  const line = `[${new Date().toLocaleTimeString("pt-BR")}] ${msg}`;
+  log.textContent += line + "\n";
+  log.scrollTop = log.scrollHeight;
+}
+
+const TOTAL_PHASES = 6;
+const PHASE_LABELS = {
+  1: "Enviando PDFs ao servidor",
+  2: "Extraindo campos via Claude Haiku 4.5",
+  3: "Consolidando por CNJ + revisor automático",
+  4: "Confirmando consolidação",
+  5: "Enriquecendo (DataJud + LOA + contatos + URL oficial)",
+  6: "Gerando relatório HTML",
+};
+
+let progressStartTs = 0;
+let progressTimer = null;
+
+function startProgressTimer() {
+  progressStartTs = Date.now();
+  if (progressTimer) clearInterval(progressTimer);
+  progressTimer = setInterval(() => {
+    const s = Math.floor((Date.now() - progressStartTs) / 1000);
+    const mm = String(Math.floor(s / 60)).padStart(2, "0");
+    const ss = String(s % 60).padStart(2, "0");
+    const el = document.getElementById("progress-elapsed");
+    if (el) el.textContent = `${mm}:${ss}`;
+  }, 500);
+}
+
+function stopProgressTimer() {
+  if (progressTimer) { clearInterval(progressTimer); progressTimer = null; }
+}
+
+function updateProgress(phaseNum, status) {
+  // "running" = começou = marca início da fase (fill até N-1/6)
+  // "ok" | "error" = terminou = marca N/6
+  const completed = status === "ok" || status === "error" ? phaseNum : phaseNum - 1;
+  const pct = Math.min(100, Math.max(0, Math.round((completed / TOTAL_PHASES) * 100)));
+  const fill = document.getElementById("progress-fill");
+  const pctEl = document.getElementById("progress-pct");
+  const curEl = document.getElementById("progress-current");
+  const titleEl = document.getElementById("progress-title");
+  if (fill) fill.style.width = pct + "%";
+  if (pctEl) pctEl.textContent = pct + "%";
+  if (curEl) curEl.textContent = status === "error"
+    ? `❌ Erro na fase ${phaseNum} — ${PHASE_LABELS[phaseNum]}`
+    : `${status === "ok" ? "✓" : "▶"} Fase ${phaseNum}/${TOTAL_PHASES} — ${PHASE_LABELS[phaseNum]}`;
+  if (pct === 100) {
+    if (titleEl) titleEl.textContent = "✅ Análise concluída";
+    fill?.classList.add("done");
+    stopProgressTimer();
+  } else if (status === "error") {
+    if (titleEl) titleEl.textContent = "❌ Análise interrompida";
+    fill?.classList.add("done");
+    stopProgressTimer();
+  }
+}
+
+function setPhase(n, status, detail = "") {
+  const el = document.querySelector(`.phase[data-phase="${n}"]`);
+  if (!el) return;
+  el.classList.remove("pending", "running", "ok", "error");
+  el.classList.add(status);
+  const iconMap = { pending: "○", running: "", ok: "✓", error: "✗" };
+  const iconEl = el.querySelector(".status-icon");
+  if (status === "running") {
+    iconEl.innerHTML = '<div class="spinner"></div>';
+  } else {
+    iconEl.textContent = iconMap[status];
+  }
+  el.querySelector(".detail").textContent = detail;
+  updateProgress(n, status);
+}
+
+function showError(msg) {
+  errorBox.textContent = "❌ " + msg;
+  errorBox.classList.add("active");
+}
+function hideError() {
+  errorBox.classList.remove("active");
+}
+
+analyzeBtn.addEventListener("click", async () => {
+  hideError();
+  analyzeBtn.disabled = true;
+  phasesBox.classList.add("active");
+  resultBox.classList.remove("active");
+  log.textContent = "";
+
+  // Reset phases + progress
+  document.getElementById("progress-fill").classList.remove("done");
+  document.getElementById("progress-fill").style.width = "0%";
+  document.getElementById("progress-pct").textContent = "0%";
+  document.getElementById("progress-title").textContent = "⚙️ Analisando documento…";
+  document.getElementById("progress-current").textContent = "Iniciando…";
+  document.getElementById("progress-elapsed").textContent = "00:00";
+  for (let i = 1; i <= 6; i++) setPhase(i, "pending", "");
+  startProgressTimer();
+
+  let loteId = null;
+
+  try {
+    // PASSO 1 — Upload
+    setPhase(1, "running");
+    logMsg(`Enviando ${selectedFiles.length} PDF(s) para /api/v2/lote…`);
+    const fd = new FormData();
+    for (const f of selectedFiles) fd.append("files", f);
+    fd.append("lgpd_consent", "true");
+    const r1 = await fetch(`${API}/lote`, { method: "POST", body: fd });
+    if (!r1.ok) {
+      const err = await r1.json().catch(() => ({ error: `HTTP ${r1.status}` }));
+      throw new Error("Upload falhou: " + (err.error || r1.status));
+    }
+    const d1 = await r1.json();
+    loteId = d1.lote_id;
+    setPhase(1, "ok", `lote ${loteId} · ${d1.total_docs} docs`);
+    logMsg(`✓ Lote ${loteId} criado`);
+    for (const d of d1.docs) {
+      logMsg(`  📄 ordem ${d.ordem} — ${d.original_name} (${d.paginas} págs, ${d.chars_extraidos} chars${d.needs_ocr ? ", OCR necessário" : ""})`);
+    }
+
+    // PASSO 2 — Extrair
+    setPhase(2, "running");
+    logMsg("Extraindo via Claude Haiku 4.5 (em paralelo)…");
+    const r2 = await fetch(`${API}/lote/${loteId}/extrair`, { method: "POST" });
+    if (!r2.ok) throw new Error("Extração falhou: HTTP " + r2.status);
+    const d2 = await r2.json();
+    const totalCost = d2.cost_total_brl_aprox ? `R$ ${d2.cost_total_brl_aprox.toFixed(3)}` : "—";
+    setPhase(2, "ok", `${d2.total_docs} docs · ${(d2.duracao_total_ms/1000).toFixed(1)}s · ${totalCost}`);
+    logMsg(`✓ Extração: ${d2.duracao_total_ms}ms · custo ${totalCost}`);
+    for (const d of d2.docs) {
+      logMsg(`  ${d.status === "ok" ? "✓" : "✗"} ${d.natureza_documento || "—"} · CNJ ${d.numero_cnj || "[não extraído]"} · ${d.valor_rs ? "R$ " + d.valor_rs.toLocaleString("pt-BR") : "[sem valor]"}`);
+    }
+
+    // PASSO 3 — Consolidar + Revisar
+    setPhase(3, "running");
+    logMsg("Consolidando por CNJ e rodando revisor 3 níveis…");
+    const r3 = await fetch(`${API}/lote/${loteId}/consolidar`, { method: "POST" });
+    if (!r3.ok) throw new Error("Consolidação falhou: HTTP " + r3.status);
+    const d3 = await r3.json();
+    const revDec = d3.revisor.decisao;
+    const revScore = d3.revisor.score;
+    setPhase(3, "ok", `${revDec} · score ${revScore}/100 · ${d3.revisor.nivel_atingido}`);
+    logMsg(`✓ Revisor: ${revDec} (score ${revScore}, nível ${d3.revisor.nivel_atingido})`);
+    logMsg(`  Mesmo caso: ${d3.consolidacao.provavelmente_mesmo_caso ? "SIM" : "NÃO"}`);
+    logMsg(`  Partes em comum: ${(d3.consolidacao.partes_em_comum || []).join(" · ") || "—"}`);
+    logMsg(`  Campos preenchidos: ${d3.consolidacao.campos_preenchidos}/${d3.consolidacao.total_campos}`);
+
+    // PASSO 4 — Confirmar
+    setPhase(4, "running");
+    const r4 = await fetch(`${API}/lote/${loteId}/confirmar`, { method: "POST" });
+    if (!r4.ok) throw new Error("Confirmação falhou: HTTP " + r4.status);
+    setPhase(4, "ok", "aprovado pelo usuário");
+    logMsg(`✓ Lote confirmado`);
+
+    // PASSO 5 — Enriquecer
+    setPhase(5, "running");
+    logMsg("Enriquecendo via F1 DataJud + F2 LOA + F3 Contatos + URL oficial…");
+    const r5 = await fetch(`${API}/lote/${loteId}/enriquecer`, { method: "POST" });
+    if (!r5.ok) throw new Error("Enriquecimento falhou: HTTP " + r5.status);
+    const d5 = await r5.json();
+    const fasesOk = d5.fases_executadas.filter(f => f.status === "ok").length;
+    setPhase(5, "ok", `${fasesOk}/${d5.fases_executadas.length} fases OK · ${(d5.duracao_total_ms/1000).toFixed(1)}s`);
+    logMsg(`✓ Enriquecimento: ${d5.duracao_total_ms}ms`);
+    for (const f of d5.fases_executadas) {
+      const emoji = f.status === "ok" ? "✓" : f.status === "indisponivel" ? "⚠" : "✗";
+      logMsg(`  ${emoji} ${f.fase}: ${f.status} (${f.confianca}) · ${f.total_itens_novos} itens novos · ${f.duracao_ms}ms${f.motivo ? " · " + f.motivo : ""}`);
+    }
+
+    // PASSO 6 — Relatório
+    setPhase(6, "running");
+    setPhase(6, "ok", "HTML gerado");
+    logMsg(`✓ Relatório disponível`);
+
+    // Mostrar links
+    document.getElementById("link-free").href = `${API}/lote/${loteId}/relatorio?mascarar=true`;
+    document.getElementById("link-paid").href = `${API}/lote/${loteId}/relatorio?mascarar=false`;
+    document.getElementById("link-pdf-free").href = `${API}/lote/${loteId}/relatorio.pdf?mascarar=true`;
+    document.getElementById("link-pdf-paid").href = `${API}/lote/${loteId}/relatorio.pdf?mascarar=false`;
+    document.getElementById("result-summary").innerHTML = `
+      <strong>Lote <span style="font-family:'JetBrains Mono',monospace; color:#22d3ee;">${loteId}</span></strong><br>
+      ${d5.fases_executadas.length} fases executadas · ${Object.keys(d5.itens_preenchidos_por_enriquecimento || {}).length} itens novos via enriquecimento
+    `;
+    resultBox.classList.add("active");
+  } catch (err) {
+    showError(err.message || String(err));
+    logMsg("✗ ERRO: " + (err.message || err));
+    // Marca fase atual como erro
+    for (let i = 6; i >= 1; i--) {
+      const el = document.querySelector(`.phase[data-phase="${i}"]`);
+      if (el?.classList.contains("running")) {
+        setPhase(i, "error", "falhou");
+        break;
+      }
+    }
+  } finally {
+    analyzeBtn.disabled = false;
+    updateBtn();
+  }
+});
+</script>
+</body>
+</html>

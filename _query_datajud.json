@@ -1,0 +1,5 @@
+{
+  "query": {
+    "match": {"numeroProcesso": "00397646220253000000"}
+  }
+}

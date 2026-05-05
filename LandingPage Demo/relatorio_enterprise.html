@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA Enterprise — Relatório Precatório</title>
+<style>
+/* ─── RESET & BASE ─── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f6f7f9;
+  --bg2:      #eef0f4;
+  --card:     #ffffff;
+  --border:   #d8dce6;
+  --border2:  #c4cad8;
+  --text:     #1e293b;
+  --text2:    #475569;
+  --text3:    #94a3b8;
+  --brand:    #06b6d4;
+  --brand2:   #0891b2;
+  --violet:   #7c3aed;
+  --emerald:  #10b981;
+  --amber:    #f59e0b;
+  --red:      #ef4444;
+  --indigo:   #6366f1;
+  --cyan:     #06b6d4;
+  --topbar:   #0f172a;
+  --mono:     "Courier New", "Courier", monospace;
+  --r:        6px;
+  --r-sm:     4px;
+  --r-full:   9999px;
+  --shadow:   0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 6px -1px rgba(0,0,0,.07), 0 2px 4px -2px rgba(0,0,0,.05);
+  --card-p:   1.25rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg:      #0b1120;
+    --bg2:     #111827;
+    --card:    #1a2744;
+    --border:  #1e3a5f;
+    --border2: #2a4a72;
+    --text:    #e2e8f0;
+    --text2:   #94a3b8;
+    --text3:   #64748b;
+    --topbar:  #0a0f1e;
+    --shadow:  0 1px 3px rgba(0,0,0,.3);
+    --shadow-md:0 4px 6px rgba(0,0,0,.4);
+  }
+}
+
+html { font-size: 14px; }
+body {
+  font-family: var(--mono);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── WATERMARK ─── */
+.watermark {
+  position: fixed; top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-35deg);
+  font-size: 3.2rem; font-weight: 700;
+  color: rgba(99,102,241,0.06);
+  white-space: nowrap; pointer-events: none;
+  z-index: 9999; letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+@media (prefers-color-scheme: dark) {
+  .watermark { color: rgba(99,102,241,0.08); }
+}
+
+/* ─── TOPBAR ─── */
+.topbar {
+  background: var(--topbar);
+  color: #e2e8f0;
+  padding: 0.85rem 1.75rem;
+  display: flex; align-items: center; gap: 1rem;
+  border-bottom: 2px solid var(--brand);
+  position: sticky; top: 0; z-index: 100;
+}
+.topbar-logo {
+  display: flex; align-items: center; gap: 0.6rem;
+  font-weight: 700; font-size: 1.05rem;
+  letter-spacing: -0.02em;
+}
+.topbar-logo-icon {
+  width: 30px; height: 30px; border-radius: 6px;
+  background: linear-gradient(135deg, #06b6d4, #7c3aed);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: #fff; font-weight: 800;
+}
+.topbar-sep { width: 1px; height: 24px; background: rgba(255,255,255,.15); }
+.topbar-title { font-size: 0.82rem; color: #94a3b8; font-weight: 400; }
+.topbar-cnj {
+  font-size: 0.78rem; color: #06b6d4;
+  background: rgba(6,182,212,.1); border: 1px solid rgba(6,182,212,.25);
+  padding: 2px 10px; border-radius: var(--r-full);
+}
+.topbar-badge {
+  margin-left: auto;
+  font-size: 0.7rem; font-weight: 700;
+  color: #fbbf24; background: rgba(251,191,36,.12);
+  border: 1px solid rgba(251,191,36,.3);
+  padding: 3px 12px; border-radius: var(--r-full);
+  letter-spacing: 0.1em; text-transform: uppercase;
+}
+
+/* ─── LAYOUT ─── */
+.container { max-width: 1140px; margin: 0 auto; padding: 1.5rem; }
+
+.layer-header {
+  display: flex; align-items: center; gap: 0.6rem;
+  margin: 2rem 0 1rem; padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+}
+.layer-num {
+  width: 28px; height: 28px; border-radius: var(--r-full);
+  background: linear-gradient(135deg, #06b6d4, #7c3aed);
+  color: #fff; font-size: 0.78rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.layer-title { font-size: 1rem; font-weight: 700; letter-spacing: -0.01em; }
+.layer-sub { font-size: 0.78rem; color: var(--text3); margin-left: auto; }
+
+/* ─── CARDS ─── */
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: var(--card-p);
+  box-shadow: var(--shadow);
+}
+
+/* ─── KPI GRID ─── */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem; }
+.kpi { text-align: center; }
+.kpi-label { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px; }
+.kpi-value { font-size: 1.35rem; font-weight: 700; color: var(--brand); }
+.kpi-value.emerald { color: var(--emerald); }
+.kpi-value.violet { color: var(--violet); }
+.kpi-value.amber { color: var(--amber); }
+
+/* ─── DETAIL TABLE ─── */
+.dtable { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+.dtable th {
+  text-align: left; font-weight: 600; padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text2); font-size: 0.72rem;
+  text-transform: uppercase; letter-spacing: 0.06em;
+}
+.dtable td {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+.dtable tr:last-child td { border-bottom: none; }
+.dtable .lbl { color: var(--text3); width: 40%; }
+
+/* ─── SPLIT BAR ─── */
+.split-bar {
+  display: flex; height: 26px; border-radius: var(--r-sm);
+  overflow: hidden; font-size: 0.68rem; font-weight: 600;
+  color: #fff; margin: 0.5rem 0;
+}
+.split-bar > div {
+  display: flex; align-items: center; justify-content: center;
+  white-space: nowrap; padding: 0 6px;
+}
+
+/* ─── 3-COL GRID ─── */
+.grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+.grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem; }
+
+/* ─── GAUGE SVG ─── */
+.gauge-wrap { text-align: center; }
+.gauge-label { font-size: 0.72rem; color: var(--text3); margin-top: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+.gauge-score { font-size: 1.4rem; font-weight: 700; }
+
+/* ─── TIMELINE ─── */
+.tl { position: relative; padding-left: 22px; }
+.tl::before {
+  content: ''; position: absolute; left: 6px; top: 4px; bottom: 4px;
+  width: 2px; background: var(--border);
+}
+.tl-item { position: relative; margin-bottom: 1rem; }
+.tl-dot {
+  position: absolute; left: -22px; top: 4px;
+  width: 12px; height: 12px; border-radius: 50%;
+  border: 2px solid var(--card);
+}
+.tl-dot.ok { background: var(--emerald); }
+.tl-dot.warn { background: var(--amber); }
+.tl-dot.err { background: var(--red); }
+.tl-date { font-size: 0.7rem; color: var(--text3); }
+.tl-desc { font-size: 0.82rem; margin-top: 2px; }
+.tl-badge {
+  display: inline-block; font-size: 0.62rem; font-weight: 700;
+  padding: 1px 8px; border-radius: var(--r-full);
+  text-transform: uppercase; letter-spacing: 0.06em;
+  margin-left: 6px; vertical-align: middle;
+}
+.tl-badge.ok { background: rgba(16,185,129,.12); color: #10b981; border: 1px solid rgba(16,185,129,.25); }
+.tl-badge.warn { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.25); }
+.tl-badge.err { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.25); }
+
+/* ─── CONF BAR ─── */
+.conf-row { margin-bottom: 0.6rem; }
+.conf-label { font-size: 0.72rem; color: var(--text2); margin-bottom: 3px; display: flex; justify-content: space-between; }
+.conf-track { height: 8px; background: var(--bg2); border-radius: var(--r-full); overflow: hidden; }
+.conf-fill { height: 100%; border-radius: var(--r-full); transition: width .5s; }
+
+/* ─── BAR CHART (CSS) ─── */
+.bar-chart { display: flex; align-items: flex-end; gap: 8px; height: 140px; padding-top: 10px; }
+.bar-col { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.bar-fill {
+  width: 100%; border-radius: var(--r-sm) var(--r-sm) 0 0;
+  background: linear-gradient(to top, var(--brand), var(--violet));
+  position: relative;
+  transition: height .4s;
+}
+.bar-fill .bar-val {
+  position: absolute; top: -18px; left: 50%; transform: translateX(-50%);
+  font-size: 0.62rem; color: var(--text2); white-space: nowrap;
+}
+.bar-label { font-size: 0.65rem; color: var(--text3); }
+
+/* ─── PIPELINE STEPS ─── */
+.pipeline { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.pipe-step {
+  flex: 1; min-width: 140px;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  background: var(--card);
+  text-align: center;
+  font-size: 0.78rem;
+}
+.pipe-dot {
+  width: 10px; height: 10px; border-radius: 50%;
+  background: var(--emerald);
+  display: inline-block; margin-bottom: 6px;
+}
+.pipe-hash { font-size: 0.6rem; color: var(--cyan); margin-top: 4px; word-break: break-all; }
+
+/* ─── IMPACT TABLE ─── */
+.impacto-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; }
+.impacto-table th {
+  text-align: left; padding: 8px 10px;
+  background: var(--bg2); font-weight: 600;
+  font-size: 0.7rem; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+.impacto-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.impacto-table tr:last-child td { border-bottom: none; }
+
+/* ─── BADGES ─── */
+.badge {
+  display: inline-block; font-size: 0.65rem; font-weight: 700;
+  padding: 2px 10px; border-radius: var(--r-full);
+  letter-spacing: 0.04em;
+}
+.badge-ok { background: rgba(16,185,129,.12); color: #10b981; border: 1px solid rgba(16,185,129,.25); }
+.badge-warn { background: rgba(245,158,11,.12); color: #f59e0b; border: 1px solid rgba(245,158,11,.25); }
+.badge-err { background: rgba(239,68,68,.12); color: #ef4444; border: 1px solid rgba(239,68,68,.25); }
+.badge-info { background: rgba(99,102,241,.12); color: #818cf8; border: 1px solid rgba(99,102,241,.25); }
+
+/* ─── HASH FOOTER ─── */
+.hash-footer {
+  margin-top: 2rem; padding: 1.25rem;
+  background: var(--topbar); color: #94a3b8;
+  border-radius: var(--r);
+  font-size: 0.72rem;
+}
+.hash-footer .hash-val { color: var(--cyan); word-break: break-all; }
+.hash-footer .hash-label { color: var(--text3); font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.08em; }
+
+/* ─── FOOTER ─── */
+.footer {
+  text-align: center; padding: 2rem 1rem;
+  color: var(--text3); font-size: 0.72rem;
+  border-top: 1px solid var(--border);
+  margin-top: 2rem;
+}
+.footer-brand { font-weight: 700; color: var(--brand); }
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 700px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  .grid-3 { grid-template-columns: 1fr; }
+  .grid-2 { grid-template-columns: 1fr; }
+  .pipeline { flex-direction: column; }
+  .topbar { flex-wrap: wrap; gap: 0.5rem; }
+  .topbar-badge { margin-left: 0; }
+  .bar-chart { height: 100px; }
+}
+
+/* ─── PRINT ─── */
+@media print {
+  .watermark { display: none; }
+  .topbar { position: static; background: #fff; color: #000; border-bottom: 2px solid #06b6d4; }
+  .topbar-badge { color: #92400e; border-color: #92400e; }
+  body { background: #fff; color: #000; }
+  .card { box-shadow: none; border: 1px solid #d1d5db; }
+  .hash-footer { background: #f3f4f6; color: #374151; }
+  .hash-footer .hash-val { color: #0891b2; }
+  @page { margin: 1.5cm; }
+}
+</style>
+</head>
+<body>
+
+<div class="watermark">MODELO ENTERPRISE &mdash; DEMONSTRA&Ccedil;&Atilde;O</div>
+
+<!-- ═══════════════════ TOPBAR ═══════════════════ -->
+<header class="topbar">
+  <div class="topbar-logo">
+    <div class="topbar-logo-icon">A</div>
+    <span>AuraLOA</span>
+  </div>
+  <div class="topbar-sep"></div>
+  <span class="topbar-title">Relat&oacute;rio Enterprise</span>
+  <span class="topbar-cnj">0004217-63.2019.4.03.6183</span>
+  <span class="topbar-badge">Confidencial</span>
+</header>
+
+<main class="container">
+
+<!-- ═══════════════════ LAYER 1 ═══════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">1</div>
+  <div class="layer-title">Identifica&ccedil;&atilde;o e Classifica&ccedil;&atilde;o</div>
+  <div class="layer-sub">Dados do precat&oacute;rio e enquadramento legal</div>
+</div>
+
+<!-- KPI GRID -->
+<div class="card" style="margin-bottom:.75rem">
+  <div class="kpi-grid">
+    <div class="kpi">
+      <div class="kpi-label">Valor da Causa</div>
+      <div class="kpi-value">R$ 8.750.000,00</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Tipo</div>
+      <div class="kpi-value violet">PRECAT&Oacute;RIO</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Natureza</div>
+      <div class="kpi-value emerald">Alimentar</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label">Fila</div>
+      <div class="kpi-value amber">Preferencial</div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-2" style="margin-bottom:.75rem">
+  <!-- Identification -->
+  <div class="card">
+    <table class="dtable">
+      <tr><td class="lbl">CNJ</td><td>0004217-63.2019.4.03.6183</td></tr>
+      <tr><td class="lbl">Of&iacute;cio Precat&oacute;rio</td><td>8&ordm; Of&iacute;cio &mdash; Precat&oacute;rios Federais</td></tr>
+      <tr><td class="lbl">Tribunal</td><td>TRF3 &mdash; Tribunal Regional Federal da 3&ordf; Regi&atilde;o</td></tr>
+      <tr><td class="lbl">Classe</td><td>Procedimento Comum C&iacute;vel</td></tr>
+      <tr><td class="lbl">Grau</td><td>1&ordm; Grau &mdash; Vara Federal</td></tr>
+      <tr><td class="lbl">&Oacute;rg&atilde;o Julgador</td><td>3&ordf; Vara Federal de S&atilde;o Paulo/SP</td></tr>
+      <tr><td class="lbl">Data Ajuizamento</td><td>14/02/2019</td></tr>
+    </table>
+  </div>
+  <!-- Classification -->
+  <div class="card">
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:.6rem">Classifica&ccedil;&atilde;o &mdash; Limites RPV</div>
+    <table class="dtable">
+      <tr><th>Esfera</th><th>Limite RPV</th><th>Enquadramento</th></tr>
+      <tr><td>Federal</td><td>R$ 75.852,00</td><td><span class="badge badge-info">Precat&oacute;rio</span></td></tr>
+      <tr><td>Estadual</td><td>Varia por UF</td><td>&mdash;</td></tr>
+      <tr><td>Municipal</td><td>Varia por munic&iacute;pio</td><td>&mdash;</td></tr>
+    </table>
+    <div style="margin-top:.7rem;font-size:.72rem;color:var(--text3)">
+      <strong>Preferencial:</strong> Cr&eacute;dito alimentar (CF art. 100 &sect;1&ordm;) com prioridade
+      constitucional at&eacute; 5x o limite de RPV por benefici&aacute;rio com 60+ anos.
+    </div>
+  </div>
+</div>
+
+<!-- Split bar: Original vs Atualizado vs Honorarios -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.4rem">Composi&ccedil;&atilde;o do Valor</div>
+  <div class="split-bar">
+    <div style="width:55%;background:#06b6d4">Original R$ 4.812.500</div>
+    <div style="width:30%;background:#7c3aed">Atualizado +R$ 2.625.000</div>
+    <div style="width:15%;background:#6366f1">Honor. R$ 1.312.500</div>
+  </div>
+  <div style="font-size:.65rem;color:var(--text3);margin-top:.3rem">
+    Valor original + corre&ccedil;&atilde;o monet&aacute;ria (IPCA-E) + honor&aacute;rios contratuais (15%)
+  </div>
+</div>
+
+<!-- ═══════════════════ LAYER 2 ═══════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">2</div>
+  <div class="layer-title">Status e Movimenta&ccedil;&otilde;es</div>
+  <div class="layer-sub">An&aacute;lise temporal e indicadores de risco</div>
+</div>
+
+<div class="grid-3" style="margin-bottom:.75rem">
+  <!-- Gauge: Pagamento -->
+  <div class="card gauge-wrap">
+    <svg width="120" height="80" viewBox="0 0 120 80">
+      <path d="M10 70 A50 50 0 0 1 110 70" fill="none" stroke="var(--border)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M10 70 A50 50 0 0 1 72 22" fill="none" stroke="url(#gGrad)" stroke-width="10" stroke-linecap="round"/>
+      <defs><linearGradient id="gGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#06b6d4"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs>
+      <text x="60" y="65" text-anchor="middle" font-family="Courier New" font-size="18" font-weight="700" fill="var(--text)">65%</text>
+    </svg>
+    <div class="gauge-label">Probabilidade de Pagamento</div>
+    <div style="font-size:.68rem;color:var(--text3);margin-top:4px">Exerc&iacute;cio 2026</div>
+  </div>
+  <!-- Status Baixa -->
+  <div class="card" style="text-align:center">
+    <div style="font-size:.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.5rem">Baixa / Arquivamento</div>
+    <div style="font-size:1.6rem;font-weight:700;color:var(--amber)">PENDENTE</div>
+    <div style="font-size:.72rem;color:var(--text3);margin-top:.3rem">Sem previs&atilde;o de baixa</div>
+    <div style="margin-top:.6rem">
+      <span class="badge badge-warn">Aguardando Dota&ccedil;&atilde;o</span>
+    </div>
+  </div>
+  <!-- Risk Score Gauge -->
+  <div class="card gauge-wrap">
+    <svg width="120" height="80" viewBox="0 0 120 80">
+      <path d="M10 70 A50 50 0 0 1 110 70" fill="none" stroke="var(--border)" stroke-width="10" stroke-linecap="round"/>
+      <path d="M10 70 A50 50 0 0 1 46 24" fill="none" stroke="url(#rGrad)" stroke-width="10" stroke-linecap="round"/>
+      <defs><linearGradient id="rGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#10b981"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs>
+      <text x="60" y="65" text-anchor="middle" font-family="Courier New" font-size="18" font-weight="700" fill="var(--text)">38</text>
+    </svg>
+    <div class="gauge-label">Risk Score</div>
+    <div style="font-size:.68rem;color:var(--emerald);margin-top:4px">Risco Moderado-Baixo</div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.8rem">Movimenta&ccedil;&otilde;es Relevantes</div>
+  <div class="tl">
+    <div class="tl-item">
+      <div class="tl-dot ok"></div>
+      <div class="tl-date">22/01/2026</div>
+      <div class="tl-desc">Inclus&atilde;o em pauta or&ccedil;ament&aacute;ria LOA 2026 &mdash; TRF3 <span class="tl-badge ok">OK</span></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot ok"></div>
+      <div class="tl-date">15/11/2025</div>
+      <div class="tl-desc">Homologa&ccedil;&atilde;o de c&aacute;lculos pelo juiz da execu&ccedil;&atilde;o <span class="tl-badge ok">OK</span></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot warn"></div>
+      <div class="tl-date">03/08/2025</div>
+      <div class="tl-desc">Impugna&ccedil;&atilde;o de c&aacute;lculos pela Fazenda &mdash; atraso de 90 dias <span class="tl-badge warn">ATRASO</span></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot err"></div>
+      <div class="tl-date">12/03/2025</div>
+      <div class="tl-desc">Erro na atualiza&ccedil;&atilde;o monet&aacute;ria &mdash; IPCA-E divergente <span class="tl-badge err">ERRO</span></div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot ok"></div>
+      <div class="tl-date">05/09/2024</div>
+      <div class="tl-desc">Tr&acirc;nsito em julgado da senten&ccedil;a condenat&oacute;ria <span class="tl-badge ok">OK</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- Contradicoes -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.5rem">Contradi&ccedil;&otilde;es Detectadas</div>
+  <table class="impacto-table">
+    <tr><th>Tipo</th><th>Qtd</th><th>Severidade</th><th>Descri&ccedil;&atilde;o</th></tr>
+    <tr><td>C&aacute;lculo divergente</td><td>1</td><td><span class="badge badge-err">Alta</span></td><td>IPCA-E aplicado com data-base incorreta (03/2025)</td></tr>
+    <tr><td>Prazo excedido</td><td>1</td><td><span class="badge badge-warn">M&eacute;dia</span></td><td>Impugna&ccedil;&atilde;o fora do prazo de 30 dias (art. 535 CPC)</td></tr>
+    <tr><td>Dado inconsistente</td><td>1</td><td><span class="badge badge-warn">M&eacute;dia</span></td><td>Nome do benefici&aacute;rio diverge entre of&iacute;cio e senten&ccedil;a</td></tr>
+  </table>
+</div>
+
+<!-- ═══════════════════ LAYER 3 ═══════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">3</div>
+  <div class="layer-title">An&aacute;lise Or&ccedil;ament&aacute;ria</div>
+  <div class="layer-sub">Dota&ccedil;&atilde;o LOA, execu&ccedil;&atilde;o e previs&atilde;o de pagamento</div>
+</div>
+
+<div class="grid-2" style="margin-bottom:.75rem">
+  <!-- Bar chart: Dotacao LOA -->
+  <div class="card">
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:.6rem">Dota&ccedil;&atilde;o LOA &mdash; TRF3 (R$ bilh&otilde;es)</div>
+    <div class="bar-chart">
+      <div class="bar-col">
+        <div class="bar-fill" style="height:52%"><span class="bar-val">3,2B</span></div>
+        <div class="bar-label">2024</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar-fill" style="height:61%"><span class="bar-val">3,8B</span></div>
+        <div class="bar-label">2025</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar-fill" style="height:74%"><span class="bar-val">4,6B</span></div>
+        <div class="bar-label">2026</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar-fill" style="height:82%"><span class="bar-val">5,1B</span></div>
+        <div class="bar-label">2027</div>
+      </div>
+      <div class="bar-col">
+        <div class="bar-fill" style="height:90%"><span class="bar-val">5,6B</span></div>
+        <div class="bar-label">2028</div>
+      </div>
+    </div>
+  </div>
+  <!-- Execucao % -->
+  <div class="card">
+    <div style="font-weight:700;font-size:.82rem;margin-bottom:.6rem">Execu&ccedil;&atilde;o Or&ccedil;ament&aacute;ria (%)</div>
+    <div class="conf-row">
+      <div class="conf-label"><span>2024</span><span>87%</span></div>
+      <div class="conf-track"><div class="conf-fill" style="width:87%;background:var(--emerald)"></div></div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-label"><span>2025</span><span>72%</span></div>
+      <div class="conf-track"><div class="conf-fill" style="width:72%;background:var(--brand)"></div></div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-label"><span>2026 (parcial)</span><span>34%</span></div>
+      <div class="conf-track"><div class="conf-fill" style="width:34%;background:var(--amber)"></div></div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-label"><span>2027 (projetado)</span><span>78%</span></div>
+      <div class="conf-track"><div class="conf-fill" style="width:78%;background:var(--indigo)"></div></div>
+    </div>
+    <div class="conf-row">
+      <div class="conf-label"><span>2028 (projetado)</span><span>85%</span></div>
+      <div class="conf-track"><div class="conf-fill" style="width:85%;background:var(--violet)"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Previsao de Pagamento -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.5rem">Previs&atilde;o de Pagamento</div>
+  <div class="conf-row">
+    <div class="conf-label"><span>Confian&ccedil;a &mdash; Pagamento em 2026</span><span style="font-weight:700;color:var(--amber)">42%</span></div>
+    <div class="conf-track"><div class="conf-fill" style="width:42%;background:linear-gradient(90deg,var(--amber),var(--red))"></div></div>
+  </div>
+  <div class="conf-row">
+    <div class="conf-label"><span>Confian&ccedil;a &mdash; Pagamento at&eacute; 2027</span><span style="font-weight:700;color:var(--brand)">73%</span></div>
+    <div class="conf-track"><div class="conf-fill" style="width:73%;background:linear-gradient(90deg,var(--brand),var(--violet))"></div></div>
+  </div>
+  <div class="conf-row">
+    <div class="conf-label"><span>Confian&ccedil;a &mdash; Pagamento at&eacute; 2028</span><span style="font-weight:700;color:var(--emerald)">91%</span></div>
+    <div class="conf-track"><div class="conf-fill" style="width:91%;background:linear-gradient(90deg,var(--emerald),var(--brand))"></div></div>
+  </div>
+</div>
+
+<!-- Split bar: Executado vs Pendente vs Bloqueado -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.4rem">Status Or&ccedil;ament&aacute;rio &mdash; Exerc&iacute;cio 2026</div>
+  <div class="split-bar">
+    <div style="width:34%;background:var(--emerald)">Executado 34%</div>
+    <div style="width:48%;background:var(--amber)">Pendente 48%</div>
+    <div style="width:18%;background:var(--red)">Bloqueado 18%</div>
+  </div>
+  <div style="font-size:.65rem;color:var(--text3);margin-top:.3rem">
+    Bloqueio judicial ref. a&ccedil;&atilde;o direta de inconstitucionalidade (ADI 4.425/DF)
+  </div>
+</div>
+
+<!-- ═══════════════════ LAYER 4 ═══════════════════ -->
+<div class="layer-header">
+  <div class="layer-num">4</div>
+  <div class="layer-title">Cadeia de Cust&oacute;dia e Conformidade</div>
+  <div class="layer-sub">Rastreabilidade, hashes e conformidade regulat&oacute;ria</div>
+</div>
+
+<!-- Pipeline Steps -->
+<div class="pipeline" style="margin-bottom:.75rem">
+  <div class="pipe-step">
+    <div class="pipe-dot"></div>
+    <div style="font-weight:700">Coleta</div>
+    <div style="font-size:.68rem;color:var(--text3)">APIs judiciais + LOA</div>
+    <div class="pipe-hash">a3f8...c91d</div>
+  </div>
+  <div class="pipe-step">
+    <div class="pipe-dot"></div>
+    <div style="font-weight:700">Valida&ccedil;&atilde;o</div>
+    <div style="font-size:.68rem;color:var(--text3)">Schema + integridade</div>
+    <div class="pipe-hash">7b2e...f504</div>
+  </div>
+  <div class="pipe-step">
+    <div class="pipe-dot"></div>
+    <div style="font-weight:700">Cruzamento</div>
+    <div style="font-size:.68rem;color:var(--text3)">LOA x Movimenta&ccedil;&otilde;es</div>
+    <div class="pipe-hash">e1d4...8a37</div>
+  </div>
+  <div class="pipe-step">
+    <div class="pipe-dot"></div>
+    <div style="font-weight:700">Evid&ecirc;ncia</div>
+    <div style="font-size:.68rem;color:var(--text3)">Screenshots + docs</div>
+    <div class="pipe-hash">5c09...2b6e</div>
+  </div>
+  <div class="pipe-step">
+    <div class="pipe-dot"></div>
+    <div style="font-weight:700">Entrega</div>
+    <div style="font-size:.68rem;color:var(--text3)">Relat&oacute;rio final</div>
+    <div class="pipe-hash">d4f1...71a2</div>
+  </div>
+</div>
+
+<!-- Audit Trail -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.5rem">Trilha de Auditoria</div>
+  <table class="impacto-table">
+    <tr><th>Etapa</th><th>Hash SHA-256</th><th>Timestamp</th><th>Status</th></tr>
+    <tr>
+      <td>Coleta de dados</td>
+      <td style="font-size:.65rem;color:var(--cyan)">a3f8b7c1d9e2...c91d</td>
+      <td>2026-04-05T08:12:33Z</td>
+      <td><span class="badge badge-ok">OK</span></td>
+    </tr>
+    <tr>
+      <td>Valida&ccedil;&atilde;o de schema</td>
+      <td style="font-size:.65rem;color:var(--cyan)">7b2ef4a801c3...f504</td>
+      <td>2026-04-05T08:12:47Z</td>
+      <td><span class="badge badge-ok">OK</span></td>
+    </tr>
+    <tr>
+      <td>Cruzamento LOA</td>
+      <td style="font-size:.65rem;color:var(--cyan)">e1d43f9b72a5...8a37</td>
+      <td>2026-04-05T08:13:02Z</td>
+      <td><span class="badge badge-ok">OK</span></td>
+    </tr>
+    <tr>
+      <td>Gera&ccedil;&atilde;o de evid&ecirc;ncias</td>
+      <td style="font-size:.65rem;color:var(--cyan)">5c09aed87f12...2b6e</td>
+      <td>2026-04-05T08:13:18Z</td>
+      <td><span class="badge badge-ok">OK</span></td>
+    </tr>
+    <tr>
+      <td>Entrega do relat&oacute;rio</td>
+      <td style="font-size:.65rem;color:var(--cyan)">d4f17c3e9a05...71a2</td>
+      <td>2026-04-05T08:13:31Z</td>
+      <td><span class="badge badge-ok">OK</span></td>
+    </tr>
+  </table>
+</div>
+
+<!-- Conformidade Badges -->
+<div class="card" style="margin-bottom:.75rem">
+  <div style="font-weight:700;font-size:.82rem;margin-bottom:.6rem">Conformidade Regulat&oacute;ria</div>
+  <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+    <span class="badge badge-ok">Lei 13.964/2019 (Pacote Anticrime)</span>
+    <span class="badge badge-ok">LGPD &mdash; Lei 13.709/2018</span>
+    <span class="badge badge-ok">SHA-256 &mdash; Cadeia de Cust&oacute;dia</span>
+    <span class="badge badge-info">CNJ Res. 331/2020 &mdash; Dados Abertos</span>
+    <span class="badge badge-info">CF Art. 100 &mdash; Precat&oacute;rios</span>
+  </div>
+</div>
+
+<!-- Hash Footer -->
+<div class="hash-footer">
+  <div class="hash-label">SHA-256 do Relat&oacute;rio</div>
+  <div class="hash-val" style="margin:6px 0">
+    d4f17c3e9a0572b1e83f6a4d9c2e5b08f1a3d7c6e9b4a2f5d8c1e7b3a6f9d2c4
+  </div>
+  <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-top:8px">
+    <div>
+      <span class="hash-label">Gerado em</span><br>
+      <span style="color:var(--text)">2026-04-05T08:13:31-03:00</span>
+    </div>
+    <div>
+      <span class="hash-label">Vers&atilde;o</span><br>
+      <span style="color:var(--text)">Enterprise v1.0</span>
+    </div>
+    <div>
+      <span class="hash-label">Motor</span><br>
+      <span style="color:var(--text)">AuraLOA Pipeline 4.2</span>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer class="footer">
+  <div style="margin-bottom:6px">
+    <span class="footer-brand">AuraLOA</span> &mdash; Intelig&ecirc;ncia Or&ccedil;ament&aacute;ria para Precat&oacute;rios
+  </div>
+  <div style="margin-bottom:6px">
+    Desenvolvido por <span class="footer-brand">AuraTECH</span> &mdash; Tecnologia Jur&iacute;dica Avan&ccedil;ada
+  </div>
+  <div style="color:var(--text3);font-size:.65rem;max-width:600px;margin:0 auto">
+    Este documento &eacute; confidencial e destinado exclusivamente ao cliente contratante.
+    A reprodu&ccedil;&atilde;o, distribui&ccedil;&atilde;o ou uso n&atilde;o autorizado &eacute; vedado.
+    Dados sujeitos &agrave; LGPD (Lei 13.709/2018).
+  </div>
+  <div style="margin-top:10px;color:var(--text3)">&copy; 2026 AuraTECH. Todos os direitos reservados.</div>
+</footer>
+
+</body>
+</html>

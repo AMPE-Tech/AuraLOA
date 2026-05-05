@@ -7,6 +7,7 @@ import { query } from "../db";
 import { uploadPdfV2, renameToContentHash } from "./upload_config";
 import { extractFields } from "./field_extractor";
 import { runPipelineVerifier } from "./pipeline_verifier";
+import { persistExtractionResult } from "./persistence";
 
 function cleanupTmp(path?: string) {
   if (path && existsSync(path)) {
@@ -182,48 +183,12 @@ router.post("/api/v2/analise/:validation_id/extrair", async (req: Request, res: 
 
   const { fields, checklist, method, tokens_input, tokens_output, cost_usd } = extraction;
 
-  await query(
-    `UPDATE v2_analises SET
-       numero_cnj = $1, numero_oficio = $2, tribunal = $3, tipo = $4,
-       credor_nome = $5, credor_cpf_cnpj = $6, devedor = $7, valor_rs = $8,
-       data_transito = $9, orgao_julgador = $10,
-       url_verificacao_tribunal = $11, qrcode_tribunal = $12, codigo_verificador = $13,
-       checklist_auditoria = $14::jsonb,
-       extraction_method = $15,
-       extraction_tokens_input = $16, extraction_tokens_output = $17, extraction_cost_usd = $18,
-       raw_text = $19,
-       natureza_documento = $20,
-       processos_identificados = $21::jsonb,
-       documentos_identificados = $22::jsonb,
-       partes = $23::jsonb,
-       autoridades = $24::jsonb,
-       datas_identificadas = $25::jsonb,
-       decisao_resumo = $26,
-       status_processual = $27,
-       observacoes_gerais = $28::jsonb,
-       extracted_at = NOW(), updated_at = NOW()
-     WHERE id = $29`,
-    [
-      fields.numero_cnj, fields.numero_oficio, fields.tribunal, fields.tipo,
-      fields.credor_nome, fields.credor_cpf_cnpj, fields.devedor, fields.valor_rs,
-      fields.data_transito, fields.orgao_julgador,
-      fields.url_verificacao_tribunal, fields.qrcode_tribunal, fields.codigo_verificador,
-      JSON.stringify(checklist),
-      method,
-      tokens_input, tokens_output, cost_usd,
-      extraction.raw_text_pdf,
-      fields.natureza_documento,
-      JSON.stringify(fields.processos_identificados),
-      JSON.stringify(fields.documentos_identificados),
-      JSON.stringify(fields.partes),
-      JSON.stringify(fields.autoridades),
-      JSON.stringify(fields.datas_identificadas),
-      fields.decisao_resumo,
-      fields.status_processual,
-      JSON.stringify(fields.observacoes_gerais),
-      analise.id,
-    ],
-  );
+  // 🛡️ Persistência usando helper unificado (inclui revisor pós-extração +
+  // campos novos: advogados, classificacao_credito, beneficiarios_detalhados,
+  // metadados_requisicao, validacao_extracao).
+  // Bug descoberto 24/04/2026: endpoint antigo fazia UPDATE inline
+  // e não gravava os campos novos. Corrigido para usar persistExtractionResult.
+  await persistExtractionResult(analise.id, extraction);
 
   const urlEncontrada = !!fields.url_verificacao_tribunal;
   await query(

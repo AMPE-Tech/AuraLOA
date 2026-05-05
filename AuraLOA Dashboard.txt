@@ -1,0 +1,18 @@
+2. O que proteger:
+
+/dashboard-loa-v3.html (dashboard principal)
+/dd-audit.html (página de auditoria)
+/dd-reports/* (relatórios gerados)
+/dd-audit/* (JSONs de auditoria)
+/api/duediligence/* (API do pipeline)
+/api/dd-audit/* (API de auditoria)
+
+3. Tipo de autenticação:
+
+Tela de login custom (dark theme AuraLOA, JWT token, sessão) — mais profissional
+Basic Auth (rápido mas pop-up feio do navegador)
+Recomendo a tela de login custom com JWT — fica premium e protege tudo. O login/senha fica no .env, nunca no código.
+
+Me diz o login/senha e confirmo se quer JWT com tela custom.
+
+pode ser meu email: marcos@auradue.com e a senha: AuraLOA-2026$

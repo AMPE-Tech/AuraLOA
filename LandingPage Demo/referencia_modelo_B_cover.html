@@ -1,0 +1,1232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraDUE · Due Diligence Criminal · 1503896-55.2022.8.26.0050</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800;1,14..32,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:      #0a0e17;
+  --bg2:     #111827;
+  --bg3:     #1a2333;
+  --bg4:     #0d1520;
+  --bg5:     #0f172a;
+  --border:  rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.13);
+  --text:    #f1f5f9;
+  --text2:   #94a3b8;
+  --text3:   #64748b;
+  --cyan:    #22d3ee;
+  --cyan2:   #06b6d4;
+  --violet:  #a78bfa;
+  --green:   #34d399;
+  --green2:  #10b981;
+  --amber:   #fbbf24;
+  --amber2:  #f59e0b;
+  --red:     #f87171;
+  --red2:    #ef4444;
+  --blue:    #60a5fa;
+  --brand:   linear-gradient(135deg,#06b6d4,#7c3aed);
+  --r:       10px;
+  --rsm:     6px;
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 14px; scroll-behavior: smooth; }
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+  line-height: 1.6;
+  min-height: 100vh;
+}
+
+/* ── TOPBAR ── */
+.topbar {
+  position: sticky; top: 0; z-index: 200;
+  background: rgba(10,14,23,0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+  height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.tb-left { display: flex; align-items: center; gap: 12px; }
+.tb-logo {
+  width: 34px; height: 34px; border-radius: 8px;
+  background: var(--brand);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 12px; color: #fff; letter-spacing: -0.5px;
+  flex-shrink: 0;
+}
+.tb-name { font-size: 13px; font-weight: 700; letter-spacing: -0.01em; }
+.tb-sub { font-size: 10px; color: var(--text3); letter-spacing: 0.02em; }
+.tb-center { display: flex; align-items: center; gap: 8px; }
+.tb-right { display: flex; align-items: center; gap: 12px; font-size: 10px; color: var(--text3); }
+.tb-cnj { font-family: 'Courier New', monospace; color: var(--cyan); font-size: 11px; }
+.tb-date { color: var(--text3); }
+
+/* ── BADGES ── */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 3px 8px; border-radius: 4px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.badge-red   { background: rgba(248,113,113,0.15); color: var(--red);   border: 1px solid rgba(248,113,113,0.3); }
+.badge-amber { background: rgba(251,191,36,0.15);  color: var(--amber); border: 1px solid rgba(251,191,36,0.3); }
+.badge-green { background: rgba(52,211,153,0.15);  color: var(--green); border: 1px solid rgba(52,211,153,0.3); }
+.badge-blue  { background: rgba(96,165,250,0.15);  color: var(--blue);  border: 1px solid rgba(96,165,250,0.3); }
+.badge-cyan  { background: rgba(34,211,238,0.15);  color: var(--cyan);  border: 1px solid rgba(34,211,238,0.3); }
+.badge-gray  { background: rgba(100,116,139,0.15); color: var(--text3); border: 1px solid rgba(100,116,139,0.3); }
+
+/* ── WARNING BANNER ── */
+.warn-banner {
+  position: sticky; top: 56px; z-index: 190;
+  background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(251,191,36,0.10));
+  border-bottom: 1px solid rgba(251,191,36,0.3);
+  padding: 8px 28px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.warn-icon { font-size: 14px; margin-top: 1px; flex-shrink: 0; }
+.warn-text { font-size: 11px; color: #fcd34d; line-height: 1.5; }
+.warn-text strong { color: var(--amber); font-weight: 700; }
+
+/* ── COVER ── */
+.cover {
+  max-width: 1100px; margin: 0 auto;
+  padding: 28px 28px 0;
+}
+.cover-eyebrow {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.12em;
+  color: var(--text3); text-transform: uppercase; margin-bottom: 14px;
+}
+.cover-line { width: 20px; height: 2px; border-radius: 1px; background: var(--brand); }
+.cover-title { font-size: 22px; font-weight: 800; letter-spacing: -0.03em; line-height: 1.15; margin-bottom: 4px; }
+.cover-subtitle { font-size: 13px; color: var(--text2); font-weight: 300; margin-bottom: 22px; }
+.cover-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px; margin-bottom: 24px;
+}
+.cg-item { }
+.cg-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; color: var(--text3); text-transform: uppercase; margin-bottom: 3px; }
+.cg-value { font-size: 12px; font-weight: 500; color: var(--text); line-height: 1.4; }
+.cg-value.mono { font-family: 'Courier New', monospace; font-size: 10px; color: var(--cyan); }
+
+/* ── TABS ── */
+.tabs-wrap {
+  position: sticky; top: calc(56px + 40px); z-index: 180;
+  background: rgba(10,14,23,0.98);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px;
+}
+.tabs {
+  max-width: 1100px; margin: 0 auto;
+  display: flex; overflow-x: auto; scrollbar-width: none; gap: 0;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  padding: 13px 18px;
+  font-size: 11px; font-weight: 500; color: var(--text3);
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  cursor: pointer; font-family: 'Inter', sans-serif; white-space: nowrap;
+  transition: all 0.15s; display: flex; align-items: center; gap: 6px;
+}
+.tab:hover { color: var(--text2); }
+.tab.on { color: var(--cyan); font-weight: 600; border-bottom-color: var(--cyan); }
+.tab-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+
+/* ── MAIN CONTENT ── */
+.main { max-width: 1100px; margin: 0 auto; padding: 24px 28px 60px; }
+.sec { display: none; }
+.sec.on { display: block; animation: fadeIn 0.2s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+/* ── SECTION HEADER ── */
+.sh { margin-bottom: 14px; }
+.sh-eye {
+  font-size: 9px; font-weight: 700; letter-spacing: 0.12em; color: var(--text3);
+  text-transform: uppercase; display: flex; align-items: center; gap: 8px; margin-bottom: 3px;
+}
+.sh-eye::before { content: ''; display: block; width: 3px; height: 14px; border-radius: 2px; background: var(--cyan); }
+.sh-title { font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+
+/* ── GRID LAYOUTS ── */
+.g4  { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 12px; }
+.g3  { display: grid; grid-template-columns: repeat(3,1fr); gap: 12px; margin-bottom: 12px; }
+.g2  { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.g32 { display: grid; grid-template-columns: 1.6fr 1fr; gap: 12px; margin-bottom: 12px; }
+.g313 { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 12px; margin-bottom: 12px; }
+
+/* ── CARD ── */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px 18px;
+  margin-bottom: 12px;
+  position: relative;
+}
+.card.no-mb { margin-bottom: 0; }
+
+/* SIMULADO watermark */
+.card.simulated::after {
+  content: 'SIMULADO';
+  position: absolute; top: 10px; right: 12px;
+  font-size: 8px; font-weight: 700; letter-spacing: 0.15em;
+  color: rgba(251,191,36,0.35); pointer-events: none;
+}
+
+.card-label {
+  font-size: 9px; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--text3); margin-bottom: 10px;
+}
+.card-sm {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: var(--rsm); padding: 10px 12px; margin-bottom: 8px;
+}
+
+/* ── KPI CARD ── */
+.kpi-val { font-size: 32px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+.kpi-sub { font-size: 10px; color: var(--text3); margin-top: 5px; line-height: 1.4; }
+.c-red    { color: var(--red); }
+.c-amber  { color: var(--amber); }
+.c-green  { color: var(--green); }
+.c-blue   { color: var(--blue); }
+.c-cyan   { color: var(--cyan); }
+.c-violet { color: var(--violet); }
+
+/* ── BAR ── */
+.bar-wrap { height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; margin: 8px 0 4px; }
+.bar-fill { height: 100%; border-radius: 3px; width: 0%; transition: width 1.2s cubic-bezier(.4,0,.2,1); }
+.bar-red    { background: var(--red); }
+.bar-amber  { background: var(--amber); }
+.bar-green  { background: var(--green); }
+.bar-blue   { background: var(--blue); }
+.bar-cyan   { background: var(--cyan); }
+
+/* ── SPLIT BAR ── */
+.split-label { display: flex; justify-content: space-between; font-size: 10px; color: var(--text2); margin-bottom: 4px; }
+.split-bar   { display: flex; height: 8px; border-radius: 4px; overflow: hidden; gap: 2px; margin-bottom: 6px; }
+.split-seg   { height: 100%; border-radius: 3px; }
+
+/* ── CONF ROW ── */
+.conf-row { display: flex; align-items: center; gap: 10px; margin-bottom: 7px; }
+.conf-nome { font-size: 11px; color: var(--text2); width: 130px; flex-shrink: 0; }
+.conf-bwrap { flex: 1; height: 5px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+.conf-nota { font-size: 11px; font-weight: 700; width: 32px; text-align: right; flex-shrink: 0; }
+
+/* ── COMP CHECKLIST ── */
+.comp-item { display: flex; align-items: center; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 11px; }
+.comp-item:last-child { border-bottom: none; }
+.ci-ok   { color: var(--green);  font-size: 12px; }
+.ci-err  { color: var(--red);    font-size: 12px; }
+.ci-warn { color: var(--amber);  font-size: 12px; font-weight: 700; }
+.comp-txt { flex: 1; color: var(--text2); }
+
+/* ── NUL MAP ── */
+.nul-header { font-size: 9px; letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); font-weight: 700; }
+.nul-item { font-size: 10px; color: var(--text2); padding: 5px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 6px; line-height: 1.5; }
+.nul-item:last-child { border-bottom: none; }
+.nd { width: 6px; height: 6px; border-radius: 1px; flex-shrink: 0; margin-top: 4px; }
+.nd-abs { background: var(--red); }
+.nd-rel { background: var(--amber); }
+.nd-irr { background: var(--text3); }
+
+/* ── CONTR ITEM ── */
+.contr-item { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.contr-item:last-child { border-bottom: none; }
+.contr-tipo { font-size: 11px; color: var(--text2); }
+.contr-count { font-size: 20px; font-weight: 800; letter-spacing: -0.03em; }
+
+/* ── TIMELINE ── */
+.tl-item { display: flex; gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--border); }
+.tl-item:last-child { border-bottom: none; }
+.tl-left { display: flex; flex-direction: column; align-items: center; gap: 5px; width: 62px; flex-shrink: 0; }
+.tl-date { font-size: 9px; color: var(--text3); text-align: center; font-family: 'Courier New', monospace; }
+.tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.tl-right { flex: 1; }
+.tl-title { font-size: 12px; font-weight: 700; color: var(--text); margin-bottom: 3px; }
+.tl-detail { font-size: 10px; color: var(--text2); line-height: 1.5; margin-bottom: 4px; }
+.tl-alerta { font-size: 9px; padding: 2px 8px; border-radius: 3px; font-weight: 600; display: inline-block; }
+.ta-ok   { background: rgba(52,211,153,0.15);  color: var(--green); }
+.ta-err  { background: rgba(248,113,113,0.15); color: var(--red); }
+.ta-warn { background: rgba(251,191,36,0.15);  color: var(--amber); }
+
+/* ── PREC ITEM ── */
+.prec-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.prec-item:last-child { border-bottom: none; }
+.prec-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; }
+.prec-nome { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.prec-desc { font-size: 10px; color: var(--text2); line-height: 1.4; }
+
+/* ── TESE CARD ── */
+.tese-card { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--rsm); padding: 12px 14px; margin-bottom: 8px; }
+.tese-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.tese-nome { font-size: 11px; font-weight: 700; color: var(--text); }
+.tese-dots { display: flex; gap: 3px; }
+.tese-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); }
+.tese-dot.on { background: var(--cyan); border-color: var(--cyan2); }
+.tese-desc { font-size: 10px; color: var(--text2); line-height: 1.5; }
+
+/* ── IMPACT TABLE ── */
+.imp-table { width: 100%; border-collapse: collapse; font-size: 11px; }
+.imp-table th { font-size: 9px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--border); font-weight: 600; }
+.imp-table td { padding: 10px 10px; border-bottom: 1px solid var(--border); color: var(--text2); vertical-align: top; }
+.imp-table tr:last-child td { border-bottom: none; }
+.imp-table tr:hover td { background: rgba(255,255,255,0.02); }
+.imp-vicio { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.imp-sub { font-size: 9px; color: var(--text3); }
+.nivel-pill { font-size: 9px; padding: 2px 8px; border-radius: 3px; white-space: nowrap; font-weight: 600; }
+.np-alto  { background: rgba(248,113,113,0.15); color: var(--red);   }
+.np-medio { background: rgba(251,191,36,0.15);  color: var(--amber); }
+.np-baixo { background: rgba(52,211,153,0.15);  color: var(--green); }
+
+/* ── PEDIDO ITEM ── */
+.pedido-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+.pedido-item:last-child { border-bottom: none; }
+.pedido-rank { width: 22px; height: 22px; border-radius: 4px; background: var(--bg3); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: var(--text2); flex-shrink: 0; margin-top: 1px; }
+.pedido-rank.top { background: rgba(248,113,113,0.15); color: var(--red); border-color: rgba(248,113,113,0.3); }
+.pedido-nome { font-size: 11px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.pedido-base { font-size: 10px; color: var(--text3); }
+
+/* ── OCR TAB ── */
+.ocr-banner {
+  background: linear-gradient(135deg, rgba(52,211,153,0.18), rgba(16,185,129,0.10));
+  border: 1px solid rgba(52,211,153,0.3); border-radius: var(--r);
+  padding: 12px 18px; margin-bottom: 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.ocr-banner-icon { font-size: 16px; }
+.ocr-banner-text { font-size: 11px; color: #6ee7b7; line-height: 1.5; }
+.ocr-banner-text strong { color: var(--green); font-weight: 700; }
+
+.ocr-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.ocr-field { background: var(--bg3); border: 1px solid var(--border); border-radius: var(--rsm); padding: 10px 12px; }
+.ocr-label { font-size: 9px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text3); margin-bottom: 3px; }
+.ocr-value { font-size: 11px; font-weight: 600; color: var(--text); line-height: 1.4; }
+
+.meta-card { background: var(--bg4); border: 1px solid var(--border); border-radius: var(--r); padding: 16px 18px; font-family: 'Courier New', monospace; font-size: 11px; margin-bottom: 12px; }
+.meta-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid var(--border); color: var(--text2); }
+.meta-row:last-child { border-bottom: none; }
+.meta-key { color: var(--text3); }
+.meta-val { color: var(--cyan); }
+.meta-val.ok { color: var(--green); }
+.meta-val.sha { color: var(--violet); font-size: 9px; }
+
+/* ── FOOTER ── */
+.footer { border-top: 1px solid var(--border); padding: 20px 28px; text-align: center; }
+.footer-inner { max-width: 1100px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text3); }
+.footer-brand { display: flex; align-items: center; gap: 8px; }
+.footer-logo { width: 22px; height: 22px; border-radius: 5px; background: var(--brand); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 8px; color: #fff; }
+
+/* ── REL ROWS ── */
+.rel-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.rel-label { font-size: 10px; color: var(--text2); width: 136px; flex-shrink: 0; }
+.rel-bwrap { flex: 1; height: 7px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+.rel-val { font-size: 11px; font-weight: 700; width: 40px; text-align: right; flex-shrink: 0; }
+
+/* ── REAL CARD HIGHLIGHT ── */
+.card.real { border-color: rgba(52,211,153,0.3); }
+.card.real .card-label { color: var(--green); }
+
+/* ── PROSE TEXT ── */
+.prose { font-size: 11px; color: var(--text2); line-height: 1.6; margin-top: 8px; }
+.prose strong { color: var(--red); font-weight: 700; }
+
+/* ── SVG GAUGE ── */
+.gauge-wrap { display: flex; flex-direction: column; align-items: center; padding: 4px 0; }
+
+/* responsive */
+@media (max-width: 768px) {
+  .g4, .g3 { grid-template-columns: 1fr 1fr; }
+  .g2, .g32, .g313 { grid-template-columns: 1fr; }
+  .topbar { padding: 0 16px; }
+  .main, .cover { padding-left: 16px; padding-right: 16px; }
+  .tabs-wrap { padding: 0 16px; }
+  .warn-banner { padding: 8px 16px; }
+  .tb-center { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════
+     TOPBAR
+════════════════════════════════════════════════════ -->
+<div class="topbar">
+  <div class="tb-left">
+    <div class="tb-logo">AD</div>
+    <div>
+      <div class="tb-name">AuraDUE</div>
+      <div class="tb-sub">· Due Diligence Criminal</div>
+    </div>
+  </div>
+  <div class="tb-center">
+    <span class="badge badge-red">⚿ SEGREDO DE JUSTIÇA</span>
+    <span class="badge badge-amber">⚠ PRÉVIA SIMULADA</span>
+  </div>
+  <div class="tb-right">
+    <span class="tb-cnj">1503896-55.2022.8.26.0050</span>
+    <span class="tb-date">01/04/2026</span>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     WARNING BANNER
+════════════════════════════════════════════════════ -->
+<div class="warn-banner">
+  <div class="warn-icon">⚠</div>
+  <div class="warn-text">
+    <strong>PRÉVIA SIMULADA</strong> — Dados artificiais gerados para demonstração da capacidade do sistema AuraDUE.
+    Os dados reais aguardam aprovação da <strong>Dra. Márcia Mirtes</strong> para análise completa das
+    <strong>19.516 páginas</strong> do processo. Esta prévia <strong>NÃO deve ser utilizada como subsídio jurídico</strong>.
+    Somente a aba "OCR Verificado ✓" contém dados reais extraídos do processo.
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     COVER
+════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-eyebrow">
+    <div class="cover-line"></div>
+    AuraDUE · Relatório de Due Diligence Criminal · Confidencial
+  </div>
+  <div class="cover-title">Processo Criminal Nº 1503896-55.2022.8.26.0050</div>
+  <div class="cover-subtitle">1ª Vara de Crimes Tributários, Org. Criminosa e Lavagem — Foro Central Criminal Barra Funda · TJSP</div>
+  <div class="cover-grid">
+    <div class="cg-item">
+      <div class="cg-label">Réu</div>
+      <div class="cg-value" style="color:var(--red);font-weight:700">GLAIDSON TADEU ROSA</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Processo CNJ</div>
+      <div class="cg-value mono">1503896-55.2022.8.26.0050</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Juiz</div>
+      <div class="cg-value">Dr. Guilherme Eduardo Martins Kellner</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Defensora</div>
+      <div class="cg-value" style="color:var(--cyan)">Dra. Márcia Mirtes</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Fase Processual</div>
+      <div class="cg-value">Resposta à Acusação</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Total de Laudas</div>
+      <div class="cg-value" style="color:var(--amber)">19.516 <span style="font-size:10px;color:var(--text3)">(estimado)</span></div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Crimes Imputados</div>
+      <div class="cg-value" style="font-size:11px">Art. 4º Lei 9.613/98 · Art. 2º Lei 12.850/13</div>
+    </div>
+    <div class="cg-item">
+      <div class="cg-label">Tribunal</div>
+      <div class="cg-value">TJSP · Seg. Justiça Estadual</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     TABS NAV
+════════════════════════════════════════════════════ -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab on" onclick="showTab('t1',this)">Visão Executiva</button>
+    <button class="tab"    onclick="showTab('t2',this)">Validade da Prova</button>
+    <button class="tab"    onclick="showTab('t3',this)">Coerência da Acusação</button>
+    <button class="tab"    onclick="showTab('t4',this)">Ação Defensiva</button>
+    <button class="tab"    onclick="showTab('t5',this)"><span class="tab-dot"></span>OCR Verificado ✓</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════
+     MAIN
+════════════════════════════════════════════════════ -->
+<div class="main">
+
+<!-- ─────────────────── TAB 1 — VISÃO EXECUTIVA ─────────────────── -->
+<div id="t1" class="sec on">
+
+  <div class="sh" style="margin-bottom:18px">
+    <div class="sh-eye">Camada 1</div>
+    <div class="sh-title">Visão Executiva</div>
+  </div>
+
+  <!-- KPI Row -->
+  <div class="g4">
+    <div class="card simulated no-mb">
+      <div class="card-label">Nulidades críticas</div>
+      <div class="kpi-val c-red">4</div>
+      <div class="kpi-sub">absolutas identificadas</div>
+    </div>
+    <div class="card simulated no-mb">
+      <div class="card-label">Provas contaminadas</div>
+      <div class="kpi-val c-amber">67%</div>
+      <div class="kpi-sub">do conjunto acusatório</div>
+    </div>
+    <div class="card simulated no-mb">
+      <div class="card-label">Risco de preclusão</div>
+      <div class="kpi-val c-red">3</div>
+      <div class="kpi-sub">teses — arguir já na resposta</div>
+    </div>
+    <div class="card simulated no-mb">
+      <div class="card-label">Potencial de acolhimento</div>
+      <div class="kpi-val c-green">Alto</div>
+      <div class="kpi-sub">2 teses consolidadas STJ</div>
+    </div>
+  </div>
+
+  <!-- Second row: gauge + domino + clock -->
+  <div class="g313">
+
+    <!-- Score Gauge -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Score de risco da acusação</div>
+      <div class="gauge-wrap">
+        <svg width="160" height="95" viewBox="0 0 160 95">
+          <!-- Background arc -->
+          <path d="M 20 80 A 60 60 0 0 1 140 80" fill="none"
+                stroke="rgba(255,255,255,0.08)" stroke-width="12" stroke-linecap="round"/>
+          <!-- Filled arc (70%) — total arc length ≈ 188.5, 70% ≈ 131.9 -->
+          <path d="M 20 80 A 60 60 0 0 1 140 80" fill="none"
+                stroke="url(#gaugeGrad)" stroke-width="12" stroke-linecap="round"
+                stroke-dasharray="131.9 188.5" id="gaugeArc"/>
+          <defs>
+            <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#fbbf24"/>
+              <stop offset="100%" stop-color="#f87171"/>
+            </linearGradient>
+          </defs>
+          <text x="80" y="68" fill="#f87171" font-family="Inter,sans-serif" font-weight="800"
+                font-size="26" text-anchor="middle" dominant-baseline="middle">70</text>
+          <text x="80" y="86" fill="#64748b" font-family="Inter,sans-serif"
+                font-size="9" text-anchor="middle" letter-spacing="1">RISCO ALTO</text>
+        </svg>
+      </div>
+      <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:4px">Índice de vulnerabilidade defensiva</div>
+    </div>
+
+    <!-- Efeito Dominó -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Efeito dominó — provas derivadas</div>
+      <div class="split-label"><span>Conjunto probatório total</span><span style="color:var(--red)">12 provas</span></div>
+      <div class="split-bar">
+        <div class="split-seg bar-fill" style="width:40%;background:var(--red)" data-w="40%"></div>
+        <div class="split-seg bar-fill" style="width:34%;background:var(--amber)" data-w="34%"></div>
+        <div class="split-seg bar-fill" style="width:26%;background:var(--green)" data-w="26%"></div>
+      </div>
+      <div style="display:flex;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <span style="font-size:9px;color:var(--red)">■ Ilícitas orig. 40%</span>
+        <span style="font-size:9px;color:var(--amber)">■ Derivadas 34%</span>
+        <span style="font-size:9px;color:var(--green)">■ Válidas 26%</span>
+      </div>
+      <div class="card-sm" style="margin-bottom:0">
+        <div style="font-size:10px;color:var(--text2);line-height:1.6">
+          Se acolhidas as nulidades, <strong style="color:var(--red)">74% das provas</strong> saem por
+          efeito dominó (<span style="color:var(--cyan)">CPP art. 157 §1º</span>)
+        </div>
+      </div>
+    </div>
+
+    <!-- Relógio da Defesa -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Relógio comparativo da defesa</div>
+      <div class="rel-row">
+        <div class="rel-label">Prazo legal (dias)</div>
+        <div class="rel-bwrap"><div class="bar-fill bar-blue" data-w="100%"></div></div>
+        <div class="rel-val c-blue">10d</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-label">Dias decorridos</div>
+        <div class="rel-bwrap"><div class="bar-fill bar-amber" data-w="70%"></div></div>
+        <div class="rel-val c-amber">7d</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-label">Laudas restantes</div>
+        <div class="rel-bwrap"><div class="bar-fill bar-red" data-w="60%"></div></div>
+        <div class="rel-val c-red">11.4k</div>
+      </div>
+      <div class="rel-row">
+        <div class="rel-label">Média defesa criminal</div>
+        <div class="rel-bwrap"><div class="bar-fill bar-green" data-w="85%"></div></div>
+        <div class="rel-val c-green">8.5d</div>
+      </div>
+      <div style="font-size:9px;color:var(--red);margin-top:6px;font-weight:600">
+        ⚠ Ritmo atual insuficiente para cobertura integral
+      </div>
+    </div>
+
+  </div><!-- /g313 -->
+</div><!-- /t1 -->
+
+
+<!-- ─────────────────── TAB 2 — VALIDADE DA PROVA ─────────────────── -->
+<div id="t2" class="sec">
+
+  <div class="sh" style="margin-bottom:18px">
+    <div class="sh-eye">Camada 2</div>
+    <div class="sh-title">Validade da Prova</div>
+  </div>
+
+  <div class="g3">
+    <!-- Interceptações -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Interceptações telefônicas</div>
+      <div style="display:flex;gap:18px;margin-bottom:10px">
+        <div><div class="kpi-val c-green" style="font-size:24px">3</div><div class="kpi-sub">dentro do prazo</div></div>
+        <div><div class="kpi-val c-red" style="font-size:24px">1</div><div class="kpi-sub">fora do prazo</div></div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill bar-red" data-w="25%"></div></div>
+      <div style="font-size:9px;color:var(--red);margin-top:4px;font-weight:600">
+        +8 dias além da última renovação · Lei 9.296/96 art. 5º
+      </div>
+    </div>
+
+    <!-- Custódia Digital -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Custódia digital por objeto</div>
+      <div style="display:flex;gap:18px;margin-bottom:10px">
+        <div><div class="kpi-val c-green" style="font-size:24px">4</div><div class="kpi-sub">com hash SHA-256</div></div>
+        <div><div class="kpi-val c-red" style="font-size:24px">3</div><div class="kpi-sub">sem hash / ruptura</div></div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill bar-red" data-w="43%"></div></div>
+      <div style="font-size:9px;color:var(--red);margin-top:4px;font-weight:600">
+        43% dos objetos digitais com cadeia inválida · CPP 158-A
+      </div>
+    </div>
+
+    <!-- Laudas -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Laudas — cadeia de custódia</div>
+      <div style="display:flex;gap:18px;margin-bottom:10px">
+        <div><div class="kpi-val c-green" style="font-size:24px">16.7k</div><div class="kpi-sub">preservadas</div></div>
+        <div><div class="kpi-val c-amber" style="font-size:24px">2.5k</div><div class="kpi-sub">sem custódia</div></div>
+      </div>
+      <div class="bar-wrap"><div class="bar-fill bar-amber" data-w="13%"></div></div>
+      <div style="font-size:9px;color:var(--amber);margin-top:4px;font-weight:600">
+        13% das laudas com integridade comprometida
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Confiabilidade -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Índice de confiabilidade por bloco</div>
+      <div class="conf-row">
+        <div class="conf-nome">Interceptação</div>
+        <div class="conf-bwrap"><div class="bar-fill bar-red" data-w="30%"></div></div>
+        <div class="conf-nota c-red">3/10</div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-nome">Prova digital</div>
+        <div class="conf-bwrap"><div class="bar-fill bar-amber" data-w="40%"></div></div>
+        <div class="conf-nota c-amber">4/10</div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-nome">Relatório policial</div>
+        <div class="conf-bwrap"><div class="bar-fill bar-amber" data-w="55%"></div></div>
+        <div class="conf-nota c-amber">5.5/10</div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-nome">Prova oral</div>
+        <div class="conf-bwrap"><div class="bar-fill bar-blue" data-w="60%"></div></div>
+        <div class="conf-nota c-blue">6/10</div>
+      </div>
+      <div class="conf-row" style="margin-bottom:0">
+        <div class="conf-nome">Prova documental</div>
+        <div class="conf-bwrap"><div class="bar-fill bar-green" data-w="72%"></div></div>
+        <div class="conf-nota c-green">7.2/10</div>
+      </div>
+      <div style="font-size:9px;color:var(--text3);margin-top:8px">Acusação não é homogênea — blocos críticos muito frágeis</div>
+    </div>
+
+    <!-- Completude -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Completude da acusação</div>
+      <div class="comp-item"><span class="ci-err">✗</span><span class="comp-txt">Laudo pericial — assinado por 1 perito (CPP 159)</span></div>
+      <div class="comp-item"><span class="ci-err">✗</span><span class="comp-txt">Renovação de interceptação — ausente para último período</span></div>
+      <div class="comp-item"><span class="ci-err">✗</span><span class="comp-txt">Hash de integridade — 3 mídias sem registro</span></div>
+      <div class="comp-item"><span class="ci-warn">!</span><span class="comp-txt">Transcrição sem lastro técnico verificável</span></div>
+      <div class="comp-item"><span class="ci-warn">!</span><span class="comp-txt">Autorização de quebra bancária — motivação insuficiente</span></div>
+      <div class="comp-item"><span class="ci-ok">✓</span><span class="comp-txt">Denúncia — fatos descritos com circunstâncias (CPP 41)</span></div>
+      <div class="comp-item"><span class="ci-ok">✓</span><span class="comp-txt">Recebimento — decisão fundamentada (CPP 396)</span></div>
+    </div>
+  </div>
+
+  <!-- Mapa de Nulidades -->
+  <div class="card simulated">
+    <div class="card-label">Mapa de nulidades por gravidade</div>
+    <div class="g3" style="margin-bottom:0">
+      <div>
+        <div class="nul-header" style="color:var(--red)">Nulidade absoluta provável</div>
+        <div class="nul-item"><div class="nd nd-abs"></div>Interceptação fora do prazo legal</div>
+        <div class="nul-item"><div class="nd nd-abs"></div>Prova digital sem cadeia de custódia</div>
+        <div class="nul-item"><div class="nd nd-abs"></div>Quebra de sigilo bancário sem decisão motivada</div>
+        <div class="nul-item"><div class="nd nd-abs"></div>Provas derivadas das três anteriores (CPP 157 §1º)</div>
+      </div>
+      <div>
+        <div class="nul-header" style="color:var(--amber)">Nulidade relativa arguível</div>
+        <div class="nul-item"><div class="nd nd-rel"></div>Laudo pericial com perito único (CPP 159)</div>
+        <div class="nul-item"><div class="nd nd-rel"></div>Mandado cumprido fora da comarca</div>
+        <div class="nul-item"><div class="nd nd-rel"></div>Ordem de interrogatório — ciência do corréu</div>
+        <div class="nul-item"><div class="nd nd-rel"></div>Lacuna de 14 dias sem movimentação</div>
+      </div>
+      <div>
+        <div class="nul-header" style="color:var(--text3)">Irregularidade s/ força anulatória</div>
+        <div class="nul-item"><div class="nd nd-irr"></div>Certidão de antecedentes sem data de expedição</div>
+        <div class="nul-item"><div class="nd nd-irr"></div>Ofício com timbre divergente do emissor</div>
+        <div class="nul-item"><div class="nd nd-irr"></div>Prazo interno entre autuação e distribuição</div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /t2 -->
+
+
+<!-- ─────────────────── TAB 3 — COERÊNCIA DA ACUSAÇÃO ─────────────────── -->
+<div id="t3" class="sec">
+
+  <div class="sh" style="margin-bottom:18px">
+    <div class="sh-eye">Camada 3</div>
+    <div class="sh-title">Coerência da Acusação</div>
+  </div>
+
+  <div class="g32">
+    <!-- Contradições -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Contradições internas da acusação</div>
+      <div class="contr-item"><div class="contr-tipo">Entre testemunhas</div><div class="contr-count c-red">5</div></div>
+      <div class="contr-item"><div class="contr-tipo">Testemunha vs. Rel. Policial</div><div class="contr-count c-red">3</div></div>
+      <div class="contr-item"><div class="contr-tipo">Inconsistências cronológicas</div><div class="contr-count c-amber">4</div></div>
+      <div class="contr-item"><div class="contr-tipo">Lacunas narrativas</div><div class="contr-count c-amber">6</div></div>
+      <div class="contr-item"><div class="contr-tipo">Contradição entre laudo e APF</div><div class="contr-count c-red">2</div></div>
+    </div>
+
+    <!-- Essencial vs. Acessória -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Prova essencial vs. acessória</div>
+      <div style="margin-bottom:12px">
+        <div class="split-label"><span>Provas centrais</span><span style="color:var(--red)">4</span></div>
+        <div class="split-bar" style="height:6px">
+          <div class="split-seg" style="width:50%;background:var(--red)"></div>
+          <div class="split-seg" style="width:50%;background:rgba(255,255,255,0.06)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--red)">2 de 4 provas centrais com vício originário</div>
+      </div>
+      <div>
+        <div class="split-label"><span>Provas periféricas / repetição</span><span style="color:var(--amber)">9</span></div>
+        <div class="split-bar" style="height:6px">
+          <div class="split-seg" style="width:78%;background:var(--amber)"></div>
+          <div class="split-seg" style="width:22%;background:rgba(255,255,255,0.06)"></div>
+        </div>
+        <div style="font-size:9px;color:var(--amber)">7 de 9 derivadas de origem viciada</div>
+      </div>
+      <div class="prose" style="margin-top:12px">
+        Retiradas as provas viciadas, <strong>o caso acusatório perde sua base central</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Timeline -->
+  <div class="card simulated">
+    <div class="card-label">Linha do tempo processual — alertas de legalidade</div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-date">15/03/22</div>
+        <div class="tl-dot" style="background:var(--green)"></div>
+      </div>
+      <div class="tl-right">
+        <div class="tl-title">Instauração do Inquérito Policial</div>
+        <div class="tl-detail">Portaria regular · Delegado titular · Fundamento legal presente</div>
+        <span class="tl-alerta ta-ok">Ato regular</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-date">16/06/22</div>
+        <div class="tl-dot" style="background:var(--green)"></div>
+      </div>
+      <div class="tl-right">
+        <div class="tl-title">Autorização judicial — interceptação</div>
+        <div class="tl-detail">Prazo autorizado: 16/06 a 01/07/2022 · Despacho fundamentado</div>
+        <span class="tl-alerta ta-ok">Regular</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-date">15/07/22</div>
+        <div class="tl-dot" style="background:var(--amber)"></div>
+      </div>
+      <div class="tl-right">
+        <div class="tl-title">2ª Renovação de interceptação</div>
+        <div class="tl-detail">Autorizada até 30/07/2022 · Despacho presente nos autos</div>
+        <span class="tl-alerta ta-warn">Verificar renovação subsequente</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-date">22/08/22</div>
+        <div class="tl-dot" style="background:var(--red)"></div>
+      </div>
+      <div class="tl-right">
+        <div class="tl-title">Última captação registrada nos logs</div>
+        <div class="tl-detail">Data da captação: 22/08/2022 · Última autorização expirada em: 30/07/2022</div>
+        <span class="tl-alerta ta-err">+23 dias fora do prazo · Prova ilícita</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-date">22/04/22</div>
+        <div class="tl-dot" style="background:var(--red)"></div>
+      </div>
+      <div class="tl-right">
+        <div class="tl-title">Apreensão de mídias digitais — sem hash</div>
+        <div class="tl-detail">HD Externo, pen drive e celular apreendidos · Ausência de laudo de integridade no APF</div>
+        <span class="tl-alerta ta-err">Cadeia de custódia não iniciada · CPP 158-A</span>
+      </div>
+    </div>
+
+    <div class="tl-item">
+      <div class="tl-left">
+        <div class="tl-date">09/01/23</div>
+        <div class="tl-dot" style="background:var(--green)"></div>
+      </div>
+      <div class="tl-right">
+        <div class="tl-title">Recebimento da denúncia</div>
+        <div class="tl-detail">Decisão fundamentada · Dr. Guilherme Eduardo Martins Kellner · Fls. 12.004</div>
+        <span class="tl-alerta ta-ok">Regular</span>
+      </div>
+    </div>
+
+  </div>
+
+</div><!-- /t3 -->
+
+
+<!-- ─────────────────── TAB 4 — AÇÃO DEFENSIVA ─────────────────── -->
+<div id="t4" class="sec">
+
+  <div class="sh" style="margin-bottom:18px">
+    <div class="sh-eye">Camada 4</div>
+    <div class="sh-title">Ação Defensiva</div>
+  </div>
+
+  <div class="g2">
+
+    <!-- Termômetro de Preclusão -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Termômetro de preclusão</div>
+
+      <div class="prec-item">
+        <div class="prec-dot" style="background:var(--red)"></div>
+        <div style="flex:1">
+          <div class="prec-nome">Nulidade da interceptação fora do prazo</div>
+          <div class="prec-desc">Nulidade absoluta — arguição na resposta consolida o registro processual</div>
+        </div>
+        <span class="badge badge-red" style="flex-shrink:0">Já na resposta</span>
+      </div>
+
+      <div class="prec-item">
+        <div class="prec-dot" style="background:var(--red)"></div>
+        <div style="flex:1">
+          <div class="prec-nome">Nulidade da cadeia de custódia digital</div>
+          <div class="prec-desc">Nulidade absoluta — arguição imediata recomendada</div>
+        </div>
+        <span class="badge badge-red" style="flex-shrink:0">Já na resposta</span>
+      </div>
+
+      <div class="prec-item">
+        <div class="prec-dot" style="background:var(--red)"></div>
+        <div style="flex:1">
+          <div class="prec-nome">Nulidade relativa — laudo com perito único</div>
+          <div class="prec-desc">Nulidade relativa — preclusão real se não arguida agora</div>
+        </div>
+        <span class="badge badge-red" style="flex-shrink:0">Já na resposta</span>
+      </div>
+
+      <div class="prec-item">
+        <div class="prec-dot" style="background:var(--amber)"></div>
+        <div style="flex:1">
+          <div class="prec-nome">Contradições cronológicas entre depoimentos</div>
+          <div class="prec-desc">Explorar em alegações finais após confronto em audiência</div>
+        </div>
+        <span class="badge badge-amber" style="flex-shrink:0">Memoriais / Ap.</span>
+      </div>
+
+      <div class="prec-item">
+        <div class="prec-dot" style="background:var(--blue)"></div>
+        <div style="flex:1">
+          <div class="prec-nome">Perícia complementar nas mídias digitais</div>
+          <div class="prec-desc">Requerer já na resposta — produção na fase de instrução</div>
+        </div>
+        <span class="badge badge-blue" style="flex-shrink:0">Instrução</span>
+      </div>
+    </div>
+
+    <!-- Teses -->
+    <div class="card simulated no-mb">
+      <div class="card-label">Teses — potencial de acolhimento</div>
+
+      <div class="tese-card">
+        <div class="tese-top">
+          <div class="tese-nome">Interceptação além do prazo legal</div>
+          <div class="tese-dots">
+            <div class="tese-dot on"></div><div class="tese-dot on"></div><div class="tese-dot on"></div>
+            <div class="tese-dot on"></div><div class="tese-dot on"></div>
+          </div>
+        </div>
+        <div class="tese-desc">Tese consolidada · STJ HC 512.290 · Alto potencial de acolhimento imediato</div>
+      </div>
+
+      <div class="tese-card">
+        <div class="tese-top">
+          <div class="tese-nome">Cadeia de custódia digital (hash)</div>
+          <div class="tese-dots">
+            <div class="tese-dot on"></div><div class="tese-dot on"></div><div class="tese-dot on"></div>
+            <div class="tese-dot on"></div><div class="tese-dot on"></div>
+          </div>
+        </div>
+        <div class="tese-desc">Legislação expressa CPP 158-A · STJ REsp 1.953.667 · Tese sólida e moderna</div>
+      </div>
+
+      <div class="tese-card">
+        <div class="tese-top">
+          <div class="tese-nome">Sigilo bancário sem decisão motivada</div>
+          <div class="tese-dots">
+            <div class="tese-dot on"></div><div class="tese-dot on"></div><div class="tese-dot on"></div>
+            <div class="tese-dot on"></div><div class="tese-dot"></div>
+          </div>
+        </div>
+        <div class="tese-desc">STF RE 601.314 · CF art. 5º XII · Depende de confirmação da ausência de motivação</div>
+      </div>
+
+      <div class="tese-card">
+        <div class="tese-top">
+          <div class="tese-nome">Contradições cronológicas da acusação</div>
+          <div class="tese-dots">
+            <div class="tese-dot on"></div><div class="tese-dot on"></div><div class="tese-dot on"></div>
+            <div class="tese-dot"></div><div class="tese-dot"></div>
+          </div>
+        </div>
+        <div class="tese-desc">Tese subsidiária · Alto valor em alegações finais e apelação</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Impacto Judicial -->
+  <div class="card simulated">
+    <div class="card-label">Impacto judicial provável</div>
+    <table class="imp-table">
+      <thead>
+        <tr>
+          <th style="width:30%">Vício / Tese</th>
+          <th style="width:23%">Admissibilidade da prova</th>
+          <th style="width:23%">Força da acusação</th>
+          <th style="width:24%">Estratégia da defesa</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><div class="imp-vicio">Interceptação fora do prazo</div><div class="imp-sub">Lei 9.296/96 · art. 5º</div></td>
+          <td><span class="nivel-pill np-alto">Exclui toda a prova</span></td>
+          <td><span class="nivel-pill np-alto">Impacto crítico</span></td>
+          <td><span class="nivel-pill np-alto">Tese principal</span></td>
+        </tr>
+        <tr>
+          <td><div class="imp-vicio">Ausência de hash digital</div><div class="imp-sub">CPP 158-A a 158-F</div></td>
+          <td><span class="nivel-pill np-alto">Imprestável</span></td>
+          <td><span class="nivel-pill np-alto">Impacto crítico</span></td>
+          <td><span class="nivel-pill np-alto">Tese principal</span></td>
+        </tr>
+        <tr>
+          <td><div class="imp-vicio">Sigilo bancário s/ motivação</div><div class="imp-sub">LC 105/2001</div></td>
+          <td><span class="nivel-pill np-alto">Exclui extratos</span></td>
+          <td><span class="nivel-pill np-medio">Impacto alto</span></td>
+          <td><span class="nivel-pill np-alto">Tese primária</span></td>
+        </tr>
+        <tr>
+          <td><div class="imp-vicio">Laudo — perito único</div><div class="imp-sub">CPP art. 159</div></td>
+          <td><span class="nivel-pill np-medio">Nulidade relativa</span></td>
+          <td><span class="nivel-pill np-medio">Impacto médio</span></td>
+          <td><span class="nivel-pill np-medio">Tese secundária</span></td>
+        </tr>
+        <tr>
+          <td><div class="imp-vicio">Contradições cronológicas</div><div class="imp-sub">Testemunha vs. Rel. Policial</div></td>
+          <td><span class="nivel-pill np-baixo">Não exclui prova</span></td>
+          <td><span class="nivel-pill np-medio">Fragiliza narrativa</span></td>
+          <td><span class="nivel-pill np-medio">Tese subsidiária</span></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pedidos -->
+  <div class="card simulated">
+    <div class="card-label">Pedidos processuais — ranking de prioridade</div>
+
+    <div class="pedido-item">
+      <div class="pedido-rank top">1</div>
+      <div style="flex:1">
+        <div class="pedido-nome">Desentranhamento das provas ilícitas e suas derivadas</div>
+        <div class="pedido-base">CPP art. 157 §3º · Interceptação + mídias digitais + extratos bancários</div>
+      </div>
+      <span class="badge badge-red">Urgente</span>
+    </div>
+
+    <div class="pedido-item">
+      <div class="pedido-rank top">2</div>
+      <div style="flex:1">
+        <div class="pedido-nome">Reconhecimento de ilicitude das captações além do prazo</div>
+        <div class="pedido-base">Lei 9.296/96 art. 5º · STJ HC 512.290</div>
+      </div>
+      <span class="badge badge-red">Urgente</span>
+    </div>
+
+    <div class="pedido-item">
+      <div class="pedido-rank top">3</div>
+      <div style="flex:1">
+        <div class="pedido-nome">Perícia complementar nas mídias digitais — dois peritos</div>
+        <div class="pedido-base">CPP arts. 158-A e 159 · Verificação de integridade e nulidade</div>
+      </div>
+      <span class="badge badge-amber">Alta</span>
+    </div>
+
+    <div class="pedido-item">
+      <div class="pedido-rank">4</div>
+      <div style="flex:1">
+        <div class="pedido-nome">Acesso integral aos logs de autorização de interceptação</div>
+        <div class="pedido-base">Princípio da ampla defesa · CF art. 5º LV</div>
+      </div>
+      <span class="badge badge-amber">Alta</span>
+    </div>
+
+    <div class="pedido-item">
+      <div class="pedido-rank">5</div>
+      <div style="flex:1">
+        <div class="pedido-nome">Subsidiariamente — absolvição sumária por insuficiência probatória</div>
+        <div class="pedido-base">CPP art. 397 IV · Caso as nulidades sejam acolhidas integralmente</div>
+      </div>
+      <span class="badge badge-gray">Subsidiário</span>
+    </div>
+
+  </div>
+
+</div><!-- /t4 -->
+
+
+<!-- ─────────────────── TAB 5 — OCR VERIFICADO ─────────────────── -->
+<div id="t5" class="sec">
+
+  <!-- OCR Banner -->
+  <div class="ocr-banner">
+    <div class="ocr-banner-icon">✓</div>
+    <div class="ocr-banner-text">
+      <strong>DADOS REAIS</strong> — Extraídos por OCR verificado das primeiras <strong>20 páginas</strong> do processo.
+      SHA-256 validado por arquivo. Custo: <strong>$0.14</strong>.
+      Estes são os únicos dados desta prévia com base documental verificada.
+    </div>
+  </div>
+
+  <!-- Real Data Cover -->
+  <div class="card real">
+    <div class="card-label">Dados verificados — primeiras 20 páginas (OCR)</div>
+    <div class="ocr-grid">
+      <div class="ocr-field">
+        <div class="ocr-label">Réu</div>
+        <div class="ocr-value" style="color:var(--red)">GLAIDSON TADEU ROSA</div>
+      </div>
+      <div class="ocr-field">
+        <div class="ocr-label">Vara</div>
+        <div class="ocr-value" style="font-size:10px">1ª Vara de Crimes Tributários, Org. Criminosa e Lavagem de Bens e Valores — Foro Central Criminal Barra Funda</div>
+      </div>
+      <div class="ocr-field">
+        <div class="ocr-label">Juiz</div>
+        <div class="ocr-value">Dr. Guilherme Eduardo Martins Kellner</div>
+      </div>
+      <div class="ocr-field">
+        <div class="ocr-label">Delegado</div>
+        <div class="ocr-value">José Mariano de Araújo Filho</div>
+      </div>
+      <div class="ocr-field">
+        <div class="ocr-label">Perito</div>
+        <div class="ocr-value">Dr. Marcelo Cirilo de Souza<br><span style="font-size:10px;color:var(--text3)">Laudo nº 308.636/2022</span></div>
+      </div>
+      <div class="ocr-field">
+        <div class="ocr-label">Busca e Apreensão</div>
+        <div class="ocr-value">18/08/2022<br><span style="font-size:10px;color:var(--text3)">Alameda Rússia, 88 — São Paulo — SP</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inconsistência detectada -->
+  <div class="card" style="border-color:rgba(251,191,36,0.3);background:rgba(251,191,36,0.05)">
+    <div class="card-label" style="color:var(--amber)">⚠ Inconsistência detectada nas primeiras 20 páginas</div>
+    <div style="font-size:12px;color:var(--text);font-weight:600;margin-bottom:6px">
+      Tipografia divergente: "Estecionato" vs. "Estelinato"
+    </div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.6">
+      Inconsistência tipográfica detectada nos documentos analisados via OCR.
+      Potencial ponto defensivo a ser verificado na íntegra do processo —
+      pode indicar erro de transcrição, documentos de origens distintas ou inconsistência na cadeia documental.
+      <strong style="color:var(--amber)">Requer verificação na análise completa das 19.516 páginas.</strong>
+    </div>
+  </div>
+
+  <!-- Pipeline Metadata -->
+  <div class="meta-card">
+    <div class="card-label" style="font-family:'Inter',sans-serif;margin-bottom:12px">Metadados do pipeline — auditáveis</div>
+    <div class="meta-row">
+      <span class="meta-key">Páginas analisadas via OCR</span>
+      <span class="meta-val ok">20/20 (100% sucesso)</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-key">Engine de renderização</span>
+      <span class="meta-val">eSAJ PDF.js viewer (único que renderiza FlateDecode Adobe TJSP)</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-key">Método OCR</span>
+      <span class="meta-val">Playwright screenshot → Claude Haiku OCR</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-key">SHA-256 relatório</span>
+      <span class="meta-val sha">06ea5839d242ab77e3cee1fabe0d2bc515d41d119a5bc321fdc081e84d25379c</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-key">Data extração</span>
+      <span class="meta-val">01/04/2026 · 17:52</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-key">Custo total</span>
+      <span class="meta-val ok">$0.14 (OCR Haiku + análise Sonnet)</span>
+    </div>
+    <div class="meta-row">
+      <span class="meta-key">Status</span>
+      <span class="meta-val ok">✓ VALIDADO — 20/20 páginas com conteúdo processual real</span>
+    </div>
+  </div>
+
+  <!-- Próximos passos -->
+  <div class="card" style="border-color:rgba(34,211,238,0.2);background:rgba(34,211,238,0.04)">
+    <div class="card-label" style="color:var(--cyan)">Próximos passos — aguardando aprovação</div>
+    <div style="font-size:12px;font-weight:600;color:var(--text);margin-bottom:8px">
+      Pipeline completo sobre as 19.516 páginas restantes
+    </div>
+    <div style="font-size:11px;color:var(--text2);line-height:1.7">
+      Aguardando aprovação da <strong style="color:var(--cyan)">Dra. Márcia Mirtes</strong> para execução do
+      pipeline completo. Após aprovação, o sistema irá:
+    </div>
+    <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="card-sm">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Estimativa de tempo</div>
+        <div style="font-size:13px;font-weight:700;color:var(--cyan)">2–3 horas</div>
+        <div style="font-size:10px;color:var(--text3)">com paralelismo 3 threads</div>
+      </div>
+      <div class="card-sm">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px">Custo estimado</div>
+        <div style="font-size:13px;font-weight:700;color:var(--green)">~$1.50</div>
+        <div style="font-size:10px;color:var(--text3)">OCR Haiku + análise Sonnet</div>
+      </div>
+    </div>
+    <div style="margin-top:10px;font-size:10px;color:var(--text3);line-height:1.6">
+      O relatório final conterá todas as 4 camadas com dados verificados, SHA-256 por peça processual,
+      análise de cadeia de custódia completa e subsídios para a Resposta à Acusação.
+    </div>
+  </div>
+
+</div><!-- /t5 -->
+
+</div><!-- /main -->
+
+<!-- ════════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<div class="footer">
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <div class="footer-logo">AD</div>
+      <span style="font-weight:600">AuraDUE</span>
+      <span style="color:var(--text3)">· AuraTECH · Digital Trust Infrastructure</span>
+    </div>
+    <div>
+      Relatório gerado em <span style="color:var(--cyan)">01/04/2026</span> ·
+      <span style="color:var(--red)">Confidencial — Segredo de Justiça</span>
+    </div>
+    <div style="font-family:'Courier New',monospace;font-size:9px;color:var(--text3)">
+      v1.0-preview · SHA-256: 06ea5839…
+    </div>
+  </div>
+</div>
+
+<script>
+// ── TAB SWITCHING ──
+function showTab(id, el) {
+  document.querySelectorAll('.sec').forEach(s => s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  el.classList.add('on');
+  // animate bars in new tab
+  setTimeout(animateBars, 50);
+}
+
+// ── BAR ANIMATION ──
+function animateBars() {
+  document.querySelectorAll('.sec.on .bar-fill[data-w]').forEach(bar => {
+    const target = bar.getAttribute('data-w');
+    bar.style.width = '0%';
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        bar.style.width = target;
+      });
+    });
+  });
+  // also animate split segs in active tab
+  document.querySelectorAll('.sec.on .split-seg.bar-fill').forEach(bar => {
+    const w = bar.style.width;
+    if (w && w !== '0%') {
+      bar.style.transition = 'width 1.2s cubic-bezier(.4,0,.2,1)';
+    }
+  });
+}
+
+// ── GAUGE ANIMATION ──
+function animateGauge() {
+  const arc = document.getElementById('gaugeArc');
+  if (!arc) return;
+  arc.style.transition = 'none';
+  arc.setAttribute('stroke-dasharray', '0 188.5');
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      arc.style.transition = 'stroke-dasharray 1.4s cubic-bezier(.4,0,.2,1)';
+      arc.setAttribute('stroke-dasharray', '131.9 188.5');
+    });
+  });
+}
+
+// ── INIT ──
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(() => {
+    animateBars();
+    animateGauge();
+  }, 150);
+});
+</script>
+</body>
+</html>

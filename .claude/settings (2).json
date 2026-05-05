@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/MarcosCosta/.claude/projects/c--Users-MarcosCosta-OneDrive---CTS-Brasil--rea-de-Trabalho-ClaudeCode-ArquivosLOA/memory/**)",
+      "Read(//c/Users/MarcosCosta/.claude/**)",
+      "Bash(xargs grep:*)",
+      "Read(//c/Users/MarcosCosta/OneDrive - CTS Brasil/Área de Trabalho/ClaudeCode/**)",
+      "Read(//c/Users/MarcosCosta/OneDrive - CTS Brasil/**)",
+      "Read(//c/Users/MarcosCosta/Desktop/**)",
+      "Read(//c/Users/MarcosCosta/Documents/**)",
+      "Read(//c/Users/MarcosCosta/**)",
+      "Bash(start \"\" \"/c/Users/MarcosCosta/OneDrive - CTS Brasil/Área de Trabalho/ClaudeCode/ArquivosLOA/RELATORIO_INVESTIDOR_AURALOA.html\")",
+      "Bash(start \"\" \"http://localhost:5000\")",
+      "Read(//var/www/**)",
+      "Read(//c/temp/auraloa-saida/analise_documentos/**)",
+      "Bash(taskkill //F //FI \"WINDOWTITLE eq npm\")",
+      "Bash(tasklist)",
+      "Bash(netstat -ano)",
+      "Bash(taskkill //F //PID 20520)",
+      "Bash(curl -s -X POST http://localhost:5000/api/duediligence/pipeline -H 'Content-Type: application/json' -d '{\"numero_precatorio\":\"540390\",\"tribunal\":\"TRF - 3a. Região\",\"valor\":1472489475,\"ano\":2026,\"uo_devedora\":\"Abono de Permanencia\",\"assunto\":\"Entidades sem Fins Lucrativos\"}')",
+      "Bash(awk '{print $5}')",
+      "Bash(python3 -c \"import sys,json;d=json.load\\(sys.stdin\\);print\\('Tribunal alias:',d['precatorio']['tribunal_alias']\\);print\\('CNJ:',d.get\\('cnj_encontrado','N/A'\\)\\);print\\('Confiança:',d.get\\('confianca_cnj','N/A'\\)\\);print\\('Score:',d.get\\('score_final','N/A'\\)\\);print\\('Status:',d.get\\('status_final','N/A'\\)\\);print\\('Fases:',len\\(d.get\\('fases_concluidas',[]\\)\\)\\);print\\('Relatório:',d.get\\('relatorio_url','N/A'\\)\\);print\\('Candidatos:',len\\(d.get\\('fase0_cnj',{}\\).get\\('dados',{}\\).get\\('candidatos',[]\\)\\)\\)\")",
+      "Bash(curl -s -X POST http://localhost:5000/api/duediligence/pipeline -H 'Content-Type: application/json' -d '{\"numero_precatorio\":\"540390\",\"tribunal\":\"TRF - 3a. Região\",\"valor\":1472489475,\"ano\":2026}')",
+      "Bash(grep -l \"session\" ~/.claude/backups/.claude.json.backup.*)"
+    ]
+  }
+}

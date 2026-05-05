@@ -1,0 +1,12 @@
+{
+  "lock_id": "f2149d90-5a3d-43c8-90de-88e3bfd959bd",
+  "resource": "pipeline/estoque",
+  "locked_at_iso": "2026-02-23T05:53:55.206Z",
+  "locked_by": "DPO AuraLOA",
+  "reason": "Protecao do pipeline completo",
+  "sha256_at_lock": "870867e7a936efa6a13bce65583ea87bc1286168e6af23b4687016546f73c8d6",
+  "status": "LOCKED",
+  "unlock_token": "0ccef8cee5751bdfc4c6c81b9a0992cbb60772ddf0920cb2cff4d52294f81952",
+  "unlock_at_iso": null,
+  "unlock_by": null
+}

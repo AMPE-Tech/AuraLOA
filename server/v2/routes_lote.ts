@@ -340,6 +340,7 @@ router.get("/api/v2/lote/:lote_id/status", async (req: Request, res: Response) =
 import { loadLoteDocs, consolidarLote, type ChecklistConsolidado } from "./consolidador";
 import { revisarConsolidacao } from "./revisor";
 import { executarOrquestrador } from "./orquestrador";
+import { auditarRelatorioFinal } from "./auditor_final";
 
 router.post("/api/v2/lote/:lote_id/consolidar", async (req: Request, res: Response) => {
   const { lote_id } = req.params;
@@ -366,8 +367,20 @@ router.post("/api/v2/lote/:lote_id/consolidar", async (req: Request, res: Respon
   const consolidacao = consolidarLote(docs);
   const duracaoConsolidacao = Date.now() - startConsolidacao;
 
+  // Carrega validacao_extracao de cada doc p/ incorporar no Revisor de Consolidação
+  const posExtracoesRows = await query<{ validacao_extracao: any }>(
+    `SELECT a.validacao_extracao
+     FROM v2_lote_docs ld JOIN v2_analises a ON a.id = ld.analise_id
+     WHERE ld.lote_id = $1 AND a.validacao_extracao IS NOT NULL
+     ORDER BY ld.ordem`,
+    [lote_id],
+  );
+  const posExtracoes = posExtracoesRows
+    .map((r) => r.validacao_extracao)
+    .filter((v) => v && typeof v.score === "number");
+
   const startRevisao = Date.now();
-  const revisao = await revisarConsolidacao(consolidacao);
+  const revisao = await revisarConsolidacao(consolidacao, { posExtracoes });
   const duracaoRevisao = Date.now() - startRevisao;
 
   const novoStatus = revisao.decisao === "aprovado"
@@ -565,8 +578,78 @@ router.post("/api/v2/lote/:lote_id/enriquecer", async (req: Request, res: Respon
 });
 
 // ══════════════════════════════════════════════════════════════════════════
+// POST /api/v2/lote/:lote_id/auditar — 3ª camada: Auditor Final do relatório
+// Valida o relatório ANTES de entregar ao cliente: incoerências narrativas,
+// badges vs conteúdo, somas que não batem, campos vazando, datas ISO cruas.
+// ══════════════════════════════════════════════════════════════════════════
+router.post("/api/v2/lote/:lote_id/auditar", async (req: Request, res: Response) => {
+  const { lote_id } = req.params;
+  const pularAI = String(req.query.skip_ai ?? "").toLowerCase() === "true";
+
+  const lote = await query<any>(
+    `SELECT * FROM v2_lotes_analise WHERE lote_id = $1 LIMIT 1`,
+    [lote_id],
+  );
+  if (!lote[0]) return res.status(404).json({ error: "Lote não encontrado" });
+
+  const docs = await query<any>(
+    `SELECT a.numero_cnj, a.tribunal, a.tipo, a.valor_rs, a.numero_oficio,
+            a.credor_nome, a.devedor, a.data_transito,
+            a.advogados, a.classificacao_credito, a.beneficiarios_detalhados,
+            a.metadados_requisicao, a.validacao_extracao
+     FROM v2_lote_docs ld JOIN v2_analises a ON a.id = ld.analise_id
+     WHERE ld.lote_id = $1 ORDER BY ld.ordem LIMIT 1`,
+    [lote_id],
+  );
+  if (docs.length === 0) return res.status(404).json({ error: "Lote sem documentos" });
+  const d0 = docs[0];
+
+  const chk = lote[0].checklist_consolidado ?? {};
+  const revisor = lote[0].alertas_revisor?.resultado_revisor ?? {};
+  const benefs = Array.isArray(d0.beneficiarios_detalhados) ? d0.beneficiarios_detalhados : [];
+  const cessionarios = benefs.filter((b: any) => /cession/i.test(b?.tipo || "")).length;
+
+  const dto = {
+    lote_id,
+    tribunal: chk.tribunal?.valor ?? d0.tribunal,
+    numero_cnj: chk.numero_cnj?.valor ?? d0.numero_cnj,
+    numero_oficio: chk.numero_oficio?.valor ?? d0.numero_oficio,
+    valor_rs: chk.valor_rs?.valor ?? d0.valor_rs,
+    credor_nome: chk.credor_nome?.valor ?? d0.credor_nome,
+    devedor: chk.devedor?.valor ?? d0.devedor,
+    data_transito: chk.data_transito?.valor ?? d0.data_transito,
+    advogados: d0.advogados,
+    classificacao_credito: d0.classificacao_credito,
+    beneficiarios_detalhados: benefs,
+    metadados_requisicao: d0.metadados_requisicao,
+    validacao_extracao: d0.validacao_extracao,
+    revisor_decisao: revisor.decisao,
+    revisor_score: revisor.score,
+    alerta_golpe_cessao: revisor?.complexidade?.alerta_golpe_cessao || null,
+    alerta_golpe_cessao_count: cessionarios,
+  };
+
+  const auditoria = await auditarRelatorioFinal(dto, { pularAI });
+
+  await query(
+    `UPDATE v2_lotes_analise SET auditoria_final = $1::jsonb, audited_at = NOW() WHERE lote_id = $2`,
+    [JSON.stringify(auditoria), lote_id],
+  );
+
+  return res.json({ ok: true, lote_id, auditoria });
+});
+
+// ══════════════════════════════════════════════════════════════════════════
 // GET /api/v2/lote/:lote_id/relatorio — relatório HTML consolidado
 // ══════════════════════════════════════════════════════════════════════════
+
+function fmtDataBR(valor: any): string {
+  if (!valor) return "[N/D]";
+  const s = String(valor);
+  const m = s.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[3]}/${m[2]}/${m[1]}`;
+  return s;
+}
 
 function maskValue(valor: any, tipo: "email" | "cpf" | "cnpj" | "telefone" | "nome" | "generic"): string {
   if (valor === null || valor === undefined || valor === "") return "•••";
@@ -594,10 +677,26 @@ function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string 
   const chk = lote.checklist_consolidado ?? {};
   const revisor = lote.alertas_revisor?.resultado_revisor ?? {};
   const enriq = lote.alertas_revisor?.enriquecimento ?? {};
-  const meta = lote.alertas_revisor?.consolidacao_meta ?? {};
+  const complexidade = revisor?.complexidade ?? null;
+  const auditoriaFinal = lote.auditoria_final ?? null;
 
-  const get = (campo: string) => chk[campo]?.valor ?? null;
-  const getArr = (campo: string): any[] => (Array.isArray(chk[campo]?.valor) ? chk[campo].valor : []);
+  // Primeiro doc como referência dos campos analíticos (advogados,
+  // beneficiarios_detalhados, classificacao_credito, metadados_requisicao,
+  // validacao_extracao vêm de v2_analises — a query do endpoint agora traz).
+  const doc0 = docs[0] ?? {};
+  const advogados: any[] = Array.isArray(doc0.advogados) ? doc0.advogados : [];
+  const classificacao: any[] = Array.isArray(doc0.classificacao_credito) ? doc0.classificacao_credito : [];
+  const beneficiarios: any[] = Array.isArray(doc0.beneficiarios_detalhados) ? doc0.beneficiarios_detalhados : [];
+  const metadados: any = doc0.metadados_requisicao ?? {};
+  const validacaoExt: any = doc0.validacao_extracao ?? null;
+
+  const get = (campo: string) => chk[campo]?.valor ?? doc0[campo] ?? null;
+  const getArr = (campo: string): any[] => {
+    const v = chk[campo]?.valor;
+    if (Array.isArray(v)) return v;
+    if (Array.isArray(doc0[campo])) return doc0[campo];
+    return [];
+  };
   const fonte = (campo: string) => {
     const fontes = chk[campo]?.fontes ?? [];
     if (fontes.length === 0) return "";
@@ -607,17 +706,23 @@ function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string 
 
   const badge = (status: string) => {
     const map: Record<string, string> = {
-      aprovado: "bg-emerald-500/20 text-emerald-300 border-emerald-500/40",
-      aprovado_com_ressalva: "bg-amber-500/20 text-amber-300 border-amber-500/40",
-      requer_revisao_humana: "bg-orange-500/20 text-orange-300 border-orange-500/40",
-      rejeitado: "bg-red-500/20 text-red-300 border-red-500/40",
+      aprovado: "badge-ok",
+      aprovado_com_ressalva: "badge-warn",
+      requer_revisao_humana: "badge-warn",
+      rejeitado: "badge-err",
     };
-    return `<span class="px-2 py-0.5 rounded text-[11px] border ${map[status] || "bg-slate-500/20 text-slate-300"}">${status}</span>`;
+    return `<span class="badge ${map[status] || "badge-neutral"}">${status}</span>`;
   };
 
   const valorRS = get("valor_rs");
+  const fmtBRL = (v: any): string => {
+    if (v === null || v === undefined || v === "") return "—";
+    const n = Number(v);
+    if (isNaN(n)) return "—";
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  };
   const valorRsFmt = valorRS != null
-    ? (mascarar ? "R$ •••.•••.•••,••" : Number(valorRS).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }))
+    ? (mascarar ? "R$ •••.•••.•••,••" : fmtBRL(valorRS))
     : "[NÃO IDENTIFICADO]";
 
   const credorMasc = mascarar ? maskValue(get("credor_nome"), "nome") : (get("credor_nome") ?? "[N/D]");
@@ -628,6 +733,21 @@ function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string 
   const datas = getArr("datas_identificadas");
   const processos = getArr("processos_identificados");
 
+  // Banner anti-golpe: se houver cessionários, destacar no topo
+  const temCessionarios = beneficiarios.filter((b: any) => /cession/i.test(b?.tipo || "")).length;
+  const alertaGolpe = complexidade?.alerta_golpe_cessao || (temCessionarios > 0
+    ? `⚠️ ALERTA ANTI-GOLPE: Este crédito possui ${temCessionarios} cessionário(s) parcial(is). O beneficiário principal NÃO detém 100% do valor. Verificar contrato antes de negociar.`
+    : null);
+
+  const sinaisComplex = complexidade?.sinais ?? [];
+  const complexAlta = complexidade?.nivel === "alta";
+
+  const checksumIcon = (ok: boolean) => ok ? "✅" : "❌";
+  const sevBadge = (sev: string) => {
+    const m: Record<string, string> = { alta: "badge-err", critica: "badge-err", media: "badge-warn", baixa: "badge-neutral" };
+    return `<span class="badge ${m[sev] || "badge-neutral"}">${(sev || "").toUpperCase()}</span>`;
+  };
+
   return `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -635,36 +755,129 @@ function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string 
 <title>Relatório AuraLOA — ${lote.lote_id}</title>
 <style>
   body { font-family: 'Inter', system-ui, sans-serif; background: #0d1117; color: #e2e8f0; margin: 0; padding: 32px; }
-  .container { max-width: 1080px; margin: 0 auto; }
+  .container { max-width: 1200px; margin: 0 auto; }
   h1 { font-size: 24px; margin: 0 0 8px; background: linear-gradient(135deg, #06b6d4, #7c3aed); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
   h2 { font-size: 16px; margin: 24px 0 12px; color: #22d3ee; border-bottom: 1px solid rgba(34,211,238,0.2); padding-bottom: 6px; }
   .card { background: #162032; border: 1px solid rgba(255,255,255,0.07); border-radius: 12px; padding: 18px; margin-bottom: 14px; }
   .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
   .label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
   .value { font-size: 14px; color: #e2e8f0; }
   .mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
   .fonte { font-size: 10px; color: #94a3b8; margin-top: 4px; }
   table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  th { text-align: left; padding: 6px 10px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 500; }
-  td { padding: 6px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; }
+  th { text-align: left; padding: 8px 10px; color: #64748b; border-bottom: 1px solid rgba(255,255,255,0.06); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+  td { padding: 8px 10px; border-bottom: 1px solid rgba(255,255,255,0.03); color: #cbd5e1; }
+  tr:hover td { background: rgba(34,211,238,0.03); }
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-size: 10px; font-weight: 600; border: 1px solid; }
+  .badge-ok { background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.3); }
+  .badge-warn { background: rgba(251,191,36,0.15); color: #fbbf24; border-color: rgba(251,191,36,0.3); }
+  .badge-err { background: rgba(239,68,68,0.15); color: #f87171; border-color: rgba(239,68,68,0.3); }
+  .badge-neutral { background: rgba(148,163,184,0.15); color: #94a3b8; border-color: rgba(148,163,184,0.3); }
   .tier-badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; margin-left: 8px; }
   .tier-free { background: rgba(34,211,238,0.15); color: #22d3ee; border: 1px solid rgba(34,211,238,0.3); }
   .tier-paid { background: rgba(168,85,247,0.15); color: #c084fc; border: 1px solid rgba(168,85,247,0.3); }
+  .alert-danger { background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(251,146,60,0.12)); border: 2px solid #f87171; border-radius: 12px; padding: 16px; margin-bottom: 14px; }
+  .alert-warn { background: rgba(251,191,36,0.08); border: 2px solid rgba(251,191,36,0.4); border-radius: 12px; padding: 14px; margin-bottom: 14px; }
+  .score-big { font-size: 36px; font-weight: 800; font-family: 'JetBrains Mono', monospace; }
   .lock { color: #fbbf24; }
+  .kpi { background: #0f172a; border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; text-align: center; }
+  .kpi-value { font-size: 22px; font-weight: 700; color: #22d3ee; font-family: 'JetBrains Mono', monospace; }
+  .kpi-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }
+  .checksum-row { display: flex; align-items: center; gap: 8px; font-size: 12px; padding: 4px 0; }
 </style>
 </head>
 <body><div class="container">
 
 <h1>🔍 AuraLOA — Relatório de Análise</h1>
-<p style="color:#64748b; font-size:12px;">Lote <span class="mono">${lote.lote_id}</span> · ${lote.total_docs} documentos processados · Gerado em ${new Date().toLocaleString("pt-BR")}</p>
+<p style="color:#64748b; font-size:12px;">Lote <span class="mono">${lote.lote_id}</span> · ${lote.total_docs} documento(s) processado(s) · Gerado em ${new Date().toLocaleString("pt-BR")}</p>
 
-<div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-    <strong style="font-size:14px;">Revisão</strong>
-    ${badge(revisor.decisao || "—")} <span style="color:#64748b; font-size:11px;">score ${revisor.score ?? "—"}/100 · nível ${revisor.nivel_atingido ?? "—"}</span>
-  </div>
-  <div style="font-size:12px; color:#94a3b8;">${revisor.justificativa || "—"}</div>
+${alertaGolpe ? `
+<div class="alert-danger">
+  <div style="font-size:14px; font-weight:700; color:#f87171; margin-bottom:6px;">🚨 ALERTA ANTI-GOLPE — CRÉDITO CEDIDO PARCIALMENTE</div>
+  <div style="font-size:13px; color:#fca5a5; line-height:1.5;">${alertaGolpe}</div>
 </div>
+` : ""}
+
+${complexAlta ? `
+<div class="alert-warn">
+  <div style="font-size:13px; font-weight:700; color:#fbbf24; margin-bottom:6px;">⚠️ Documento complexo — revisão humana recomendada</div>
+  <ul style="margin:4px 0 0 20px; font-size:12px; color:#fcd34d; line-height:1.6;">
+    ${sinaisComplex.map((s: string) => `<li>${s}</li>`).join("")}
+  </ul>
+  <div style="font-size:11px; color:#94a3b8; margin-top:8px;">A extração foi completa — todos os dados abaixo foram obtidos. Recomenda-se conferência humana por se tratar de caso não-padrão.</div>
+</div>
+` : ""}
+
+${validacaoExt ? `
+<div class="card" style="border-color: ${validacaoExt.score >= 80 ? "rgba(16,185,129,0.3)" : validacaoExt.score >= 60 ? "rgba(251,191,36,0.3)" : "rgba(239,68,68,0.3)"};">
+  <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+    <div class="score-big" style="color: ${validacaoExt.score >= 80 ? "#34d399" : validacaoExt.score >= 60 ? "#fbbf24" : "#f87171"};">${validacaoExt.score}<span style="font-size:16px; color:#64748b;">/100</span></div>
+    <div style="flex:1;">
+      <div style="font-size:14px; font-weight:700;">🛡️ Revisor Pós-Extração</div>
+      <div style="font-size:11px; color:#94a3b8;">${validacaoExt.total_alertas} alerta(s) · ${validacaoExt.recomenda_reextrair ? "⚠️ recomenda re-extrair" : "extração aceita"}</div>
+    </div>
+  </div>
+  <div class="grid-2" style="margin-bottom:12px;">
+    ${Object.entries(validacaoExt.checksums || {}).map(([k, ok]) =>
+      `<div class="checksum-row">${checksumIcon(ok as boolean)} <span style="color:${ok ? "#cbd5e1" : "#f87171"}; text-transform:capitalize;">${k.replace(/_/g, " ")}</span></div>`
+    ).join("")}
+  </div>
+  ${(validacaoExt.alertas && validacaoExt.alertas.length > 0) ? `
+  <div style="margin-top:12px;">
+    <div class="label">Alertas detectados</div>
+    ${validacaoExt.alertas.map((a: any) => `
+      <div style="padding:10px; border-left:3px solid ${a.severidade === "alta" || a.severidade === "critica" ? "#f87171" : "#fbbf24"}; background:rgba(255,255,255,0.02); margin-top:8px; border-radius:4px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
+          ${sevBadge(a.severidade)} <strong style="font-size:12px;">${a.codigo}</strong> ${a.campo ? `<span style="color:#64748b; font-size:11px;">campo: ${a.campo}</span>` : ""}
+        </div>
+        <div style="font-size:12px; color:#cbd5e1; line-height:1.5;">${a.descricao}</div>
+        ${a.sugestao ? `<div style="font-size:11px; color:#94a3b8; margin-top:4px;">💡 ${a.sugestao}</div>` : ""}
+      </div>
+    `).join("")}
+  </div>
+  ` : ""}
+</div>
+` : ""}
+
+${auditoriaFinal ? `
+<div class="card" style="border-color: ${auditoriaFinal.score >= 85 ? "rgba(16,185,129,0.3)" : auditoriaFinal.score >= 70 ? "rgba(251,191,36,0.3)" : "rgba(239,68,68,0.3)"};">
+  <div style="display:flex; align-items:center; gap:16px; margin-bottom:12px;">
+    <div class="score-big" style="color: ${auditoriaFinal.score >= 85 ? "#34d399" : auditoriaFinal.score >= 70 ? "#fbbf24" : "#f87171"};">${auditoriaFinal.score}<span style="font-size:16px; color:#64748b;">/100</span></div>
+    <div style="flex:1;">
+      <div style="font-size:14px; font-weight:700;">🎯 Auditor Final do Relatório</div>
+      <div style="font-size:11px; color:#94a3b8;">${auditoriaFinal.total_achados} achado(s) · ${
+        auditoriaFinal.decisao === "libera_para_cliente" ? "✅ liberado para cliente" :
+        auditoriaFinal.decisao === "libera_com_ressalva" ? "⚠️ liberado com ressalva" :
+        "🔴 BLOQUEADO — não entregar ao cliente"
+      }</div>
+    </div>
+  </div>
+  <div style="font-size:12px; color:#94a3b8; margin-bottom:10px;">${auditoriaFinal.justificativa || ""}</div>
+  <div class="grid-2" style="margin-bottom:12px;">
+    ${Object.entries(auditoriaFinal.checksums_deterministicos || {}).map(([k, ok]) =>
+      `<div class="checksum-row">${checksumIcon(ok as boolean)} <span style="color:${ok ? "#cbd5e1" : "#f87171"}; text-transform:capitalize;">${k.replace(/_/g, " ")}</span></div>`
+    ).join("")}
+  </div>
+  ${(auditoriaFinal.achados && auditoriaFinal.achados.length > 0) ? `
+  <div style="margin-top:12px;">
+    <div class="label">Achados do auditor</div>
+    ${auditoriaFinal.achados.map((a: any) => {
+      const cor = a.severidade === "bloqueante" || a.severidade === "alta" ? "#f87171" : a.severidade === "media" ? "#fbbf24" : "#94a3b8";
+      return `
+      <div style="padding:10px; border-left:3px solid ${cor}; background:rgba(255,255,255,0.02); margin-top:8px; border-radius:4px;">
+        <div style="display:flex; gap:8px; align-items:center; margin-bottom:4px;">
+          ${sevBadge(a.severidade)} <strong style="font-size:12px;">${a.codigo}</strong> <span style="color:#64748b; font-size:11px;">em: ${a.onde}</span>
+        </div>
+        <div style="font-size:12px; color:#cbd5e1; line-height:1.5;">${a.descricao}</div>
+        ${a.sugestao ? `<div style="font-size:11px; color:#94a3b8; margin-top:4px;">💡 ${a.sugestao}</div>` : ""}
+      </div>`;
+    }).join("")}
+  </div>
+  ` : ""}
+</div>
+` : ""}
 
 <h2>📋 Identificação do processo ${mascarar ? '<span class="tier-badge tier-free">FREE</span>' : '<span class="tier-badge tier-paid">COMPLETO</span>'}</h2>
 <div class="card">
@@ -682,7 +895,7 @@ function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string 
 <div class="card">
 <div class="grid-2">
   <div><div class="label">Valor Requisitado</div><div class="value mono" style="font-size:18px; font-weight:700; color:#22d3ee;">${valorRsFmt}</div></div>
-  <div><div class="label">Data Trânsito em Julgado</div><div class="value mono">${get("data_transito") ?? "[N/D]"}</div></div>
+  <div><div class="label">Data Trânsito em Julgado</div><div class="value mono">${fmtDataBR(get("data_transito"))}</div></div>
 </div>
 </div>
 
@@ -694,6 +907,87 @@ function renderRelatorioHTML(lote: any, docs: any[], mascarar: boolean): string 
   <div><div class="label">Devedor</div><div class="value">${get("devedor") ?? "[N/D]"}</div></div>
 </div>
 </div>
+
+${classificacao.length > 0 ? `
+<h2>📝 Classificação do Crédito por Ofício (${classificacao.length})</h2>
+<div class="card">
+<table>
+<thead><tr><th>Ofício</th><th>Natureza do Crédito</th><th>Código Assunto</th><th>Descrição</th></tr></thead>
+<tbody>
+${classificacao.map((c: any) => `<tr>
+  <td class="mono">${c.oficio || "—"}</td>
+  <td>${c.natureza_credito || "—"}</td>
+  <td class="mono">${c.natureza_obrigacao_codigo || "—"}</td>
+  <td style="font-size:11px;">${c.natureza_obrigacao_descricao || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+` : ""}
+
+${metadados && (metadados.especie || metadados.incidentes || metadados.tipo_requisicao || metadados.valor_total_requisitado) ? `
+<h2>🎯 Metadados da Requisição</h2>
+<div class="card">
+<div class="grid-4" style="margin-bottom:12px;">
+  <div class="kpi"><div class="kpi-value">${metadados.quantidade_beneficiarios ?? "—"}</div><div class="kpi-label">Beneficiários</div></div>
+  <div class="kpi"><div class="kpi-value">${metadados.quantidade_cessionarios ?? "—"}</div><div class="kpi-label">Cessionários</div></div>
+  <div class="kpi"><div class="kpi-value" style="font-size:14px;">${mascarar ? "R$ •••" : fmtBRL(metadados.valor_total_principal)}</div><div class="kpi-label">Total Principal</div></div>
+  <div class="kpi"><div class="kpi-value" style="font-size:14px;">${mascarar ? "R$ •••" : fmtBRL(metadados.valor_total_juros)}</div><div class="kpi-label">Total Juros</div></div>
+</div>
+<div class="grid-3">
+  <div><div class="label">Espécie</div><div class="value">${metadados.especie || "—"}</div></div>
+  <div><div class="label">Tipo de Requisição</div><div class="value">${metadados.tipo_requisicao || "—"}</div></div>
+  <div><div class="label">Status Sistema</div><div class="value" style="font-size:12px;">${metadados.status_sistema || "—"}</div></div>
+  <div><div class="label">Incidentes</div><div class="value">${metadados.incidentes || "—"}</div></div>
+  <div><div class="label">Juros de Mora</div><div class="value" style="font-size:12px;">${metadados.percentual_juros_mora || "—"}</div></div>
+  <div><div class="label">Valor Total Requisitado</div><div class="value mono" style="color:#22d3ee; font-weight:700;">${mascarar ? "R$ •••" : fmtBRL(metadados.valor_total_requisitado)}</div></div>
+</div>
+</div>
+` : ""}
+
+${advogados.length > 0 ? `
+<h2>👨‍⚖️ Advogados (${advogados.length}) ${mascarar ? '<span class="tier-badge tier-paid">🔒 PAGO</span>' : ''}</h2>
+<div class="card">
+<table>
+<thead><tr><th>Nome</th><th>OAB</th><th>CPF</th><th>Ofício</th></tr></thead>
+<tbody>
+${advogados.map((a: any) => `<tr>
+  <td>${mascarar ? maskValue(a.nome, "nome") : (a.nome || "—")}</td>
+  <td class="mono">${a.oab_seccional || "—"}/${a.oab_numero || "—"}</td>
+  <td class="mono">${mascarar ? maskValue(a.cpf, "cpf") : (a.cpf || "—")}</td>
+  <td class="mono">${a.oficio_referencia || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+` : ""}
+
+${beneficiarios.length > 0 ? `
+<h2>🧾 Beneficiários Detalhados (${beneficiarios.length}) ${mascarar ? '<span class="tier-badge tier-paid">🔒 PAGO</span>' : ''}</h2>
+<div class="card">
+<table>
+<thead><tr>
+  <th>Nome</th><th>CNPJ</th><th>Tipo</th>
+  <th style="text-align:right;">Principal</th><th style="text-align:right;">Juros SELIC</th>
+  <th style="text-align:right;">Juros Compens.</th><th style="text-align:right;">Total</th>
+  <th>Ofício</th>
+</tr></thead>
+<tbody>
+${beneficiarios.map((b: any) => `<tr>
+  <td style="font-size:11px;">${mascarar ? maskValue(b.nome, "nome") : (b.nome || "—")}</td>
+  <td class="mono" style="font-size:10px;">${mascarar ? "•••" : (b.cnpj || "—")}</td>
+  <td>${b.tipo === "principal"
+    ? '<span class="badge badge-ok">principal</span>'
+    : b.tipo === "cessionario_parcial"
+    ? '<span class="badge badge-warn">cessionário</span>'
+    : `<span class="badge badge-neutral">${b.tipo || "—"}</span>`}</td>
+  <td class="mono" style="text-align:right;">${mascarar ? "•••" : fmtBRL(b.principal)}</td>
+  <td class="mono" style="text-align:right;">${mascarar ? "•••" : fmtBRL(b.juros_selic)}</td>
+  <td class="mono" style="text-align:right;">${mascarar ? "•••" : fmtBRL(b.juros_compensatorio)}</td>
+  <td class="mono" style="text-align:right; color:#22d3ee; font-weight:700;">${mascarar ? "•••" : fmtBRL(b.total)}</td>
+  <td class="mono" style="font-size:10px;">${b.oficio_referencia || "—"}</td>
+</tr>`).join("")}
+</tbody></table>
+</div>
+` : ""}
 
 <h2>📜 Partes do Processo (${partes.length})</h2>
 <div class="card">
@@ -787,6 +1081,58 @@ Cadeia de custódia digital — Lei 13.964/2019
 </div></body></html>`;
 }
 
+// ══════════════════════════════════════════════════════════════════════════
+// GET /api/v2/lote/:lote_id/relatorio.pdf — PDF ABNT (Playwright)
+// ══════════════════════════════════════════════════════════════════════════
+router.get("/api/v2/lote/:lote_id/relatorio.pdf", async (req: Request, res: Response) => {
+  const { lote_id } = req.params;
+  const mascararParam = String(req.query.mascarar ?? "").toLowerCase();
+  const lote = await query<any>(
+    `SELECT * FROM v2_lotes_analise WHERE lote_id = $1 LIMIT 1`, [lote_id],
+  );
+  if (!lote[0]) return res.status(404).json({ error: "Lote não encontrado" });
+
+  const docs = await query<any>(
+    `SELECT ld.ordem,
+            a.file_original_name, a.natureza_documento, a.paginas,
+            a.numero_cnj, a.tribunal, a.tipo, a.valor_rs,
+            a.orgao_julgador, a.status_processual, a.numero_oficio,
+            a.credor_nome, a.credor_cpf_cnpj, a.devedor, a.data_transito,
+            a.partes, a.autoridades, a.datas_identificadas, a.processos_identificados,
+            a.advogados, a.classificacao_credito, a.beneficiarios_detalhados,
+            a.metadados_requisicao, a.validacao_extracao
+     FROM v2_lote_docs ld JOIN v2_analises a ON a.id = ld.analise_id
+     WHERE ld.lote_id = $1 ORDER BY ld.ordem`, [lote_id],
+  );
+
+  const mascarar = mascararParam === "true" || (!mascararParam && lote[0].status !== "enriched" && lote[0].status !== "done");
+  const html = renderRelatorioHTML(lote[0], docs, mascarar);
+
+  try {
+    const { chromium } = await import("playwright");
+    const browser = await chromium.launch({ headless: true });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: "domcontentloaded" });
+    const pdfBuffer = await page.pdf({
+      format: "A4",
+      margin: { top: "2cm", bottom: "2cm", left: "3cm", right: "2cm" },
+      printBackground: true,
+      displayHeaderFooter: true,
+      headerTemplate: `<div style="font-size:8px;color:#666;width:100%;text-align:right;padding-right:2cm;">AuraLOA — Lote ${lote_id}</div>`,
+      footerTemplate: `<div style="font-size:8px;color:#666;width:100%;text-align:center;">Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>`,
+    });
+    await browser.close();
+
+    const filename = `AuraLOA_Relatorio_${lote_id}${mascarar ? "_free" : "_completo"}.pdf`;
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    return res.send(pdfBuffer);
+  } catch (err: any) {
+    console.error("[PDF ABNT]", err);
+    return res.status(500).json({ error: "Falha gerando PDF", detail: err.message });
+  }
+});
+
 router.get("/api/v2/lote/:lote_id/relatorio", async (req: Request, res: Response) => {
   const { lote_id } = req.params;
   // Por padrão, se o status não é 'enriched' ou 'done', retorna mascarado (tier free).
@@ -800,7 +1146,14 @@ router.get("/api/v2/lote/:lote_id/relatorio", async (req: Request, res: Response
   if (!lote[0]) return res.status(404).json({ error: "Lote não encontrado" });
 
   const docs = await query<any>(
-    `SELECT ld.ordem, a.file_original_name, a.natureza_documento, a.paginas
+    `SELECT ld.ordem,
+            a.file_original_name, a.natureza_documento, a.paginas,
+            a.numero_cnj, a.tribunal, a.tipo, a.valor_rs,
+            a.orgao_julgador, a.status_processual, a.numero_oficio,
+            a.credor_nome, a.credor_cpf_cnpj, a.devedor, a.data_transito,
+            a.partes, a.autoridades, a.datas_identificadas, a.processos_identificados,
+            a.advogados, a.classificacao_credito, a.beneficiarios_detalhados,
+            a.metadados_requisicao, a.validacao_extracao
      FROM v2_lote_docs ld JOIN v2_analises a ON a.id = ld.analise_id
      WHERE ld.lote_id = $1 ORDER BY ld.ordem`,
     [lote_id],

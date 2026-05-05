@@ -1,0 +1,111 @@
+[
+  {
+    "tipo": "REQUEST",
+    "method": "GET",
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/propriedades",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://pje.trt1.jus.br/consultaprocessual/detalhe-processo/0110494-40.2024.5.01.0000/2",
+      "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-grau-instancia": "1",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "content-type": "application/json"
+    },
+    "postData": null
+  },
+  {
+    "tipo": "REQUEST",
+    "method": "GET",
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/dadosbasicos/0110494-40.2024.5.01.0000",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://pje.trt1.jus.br/consultaprocessual/detalhe-processo/0110494-40.2024.5.01.0000/2",
+      "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-grau-instancia": "2",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "content-type": "application/json"
+    },
+    "postData": null
+  },
+  {
+    "tipo": "RESPONSE",
+    "status": 200,
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/propriedades",
+    "body": "{\"dataBuild\":\"20/03/2026 - 11:57\",\"versao\":\"2.19.1\",\"ambienteTST\":false,\"numeroRegional\":1,\"baseURLPJe\":\"https://pje.trt1.jus.br\",\"textoFaleConosco\":\"<div id=\\\"j_id1117:j_id1118:16:j_id1119\\\" style=\\\"text-align: center;\\\"><img style=\\\"width: 50px;\\\" title=\\\"Arraste para o documento\\\" src=\\\"http://pje.trt1.jus.br/primeirograu/img/brasaoRep.png\\\" alt=\\\"\\\" /></div>\\n<div style=\\\"text-align: center;\\\">\\n<p style=\\\"margin: 0cm 0cm 0.0001pt; text-align: center;\\\" align=\\\"center\\\"><span style=\\\"font-si...[truncated]"
+  },
+  {
+    "tipo": "REQUEST",
+    "method": "GET",
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/760640",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://pje.trt1.jus.br/consultaprocessual/detalhe-processo/0110494-40.2024.5.01.0000/2",
+      "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-grau-instancia": "2",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "content-type": "application/json"
+    },
+    "postData": null
+  },
+  {
+    "tipo": "RESPONSE",
+    "status": 200,
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/dadosbasicos/0110494-40.2024.5.01.0000",
+    "body": "[{\"id\":760640,\"numeroIdentificacaoJustica\":501,\"numero\":\"0110494-40.2024.5.01.0000\",\"classe\":\"Precat\",\"codigoOrgaoJulgador\":\"245 \",\"segredoJustica\":false,\"juizoDigital\":false}]"
+  },
+  {
+    "tipo": "REQUEST",
+    "method": "GET",
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/dadosbasicos/0110494-40.2024.5.01.0000",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://pje.trt1.jus.br/consultaprocessual/captcha/detalhe-processo/0110494-40.2024.5.01.0000/2",
+      "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+      "sec-ch-ua-mobile": "?0",
+      "x-grau-instancia": "2",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "content-type": "application/json"
+    },
+    "postData": null
+  },
+  {
+    "tipo": "RESPONSE",
+    "status": 200,
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/760640",
+    "body": "{\"tokenDesafio\":\"93e53486d94a95ff46e42781612c2a1f2e059cc138e490db4f07162dd413bb9a9fb2741feed300c962d4d33cc7964ebb27e52934014d142afe64810053f932736a7019d0c176de59f13ed696db2448336c3c72aa7e962116fd64adff7d73351a\",\"imagem\":\"/9j/4AAQSkZJRgABAgAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABaASwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQo...[truncated]"
+  },
+  {
+    "tipo": "REQUEST",
+    "method": "GET",
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/captcha?idProcesso=760640",
+    "headers": {
+      "sec-ch-ua-platform": "\"Windows\"",
+      "referer": "https://pje.trt1.jus.br/consultaprocessual/captcha/detalhe-processo/0110494-40.2024.5.01.0000/2",
+      "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+      "accept": "application/json, text/plain, */*",
+      "sec-ch-ua": "\"Not:A-Brand\";v=\"99\", \"HeadlessChrome\";v=\"145\", \"Chromium\";v=\"145\"",
+      "content-type": "application/json",
+      "sec-ch-ua-mobile": "?0"
+    },
+    "postData": null
+  },
+  {
+    "tipo": "RESPONSE",
+    "status": 200,
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/dadosbasicos/0110494-40.2024.5.01.0000",
+    "body": "[{\"id\":760640,\"numeroIdentificacaoJustica\":501,\"numero\":\"0110494-40.2024.5.01.0000\",\"classe\":\"Precat\",\"codigoOrgaoJulgador\":\"245 \",\"segredoJustica\":false,\"juizoDigital\":false}]"
+  },
+  {
+    "tipo": "RESPONSE",
+    "status": 200,
+    "url": "https://pje.trt1.jus.br/pje-consulta-api/api/captcha?idProcesso=760640",
+    "body": "{\"tokenDesafio\":\"93e53486d94a95ff46e42781612c2a1fbfcd59650dc5960a4ab73dadbde8af3bc39595093962da47ea730ae36c9575cf4c881b6746f9870794fdcb5c07a7cfc7e7cdfb3d20c229c67379fc7da85b25c855243e44573989c6073f6a316fab461c\",\"imagem\":\"/9j/4AAQSkZJRgABAgAAAQABAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCABaASwDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQo...[truncated]"
+  }
+]

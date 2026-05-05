@@ -1,0 +1,26 @@
+
+https://loa.auradue.com/dashboard-loa-v3.html
+
+
+Solução imediata (Nginx):
+
+
+URL: loa.auradue.com/dashboard-loa-v3.html
+Proteção: usuário + senha (que você define)
+Tempo: 5 minutos
+Risco: zero (não toca no Node.js)
+Reversível: 1 comando
+Depois (Express):
+Login: Painel_Controle  Senha: PRC#2026#
+
+
+URL: loa.auradue.com/dashboard-precatorios
+Proteção: JWT (login AuraLOA existente)
+Arquivo sai da pasta pública
+Integração com sistema de usuários
+
+hooks
+
+qual senha de mlgin do auraLOA? quando terminar crie um robô com as seguinteds instruçoes:  criar um robô capaz de executrar esse script das 15n fases e 4 camadas, completo para mais 20 precatório aleatorios que estão na base de dados. programe o robô para rodar hoje a12hs depois as 16hs e as 22hs!  a unica regra é seguir script completo, utilizar apenas template padrão e salva na pasta meu precatorions 
+
+1652786520254010000 → buscar 165278 ou 0165278

@@ -1,0 +1,125 @@
+🏗️ ARQUITETURA AURALOA — PIPELINES
+Fontes lidas: CLAUDE.md, docs/MASTER.md, docs/MANUAL_MASTER_PRECATORIO.md, docs/PIPELINE_DD_COMPLETO.md, memórias críticas.
+
+
+/pipeline-relatorio-dd skill
+Executando as 15 fases mecanicamente. Só o que está programado.
+
+
+1. IDENTIDADE & STACK
+Produto: plataforma de inteligência sobre precatórios federais (ecossistema AuraTECH)
+Produção: https://loa.auradue.com (Hetzner VPS 178.104.66.47 · /var/www/auraloa · PM2 + Nginx + SSL)
+Stack: Node.js 24 · Express 5 + TypeScript 5.6 · React 18 + Vite 7 · Drizzle ORM · PostgreSQL 16 · Stripe · Playwright (Chromium)
+Módulo: CJS obrigatório — bundle dist/index.cjs (não mudar para ESM sem aprovação)
+2. ARQUITETURA EM 3 CAMADAS (CICLO DO PRECATÓRIO)
+
+[1] Sentença → [2] Cálculo → [3] Ofício → [4] LOA → [5] CJF libera → [6] Pagamento
+                    ▲              ▲          ▲
+              CAMADA 3       CAMADA 2    CAMADA 1
+              Execução       Expedido    Na LOA
+              (futuro)       (pré-LOA)   (42.174/2026)
+              ALTO risco     MÉDIO       BAIXO
+              desconto       desconto    desconto
+              60-80%         40-60%      20-40%
+Camada	Cobertura atual	Fontes
+C1 — LOA	✅ 42.174 registros (R$ 28,9 bi)	PDF LOA + SIOP CSV + Portal Transparência + BrasilAPI
+C2 — Expedido	❌ A mapear	TJSP DEPRE, TRF3 PrecWeb, TRF1-6 portais
+C3 — Execução	⚠️ TRF1 parcial	DataJud + Robô PJe Playwright
+3. SISTEMA DE AGENTES (6)
+
+┌─────────────────────────────────────────────┐
+│     /agent-loa-orquestrador (CÉREBRO)       │
+│     8 fases · notifica Marcos a cada passo  │
+└──────────────┬──────────────────────────────┘
+               │
+   ┌───────────┼───────────┐
+   ▼           ▼           ▼
+ C1 LOA    C2 Exped.    C3 Execução
+   │           │           │
+   └───────────┼───────────┘
+               ▼
+  /agent-revisor + /agent-guardian
+   (MANTRA + anti-alucinação)
+               │
+               ▼
+  /agent-enriquecimento-loa (CNJ)
+4. PIPELINE ÚNICO AUTORIZADO — /pipeline-relatorio-dd (15 FASES, 4 CAMADAS)
+
+CAMADA 1 — ORÇAMENTÁRIA
+  F1  LOA CSV (precatorios_extraidos.csv)         ✅
+  F2  SIOP cruzamento UO+Tipo+Valor (94,7% match) ✅
+  F3  CNPJ devedor (BrasilAPI)                    ✅
+
+CAMADA 2 — JUDICIAL
+  F4  TRF1: CNPJ → CNJ orig + CNJ execução       ✅ (407 INCRA)
+  F5  Robô PJe (Playwright) — movimentações       ✅ TRF1 · ❌ TRF2-6/STF/STJ
+  F6  Gravames (penhora/bloqueio/indisponib.)    ✅
+  F7  Credor identificado (Portal Transparência)  ✅
+
+CAMADA 3 — VERIFICAÇÃO
+  F8  CNPJ credor (BrasilAPI + QSA)              ✅
+  F9  Pagamento tripla verificação:
+        A. PJe cód. 12217/60  B. CJF  C. Portal OB ✅
+  F10 OAB ativa                                   ⏳ aguardando token
+  F11 Processos vinculados                        ⚠️
+
+CAMADA 4 — PUBLICAÇÃO
+  F12 Score 14 regras (R-BR001-010 + R-LOA001-004) ✅
+  F13 Template blindado (TEMPLATE_DD_PRECATORIO.html) ✅
+  F14 Revisor (fonte × dado)                     ✅
+  F15 Deploy Hetzner + registro em docs/         ✅
+Referência visual obrigatória: Saida/due_diligence/santacasa-pp/due_diligence_santacasa_pp_20260413.html — modelo Santa Casa aprovado 100% por Marcos.
+
+5. PIPELINE OCR (BLINDADO 01/04/2026)
+Para processo criminal 1503896 (Dra. Márcia Mirtes). ESM paralelo ao pipeline DD:
+
+
+Agente 1 (login eSAJ) ──sessão compartilhada──▶ Agente 4 (OCR)
+      │                                               │
+      ▼                                               ▼
+ manterSessaoAberta: true              capturarPaginaViewer()
+                                       viewer.html?file=getPDF.do
+                                       → FlateDecode TJSP customizado
+Regras invioláveis:
+
+--saida=C:/Temp/auraloa-saida/... (NUNCA OneDrive — file locks)
+URLs getPDF.do expiram com sessão — nunca reutilizar
+pdf-parse/pdfjs-dist/Chromium file:// todos falham — só viewer eSAJ renderiza
+6. FONTES DE DADOS VALIDADAS
+Fonte	Status
+PDF LOA (Câmara/Congresso)	✅ 42.174
+SIOP CSV (MPO)	✅ 164.012 / 2026
+BrasilAPI (CNPJ)	✅
+DataJud CNJ	✅ TRF4, TRF6, TJSP · ❌ TRF1/2/5 (classes 1265/1266 não indexadas)
+Portal Transparência (MCP, 106 endpoints)	✅ chave ativa
+TRF1 processual	✅ headless:false + anti-detecção
+PJe TRF1	⚠️ instável
+OAB CNA	⏳ aguardando token
+7. ARQUITETURA DE DADOS
+
+Entrada (Nº Precatório da LOA)
+  │
+  ▼
+precatorios_extraidos.csv (42.174)
+  │  → UO, Tipo, Valor, Ano
+  ▼
+LOA_FULL_CONCILIADO.csv (1.590 · 32 colunas)
+  │  → + Chave SIOP, Datas, Valor Atualizado
+  ▼
+Mapa CNJ (CNPJ devedor)
+  │
+  ▼
+TRF1 CPF/CNPJ → tabela
+  │  → Número do Processo (execução)
+  │  → Processo Originário (mandatório)
+  ▼
+Robô PJe → movimentações (cód. 12217, 60, 246...)
+  │
+  ▼
+BrasilAPI + Portal Transparência + OAB
+  │
+  ▼
+Relatório HTML (template blindado) → dist/public/dd-reports/
+  │
+  ▼
+PostgreSQL (aura_users, document_validations, pesquisas_validador...)

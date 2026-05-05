@@ -1,0 +1,4 @@
+{
+  "url": "https://pje.trt1.jus.br/pje-consulta-api/api/processos/dadosbasicos/0110494-40.2024.5.01.0000",
+  "body": "[{\"id\":760640,\"numeroIdentificacaoJustica\":501,\"numero\":\"0110494-40.2024.5.01.0000\",\"classe\":\"Precat\",\"codigoOrgaoJulgador\":\"245 \",\"segredoJustica\":false,\"juizoDigital\":false}]"
+}

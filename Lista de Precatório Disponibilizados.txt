@@ -1,0 +1,24 @@
+Lista de Precatório Disponibilizados para o Ricardo
+
+1363102520254010000	R$ 1.04B	FUNDEF/Fundo de Manutenção e Desenvolvim	EFU - Sentenças Judiciais	2026
+1092983620254010000	R$ 142.46M	EXCLUSÃO DE ICMS - BASE DE CÁLCULO - CRÉ	EFU - Sentenças Judiciais	2026	
+1670896020254010000	R$ 140.05M	IPI/ Imposto sobre Produtos Industrializ 	EFU - Sentenças Judiciais	2026
+1662088320254010000	R$ 132.52M	FUNDEF/Fundo de Manutenção e Desenvolvim	EFU - Sentenças Judiciais	2026
+1325879520254010000	R$ 103.97M	Incentivos fiscais - Crédito Tributário	EFU - Sentenças Judiciais		2026
+
+50073403820244000000	R$ 13,87M	Desapropriação por Interesse Social		INCRA				2026	
+5104620520244010000	R$ 13,14M	Pagamento Atrasado / Correção			DNIT				2026		
+218745320254019000	R$ 20,47M	Gratificações Lei 8.112/90			UFBA				2026	
+1471249620254010000	R$ 21,20M	Taxa de Despacho Aduaneiro			SUFRAMA				2026	
+3650677920244010000	R$ 28,12M	Prestação de serviços				DNIT				2026
+1477103620254010000	R$ 53,29M	Taxa de Guia de Importação			SUFRAMA				2026
+1228498320254010000	R$ 3.65M	Honorários Advocatícios - Sucumbência -	EFU - Sentenças Judiciais	2026
+1055534820254010000	R$ 2.69M	Aposentadoria Especial (Art. 57/8) - Ben	F. Regime Geral Prev. Soc	2026
+
+1474124420254010000	R$ 82.308	Honorários Advocatícios - Sucumbência -	INSS	2026
+1648456120254010000	R$ 82.002	Pensão por Morte (Art. 74/9) - Benefício	F. Regime Geral Prev. Soc	2026
+7332286820244010000	R$ 67.974	Aposentadoria Especial (Art. 57/8) - Ben	F. Regime Geral Prev. Soc	2026
+50005353520254000000	R$ 53.775	Pensão por Morte (Art. 74/9)	F. Regime Geral Prev. Soc	2026
+3963294720244010000	R$ 42.712	Entidades sem Fins Lucrativos - Imunidad	EFU - Sentenças Judiciais	2026
+1249811620254010000	R$ 34.462	Honorários Advocatícios - Sucumbência -	INSS	2026
+50106132520244000000	R$ 12.896	Auxílio-Doença Previdenciário	F. Regime Geral Prev. Soc	2026

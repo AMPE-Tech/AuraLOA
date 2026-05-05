@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AuraLOA — Galeria de Templates de Relatório</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #0d1117; color: #e2e8f0; font-family: 'DM Sans', system-ui, sans-serif; min-height: 100vh; }
+  .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+
+  .header { text-align: center; margin-bottom: 48px; }
+  .header h1 { font-size: 32px; font-weight: 700; margin-bottom: 8px; }
+  .header h1 span { color: #22d3ee; }
+  .header p { color: #64748b; font-size: 14px; }
+
+  .section-title { font-size: 13px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px; display: flex; align-items: center; gap: 10px; }
+  .section-title::before { content: ''; width: 3px; height: 16px; background: linear-gradient(135deg, #06b6d4, #7c3aed); border-radius: 2px; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 48px; }
+
+  .card {
+    background: #162032;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.2s;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+    display: flex;
+    flex-direction: column;
+  }
+  .card:hover {
+    border-color: rgba(34,211,238,0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+
+  .card-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 4px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    width: fit-content;
+  }
+  .badge-green { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.2); }
+  .badge-cyan { background: rgba(34,211,238,0.12); color: #22d3ee; border: 1px solid rgba(34,211,238,0.2); }
+  .badge-amber { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.2); }
+  .badge-violet { background: rgba(167,139,250,0.12); color: #a78bfa; border: 1px solid rgba(167,139,250,0.2); }
+  .badge-gray { background: rgba(100,116,139,0.12); color: #94a3b8; border: 1px solid rgba(100,116,139,0.2); }
+
+  .card h3 { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+  .card p { font-size: 12px; color: #94a3b8; line-height: 1.6; flex-grow: 1; }
+  .card-footer { margin-top: 16px; display: flex; align-items: center; justify-content: space-between; }
+  .card-plan { font-size: 10px; color: #64748b; }
+  .card-arrow { color: #22d3ee; font-size: 14px; }
+
+  @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>AuraLOA — <span>Galeria de Templates</span></h1>
+    <p>3 modelos de relatório + 3 referências de design · Revisão 05/04/2026</p>
+  </div>
+
+  <!-- Templates AuraLOA -->
+  <div class="section-title">Templates AuraLOA (prontos para produção)</div>
+  <div class="grid">
+
+    <a href="relatorio_express.html" class="card">
+      <span class="card-badge badge-green">EXPRESS</span>
+      <h3>Relatório Express</h3>
+      <p>Single-page, dados completos, classificação RPV/Precatório, marca d'água no Free. Ideal para validações rápidas e credores RPV.</p>
+      <div class="card-footer">
+        <span class="card-plan">Free / Essencial</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="relatorio_profissional.html" class="card">
+      <span class="card-badge badge-cyan">PROFISSIONAL</span>
+      <h3>Relatório Profissional</h3>
+      <p>4 tabs de navegação: Resumo, Dados do Processo, Movimentações, Evidência SHA-256. KPI grid, badges de status, tabelas detalhadas.</p>
+      <div class="card-footer">
+        <span class="card-plan">Professional / Business</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="relatorio_enterprise.html" class="card">
+      <span class="card-badge badge-amber">ENTERPRISE</span>
+      <h3>Relatório Enterprise</h3>
+      <p>Dashboard com 4 camadas: Identificação, Status, Análise Orçamentária, Cadeia de Custódia. Gauges SVG, barras, timeline, light/dark.</p>
+      <div class="card-footer">
+        <span class="card-plan">Enterprise / Enterprise Plus</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <!-- Referências -->
+  <div class="section-title">Modelos de Referência (base de design)</div>
+  <div class="grid">
+
+    <a href="referencia_modelo_A_tabs.html" class="card">
+      <span class="card-badge badge-violet">MODELO A</span>
+      <h3>AuraDUE — Tabs + OCR</h3>
+      <p>Relatório 20 páginas do processo 1503896. Tabs: Resumo, OCR por Página, Análise Macro, Cadeia de Custódia. Design dark premium.</p>
+      <div class="card-footer">
+        <span class="card-plan">Due Diligence Criminal</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="referencia_modelo_B_cover.html" class="card">
+      <span class="card-badge badge-violet">MODELO B</span>
+      <h3>AuraDUE — Cover + Warning</h3>
+      <p>Preview do relatório com cover page institucional, warning banner para dados preliminares, seções ricas com badges por severidade.</p>
+      <div class="card-footer">
+        <span class="card-plan">Due Diligence Criminal</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+    <a href="referencia_modelo_C_dashboard.html" class="card">
+      <span class="card-badge badge-violet">MODELO C</span>
+      <h3>AuraLEGAL — Dashboard 4 Camadas</h3>
+      <p>Dashboard KPI com 4 camadas: gauges SVG, split bars, timeline com dots, tabela de impacto, pedidos ranqueados. Light/dark auto.</p>
+      <div class="card-footer">
+        <span class="card-plan">Análise Jurídico-Forense</span>
+        <span class="card-arrow">→</span>
+      </div>
+    </a>
+
+  </div>
+
+  <div style="text-align:center;color:#475569;font-size:11px;padding-top:24px;border-top:1px solid rgba(255,255,255,0.06);">
+    AuraLOA · AuraTECH · © 2026 · Galeria de Templates para revisão interna
+  </div>
+
+</div>
+</body>
+</html>

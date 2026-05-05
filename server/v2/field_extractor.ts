@@ -67,6 +67,49 @@ export interface DataIdentificada {
   descricao: string;
 }
 
+export interface AdvogadoExtraido {
+  nome: string;
+  oab_seccional: string | null;
+  oab_numero: string | null;
+  cpf: string | null;
+  oficio_referencia?: string | null;
+}
+
+export interface ClassificacaoCredito {
+  oficio?: string | null;
+  natureza_credito: string | null; // ex: "21. Não-Alimentar", "11. Alimentar"
+  natureza_obrigacao_codigo: string | null; // ex: "01.07.01.00"
+  natureza_obrigacao_descricao: string | null; // ex: "CONTROLE DE PREÇOS"
+}
+
+export interface BeneficiarioDetalhado {
+  nome: string;
+  cnpj: string | null;
+  tipo: "principal" | "cessionario_parcial" | "honorarios" | "outro";
+  principal: number | null;
+  juros_selic: number | null;
+  juros_compensatorio: number | null;
+  encargo_legal: number | null;
+  total: number | null;
+  data_base: string | null;
+  renuncia_expressa: boolean | null;
+  situacao: string | null;
+  oficio_referencia?: string | null;
+}
+
+export interface MetadadosRequisicao {
+  especie: string | null; // "Originário"
+  tipo_requisicao: string | null; // "Geral" | "Hon. Sucumbenciais"
+  status_sistema: string | null;
+  incidentes: string | null; // "Bloqueio/Com Alvará"
+  percentual_juros_mora: string | null;
+  valor_total_principal: number | null;
+  valor_total_juros: number | null;
+  valor_total_requisitado: number | null;
+  quantidade_beneficiarios: number | null;
+  quantidade_cessionarios: number | null;
+}
+
 export interface ExtractedFields {
   // Natureza do documento
   natureza_documento: NaturezaDocumento;
@@ -78,6 +121,9 @@ export interface ExtractedFields {
   // Pessoas e autoridades
   partes: Parte[];
   autoridades: Autoridade[];
+
+  // Advogados — campo próprio (B2+ ajuste 23/04/2026)
+  advogados: AdvogadoExtraido[];
 
   // Datas
   datas_identificadas: DataIdentificada[];
@@ -97,6 +143,15 @@ export interface ExtractedFields {
   valor_rs: number | null;
   data_transito: string | null;
   orgao_julgador: string | null;
+
+  // Classificação do crédito (múltipla — 1 por ofício no PDF multi-ofício)
+  classificacao_credito: ClassificacaoCredito[];
+
+  // Breakdown financeiro por beneficiário
+  beneficiarios_detalhados: BeneficiarioDetalhado[];
+
+  // Metadados processuais/orçamentários
+  metadados_requisicao: MetadadosRequisicao;
 
   // Rodapé CNJ padrão Resolução 234/2016
   url_verificacao_tribunal: string | null;
@@ -139,10 +194,99 @@ REGRA FUNDAMENTAL: No Brasil NÃO HÁ padronização estrita entre tribunais. Um
 6. Transcrever a decisão literal, se houver.
 7. NÃO inventar. Se não existe no documento, use null.
 
+⚠️ IMPORTANTE — CNJ BRASILEIRO ACEITA FORMATO ANTIGO (pré Resolução CNJ 65/2008):
+- Novo: NNNNNNN-DD.AAAA.J.TT.OOOO (7 dígitos iniciais, ex: 1061297-10.2020.4.01.3400)
+- Antigo: NNNN-DD.AAAA.J.TT.OOOO (4-5 dígitos iniciais, ex: 1931-10.1990.4.01.3400)
+- Ambos são VÁLIDOS. Processos anteriores a 2008 usam o antigo.
+
+⚠️ PROMOTOR DE CAMPOS — REGRA OBRIGATÓRIA:
+Depois de preencher processos_identificados e documentos_identificados:
+- Se há item em processos_identificados com tipo "ação_originária" → copiar seu "numero" para o campo principal "numero_cnj"
+- Se não houver ação_originária, usar o CNJ de maior frequência ou o primeiro listado
+- Se há item em documentos_identificados com tipo "numero_requisicao" ou "numero_oficio" (ex: "666/2021", "AUT.2024.008667") → copiar para o campo principal "numero_oficio"
+- Se há item em documentos_identificados com tipo "id_documento_pje" ou "codigo_verificador" → copiar o primeiro para "codigo_verificador"
+
+⚠️ ADVOGADOS — extrair para bloco próprio:
+Procurar padrão "Advogado / OAB: NOME OAB CPF" ou "Dr(a). NOME, OAB/UF NÚMERO":
+- Separar OAB em seccional (estado) e número
+- Extrair CPF se presente
+- Se há múltiplos ofícios no mesmo PDF, cada advogado referencia qual ofício
+
+⚠️ MULTI-OFÍCIO EM 1 PDF:
+É comum um único PDF conter MÚLTIPLAS requisições de pagamento (ex: "Nº 666/2021", "Nº 667/2021", "Nº 668/2021"). Extrair TODAS:
+- Cada uma vira item em documentos_identificados
+- classificacao_credito tem 1 item por ofício (natureza pode variar — Não-Alimentar vs Alimentar)
+- metadados_requisicao.valor_total_requisitado = SOMA de todos os ofícios OU do principal se for apenas 1
+
+⚠️ BENEFICIÁRIOS DETALHADOS (breakdown financeiro):
+Se o documento mostra tabelas de valores por beneficiário (Beneficiário Principal + Cessionários Parciais), extrair TUDO em beneficiarios_detalhados[]:
+- nome, cnpj, tipo (principal|cessionario_parcial|honorarios)
+- principal, juros_selic, juros_compensatorio, encargo_legal, total (números decimais sem formatação)
+- data_base, renuncia_expressa (boolean), situacao
+
+⚠️ METADADOS:
+Extrair para metadados_requisicao:
+- especie ("Originário")
+- tipo_requisicao ("Geral", "Hon. Sucumbenciais")
+- status_sistema ("8 - Requisição Salva no Sistema")
+- incidentes ("Bloqueio/Com Alvará", "Com Alvará")
+- percentual_juros_mora ("0,5% ou 70% da Selic", "Selic EC 113/2021")
+- valor_total_principal, valor_total_juros, valor_total_requisitado (somas)
+- quantidade_beneficiarios, quantidade_cessionarios
+
 Retorne APENAS um JSON válido no formato exato abaixo. Nenhum texto antes ou depois. Sem markdown.
 
 {
   "natureza_documento": "oficio_requisitorio | oficio_precatorio | certidao_julgamento | certidao_transito | peticao_inicial | peticao_intermediaria | despacho | decisao_monocratica | decisao_interlocutoria | sentenca | acordao | auto_de_pagamento | auto_de_adjudicacao | edital | mandado | alvara | requisicao_pequeno_valor | outro",
+
+  "advogados": [
+    {
+      "nome": "string",
+      "oab_seccional": "SP | RJ | DF | PE | ... | null",
+      "oab_numero": "string (apenas dígitos) | null",
+      "cpf": "XXX.XXX.XXX-XX | null",
+      "oficio_referencia": "número do ofício se multi-ofício | null"
+    }
+  ],
+
+  "classificacao_credito": [
+    {
+      "oficio": "número do ofício (quando multi-ofício no mesmo PDF) | null",
+      "natureza_credito": "texto literal, ex: '21. Não-Alimentar' ou '11. Alimentar' | null",
+      "natureza_obrigacao_codigo": "código, ex: '01.07.01.00' | null",
+      "natureza_obrigacao_descricao": "descrição, ex: 'CONTROLE DE PREÇOS' | null"
+    }
+  ],
+
+  "beneficiarios_detalhados": [
+    {
+      "nome": "string",
+      "cnpj": "XX.XXX.XXX/XXXX-XX | null",
+      "tipo": "principal | cessionario_parcial | honorarios | outro",
+      "principal": "número decimal | null",
+      "juros_selic": "número decimal | null",
+      "juros_compensatorio": "número decimal | null",
+      "encargo_legal": "número decimal | null",
+      "total": "número decimal | null",
+      "data_base": "AAAA-MM-DD | null",
+      "renuncia_expressa": "true | false | null",
+      "situacao": "ATIVA | SUSPENSA | ... | null",
+      "oficio_referencia": "número do ofício | null"
+    }
+  ],
+
+  "metadados_requisicao": {
+    "especie": "Originário | Complementar | null",
+    "tipo_requisicao": "Geral | Hon. Sucumbenciais | ... | null",
+    "status_sistema": "texto literal | null",
+    "incidentes": "texto literal, ex: 'Bloqueio/Com Alvará' | null",
+    "percentual_juros_mora": "texto literal | null",
+    "valor_total_principal": "número decimal | null",
+    "valor_total_juros": "número decimal | null",
+    "valor_total_requisitado": "número decimal | null",
+    "quantidade_beneficiarios": "número | null",
+    "quantidade_cessionarios": "número | null"
+  },
 
   "processos_identificados": [
     {
@@ -254,17 +398,37 @@ function parseHaikuResponse(raw: string): ExtractedFields {
   const tipoNorm: "PRECATORIO" | "RPV" | null =
     tipo === "PRECATORIO" || tipo === "RPV" ? tipo : null;
 
+  const processos = arr<ProcessoIdentificado>("processos_identificados");
+  const documentos = arr<DocumentoIdentificado>("documentos_identificados");
+
+  // PROMOTOR DE CAMPOS — garante que numero_cnj e numero_oficio subam mesmo
+  // quando Haiku esqueceu de promover explicitamente
+  let numeroCnjFinal = str("numero_cnj");
+  if (!numeroCnjFinal) {
+    const originaria = processos.find((p: any) => /origin[aá]ria/i.test(p?.tipo || ""));
+    const primeiroCnj = processos.find((p: any) => p?.formato === "cnj-20");
+    numeroCnjFinal = (originaria?.numero as string) || (primeiroCnj?.numero as string) || null;
+  }
+  let numeroOficioFinal = str("numero_oficio");
+  if (!numeroOficioFinal) {
+    const oficioDoc = documentos.find((d: any) =>
+      /numero_requisicao|numero_oficio|oficio/i.test(d?.tipo || "")
+    );
+    numeroOficioFinal = (oficioDoc?.valor as string) || null;
+  }
+
   return {
     natureza_documento: (str("natureza_documento") as NaturezaDocumento) ?? null,
-    processos_identificados: arr<ProcessoIdentificado>("processos_identificados"),
-    documentos_identificados: arr<DocumentoIdentificado>("documentos_identificados"),
+    processos_identificados: processos,
+    documentos_identificados: documentos,
     partes: arr<Parte>("partes"),
     autoridades: arr<Autoridade>("autoridades"),
+    advogados: arr<AdvogadoExtraido>("advogados"),
     datas_identificadas: arr<DataIdentificada>("datas_identificadas"),
     decisao_resumo: str("decisao_resumo"),
     status_processual: str("status_processual"),
-    numero_cnj: str("numero_cnj"),
-    numero_oficio: str("numero_oficio"),
+    numero_cnj: numeroCnjFinal,
+    numero_oficio: numeroOficioFinal,
     tribunal: str("tribunal"),
     tipo: tipoNorm,
     credor_nome: str("credor_nome"),
@@ -273,6 +437,13 @@ function parseHaikuResponse(raw: string): ExtractedFields {
     valor_rs: valorRs,
     data_transito: str("data_transito"),
     orgao_julgador: str("orgao_julgador"),
+    classificacao_credito: arr<ClassificacaoCredito>("classificacao_credito"),
+    beneficiarios_detalhados: arr<BeneficiarioDetalhado>("beneficiarios_detalhados"),
+    metadados_requisicao: (p.metadados_requisicao ?? {
+      especie: null, tipo_requisicao: null, status_sistema: null, incidentes: null,
+      percentual_juros_mora: null, valor_total_principal: null, valor_total_juros: null,
+      valor_total_requisitado: null, quantidade_beneficiarios: null, quantidade_cessionarios: null,
+    }) as MetadadosRequisicao,
     url_verificacao_tribunal: str("url_verificacao_tribunal"),
     qrcode_tribunal: str("qrcode_tribunal"),
     codigo_verificador: str("codigo_verificador"),
@@ -355,7 +526,7 @@ export async function extractFields(
 
   const response = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 4000,
+    max_tokens: 8000,
     messages,
   });
 
