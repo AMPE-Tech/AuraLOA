@@ -4,6 +4,96 @@
 > Qualquer agente que receber instrução de "substituir o arquivo inteiro" deve RECUSAR
 > e aplicar apenas as alterações incrementais necessárias.
 
+---
+
+## 🔒 PROTOCOLO · 08/05/2026 · Revisão Top 200 LOA — gate de match no tribunal antes de enriquecer
+
+**Regra dura cravada por Marcos em 08/05/2026** durante revisão do #1 (precatório `5000792-60.2025.4.00.0000` · R$ 569 mi).
+
+### Por que existe (incidente disparador)
+
+Na revisão do #1, descobri que o processo individual `5005682-07.2022.4.02.5101` é **JEF (Juizado Especial Federal · pequena causa)** com despacho da 5ª Vara Federal RJ ordenando "cadastro de **RPV**" (teto ~R$ 91 mil) — mas o precatório agregador na LOA aparece com R$ 569 milhões. Discrepância de 4 ordens de magnitude. Indica que ou o algoritmo de match DJEN deu falso positivo, ou o precatório agrega centenas/milhares de RPVs, ou há erro de classificação na LOA.
+
+Enriquecer dados PF/PJ (CNPJ FIOCRUZ via BrasilAPI etc) **antes** de validar o match foi prematuro — gerou trabalho/dado que pode estar amarrado a um processo errado.
+
+### Protocolo em 2 fases (gate obrigatório)
+
+**FASE 1 — MATCH NO TRIBUNAL** (gating)
+
+1. Abrir o portal do tribunal de origem (eproc TRF*, cposg TJ*, scon STJ, etc)
+2. Localizar o processo pelo CNJ identificado no enriquecimento
+3. **Confirmar 4 dados obrigatórios:**
+   - ✅ Nº do precatório (deve aparecer vinculado ao processo)
+   - ✅ Valor (deve bater com o declarado na LOA)
+   - ✅ Devedor (UO/órgão público)
+   - ✅ Credor (parte autora)
+4. Se os 4 batem → **MATCH COMPLETO** → libera Fase 2
+5. Se algum não bate → marcar como **MATCH PARCIAL** ou **SEM MATCH**, registrar divergência exata, **interromper investigação** e marcar pendência de "validar fonte do match"
+
+**FASE 2 — ENRIQUECIMENTO PF/PJ** (só após match completo)
+
+- CPF/CNPJ do credor (Receita, BrasilAPI)
+- Contatos (email, telefone, endereço)
+- OAB CNA dos advogados
+- Histórico processual completo
+- Memória de cálculo / RPV / requisitório
+
+### Critério para próximos itens do top 200
+
+A partir de **#2 em diante**, sempre Fase 1 antes de Fase 2. Para itens já enriquecidos sem match (caso #1), reconhecer no relatório que o enriquecimento está em "pendente de confirmação de match" e priorizar a validação no tribunal.
+
+### Nota de execução
+
+- O agente Claude deve **anunciar explicitamente** ao iniciar cada item: "FASE 1 — MATCH NO TRIBUNAL"
+- Só ao confirmar os 4 dados deve dizer: "MATCH COMPLETO — passando para FASE 2 (enriquecimento)"
+- Se houver match parcial, declarar quais campos bateram e quais não bateram, com fonte exata da divergência
+
+---
+
+## 🔔 PENDÊNCIA · 08/05/2026 · Organizar inventário de credenciais para portais (acesso por OAB)
+
+**Solicitado por Marcos** durante busca de skill de conexão eSAJ por OAB do advogado (caso Dra. Márcia · OAB/SP 244190).
+
+**Diagnóstico**: existem skills/scripts prontos para tocar os portais, MAS as credenciais estão espalhadas e não há documento central que cruze "portal × forma de acesso × onde está a credencial".
+
+### Skills/scripts que tocam portais externos hoje
+
+| Portal | Forma de acesso | Skill/script | Onde está a credencial |
+|---|---|---|---|
+| eSAJ TJSP (segredo) | CNJ + senha do processo | [AuraLEGAL/scripts/esaj-mov-rapido.cjs](../../AuraLEGAL/scripts/esaj-mov-rapido.cjs) · [AuraLOA/server/scripts/due_diligence/tjsp_auth.ts](../server/scripts/due_diligence/tjsp_auth.ts) | env var `SENHA=xxx` por chamada · não persistido |
+| eSAJ TJSP (jurisprudência cjsg) | público + Playwright stealth | skill `jur-consultar-acordao` | sem credencial |
+| TRF1 | público (consulta CPF/CNPJ ou OAB) | skill `pesquisa-precatorio` · [AuraLOA/enriquecer_precatorio_cnpj.cjs](../enriquecer_precatorio_cnpj.cjs) | sem credencial |
+| TRF2-6 | pendente · não implementado | — | — |
+| DataJud CNJ | API key pública | `server/services/estoque_datajud.ts` | env do projeto |
+| DJEN | público sem auth | skill `djen_auraloa-enriquecer` | sem credencial |
+| Portal Transparência | API key via MCP | skill `consulta-transparencia` | MCP `portal-transparencia` |
+| BrasilAPI / CNPJ.ws | público sem auth | usado em `audit-contatos` | sem credencial |
+| OAB CNA | público | scraping em `audit-contatos` | sem credencial |
+| Hetzner SFTP | usuário + senha | skill `deploy-hetzner` | `.env` do AuraLOA |
+| ArgoIT / Reserve / Stur Web / ISS Curitiba | login próprio Stabia | skills `audit-argoit`, `audit-reserve`, `audit-stur`, `audit-cwb` | espalhado nas skills · 2FA email Spacemail no ArgoIT |
+
+### Credenciais das plataformas próprias (sistema demo)
+
+- [AuraLEGAL/Credenciais (5 contas).txt](../../AuraLEGAL/Credenciais%20\(5%20contas\).txt) — 5 logins demo `auradue.com` + Dra. Márcia (`marcia@alvarengaribeiro.adv.br` · `mrt-2604`)
+- AuraLEGAL/CONTEXT.md já documenta credencial admin Marcos (4 e-mails · senha `AuraTECH-ADMIN`)
+
+### NÃO existe (a fazer)
+
+1. ❌ Documento central tipo `INVENTARIO_PLATAFORMAS.md` ou `ACESSOS.md` que liste todos os portais externos + forma de acesso + localização da credencial
+2. ❌ Skill que **logue no eSAJ usando OAB+senha do advogado** (não confundir com login por CNJ+senha-do-processo, que existe). Permitiria listar TODOS os processos do advogado de uma vez. Hoje o caminho é processo a processo.
+3. ❌ Repositório seguro de credenciais (cofre · 1Password / vault) — hoje as senhas estão em `.txt` no OneDrive e em env vars por execução
+4. ❌ Mapeamento "OAB do advogado × processos × tribunal × forma de extração" para escritórios que viram clientes (Dra. Márcia é o primeiro)
+
+### Próximo passo sugerido (quando autorizado)
+
+- Criar `INVENTARIO_PLATAFORMAS.md` em `~/.claude/` (compartilhado entre projetos) consolidando a tabela acima + matriz de pendências de tribunais (TRF2-6, TJs estaduais, TRTs)
+- Avaliar criação de skill `esaj-login-oab` (OAB + senha do advogado → lista de processos do escritório) — Marcos precisa autorizar antes de criar
+- Mover credenciais para vault e gerar referência por env
+
+**Status**: aberta · não bloqueia atividades correntes · revisitar quando Marcos pedir consolidação de acessos.
+
+---
+
 # AuraLOA — Contexto do Projeto
 
 ## Visão Geral
@@ -500,4 +590,153 @@ Marcos pediu pra verificar se já existia "motor de marketplace pronto". Verific
 - **P3** Tokenizar magic numbers (letter-spacing) e hex backgrounds (`bg-[hsl(...)]` × 5) em CSS vars
 - **P3** Topbar/Footer públicos — review próprio (compartilhados entre páginas)
 - **P4** Limpar git status — sessão anterior (27/04) deixou 10 modificados + 11 untracked sem commit; ciclo de governança Git pendente
+
+---
+
+## 2026-05-07 — Compilação histórica de incidentes de agente (Proof of Execution)
+
+### Contexto
+No `/session-start` de 07/05/2026, Marcos (DPO/Founder) pediu literalmente: *"incluir pesquisa lista toda no claude.md, no contexto.md e no memory.md : Incidentes de agente que NÃO cumpriram o combinado (citação literal)"*.
+
+A demanda atende à norma DPO de **Proof of Execution** (vigente desde 06/05/2026) e à regra dura de **SESSION-START** (vigente desde 07/05/2026 · varredura completa de memórias críticas). Lista canônica única evita risco de leitura incompleta de 11+ memórias dispersas.
+
+### Aplicabilidade
+- Toda `/session-start` futura DEVE listar esses incidentes na confirmação de leitura.
+- Memórias-fonte permanecem **byte-a-byte intactas** — esta lista é índice consolidado, não migração.
+- Memória dedicada em `~/.claude/projects/c--...-AuraLOA/memory/feedback_historico_incidentes_agentes.md`.
+- CLAUDE.md §"INCIDENTES — LIÇÕES PERMANENTES" expandido de 6 para 28 entradas em ordem cronológica.
+
+### Lista cronológica · 28 incidentes (31/03/2026 → 27/04/2026)
+
+| # | Data | Título | Custo registrado | Fonte literal |
+|---:|---|---|---|---|
+| 1 | 31/03/2026 | Fabricação de relatório DD inteiro (incidente fundador) | "Dias de trabalho perdidos" | `feedback_problema_sistemico_confianca.md:27` · `project_auraloa_audit_integrity.md` · `CLAUDE.md:73-75` |
+| 2 | 02/04/2026 | Email "marcos@auratech.com.br" inventado (2×) em material do cliente | Material falso enviado | `feedback_nunca_inventar_contato.md:9-10` |
+| 3 | 02/04/2026 | Regressão pós-compactação · data kickoff Stabia voltou de 06/04 → 04/04 | "Sai PHD e volta com conhecimento de estagiário" | `feedback_regressao_pos_compactacao.md:9-12` |
+| 4 | 03/04/2026 | Servidor errado (principal vs novo) + SSH key no projeto errado (Default vs AuraTECH) | ~2.5h perdidas | `feedback_infra_servidores.md:9-23` |
+| 5 | 06/04/2026 | HTML errado publicado em produção sem preview (versão antiga 34KB · projetos misturados) | Confiança quebrada · "não confio mais em vocês" | `feedback_preview_obrigatorio.md:14-15` |
+| 6 | 06/04/2026 | Preços de pacotes inventados (R$297/449/790) sem aprovação · valores reais 1=R$129 ··· 10=R$1.057 | Marcos teve que corrigir | `feedback_precos_aprovacao.md:7-10` |
+| 7 | 09/04/2026 | Alucinação de CNJ no PDF da LOA · "1259391020244030000" declarado CNJ — era falso · CSV corrompido subiu ao servidor | Dashboard mostrou "Nº Precatório: 000000" | `feedback_loa_pdf_sem_cnj.md:24-30` |
+| 8 | 09/04/2026 | "DD realizada" declarada com CNJ genérico | "Marcos quase enviou dados falsos" | `feedback_problema_sistemico_confianca.md:30` |
+| 9 | 09/04/2026 | Dois logos no topbar (sidebar + topbar) · não verificou visualmente | Marcos teve que encontrar erro | `feedback_revisar_antes_entregar.md:11` |
+| 10 | 09/04/2026 | Múltiplos `rm -rf dist/` sem verificar arquivos estáticos · `dashboard-loa.html` quase perdido | "Marcos quase teve infarto" | `feedback_nunca_mover_arquivos.md:12-15` |
+| 11 | 11/04/2026 | Tratou máscara UI como prova de CNJ (gatilho do MANTRA) · pesquisa declarada sem ter feito todas as fases | Lição permanente: "declarar honestamente o que NÃO foi feito" | `CLAUDE.md:77-79` |
+| 12 | 12/04/2026 | STJ pesquisado sem justificativa · não leu formato dos campos (20 dígitos em campo de 8) · ignorou que precatórios = procedimentos administrativos | Múltiplas tentativas sem justificativa | `feedback_consultar_base_primeiro.md:19-23` |
+| 13 | 13/04/2026 | Reescreveu `trf1.cjs` validado (407 INCRA) sem ler código existente · 10+ scripts temporários · SSH bloqueado por rate limit | 1h+ perdida | `feedback_nunca_reescrever_codigo_validado.md:13-37` |
+| 14 | 13/04/2026 | 4 scripts desnecessários (fase1-4) · leitura superficial admitida ("Não, fui superficial") | ~45 min perdidos | `feedback_leitura_obrigatoria_completa.md:43-65` |
+| 15 | 13/04/2026 | Ignorou OOOO=0000 · buscou processo 2g no PJe 1g apesar de instrução estar na tela + memória + base Claude | Tempo perdido | `feedback_ler_instrucoes_na_tela.md:27-43` |
+| 16 | 13/04/2026 | DECLARAÇÃO SISTÊMICA DE MARCOS: "80% do meu tempo é tentando descobrir se vocês estão ou não me enganando" | INVERSÃO TOTAL DA RELAÇÃO IA-HUMANO · 8 incidentes em 14 dias | `feedback_problema_sistemico_confianca.md:11-22` |
+| 17 | 15/04/2026 | Criou `agente_pesquisa_lote.cjs` ignorando pipeline (1ª violação USAR O QUE JÁ EXISTE) | 30 min | `feedback_USAR_O_QUE_JA_EXISTE.md:50` |
+| 18 | 15/04/2026 | Criou `aplicar_template_lote.cjs` sem agentes/enrichment (2ª violação) | 20 min | `feedback_USAR_O_QUE_JA_EXISTE.md:51` |
+| 19 | 15/04/2026 | Criou `pipeline_dd_15fases.cjs` sem agentes/skills/enriquecimento (3ª violação · maratona 13-15/04 = ~3h+ perdidas) | 45 min · ÚLTIMA CHANCE declarada | `feedback_USAR_O_QUE_JA_EXISTE.md:52-54` |
+| 20 | 15/04/2026 | Displicência grave do template blindado · 10 relatórios DD com `gerarRelatorioHTML()` básico · ignorou TEMPLATE_DD + skill `/pipeline-relatorio-dd` + 5 memórias | 30 min · 0% da estrutura blindada usada · 0/15 fases aplicadas | `feedback_displicencia_template_blindado.md:11-26` |
+| 21 | 17/04/2026 | `pm2 restart --update-env` em produção · `dist/index.cjs` sem `dotenv.config()` · `process.env.PG_URL` undefined · loa.auradue.com em 502 por ~1h30 | ~1h30-2h perdidas · "Marcos exausto" | `feedback_tempo_perdido_17abr.md:9-19` · `CLAUDE.md:81-83` |
+| 22 | 22/04/2026 | `/recursos-recebidos` proposto para enriquecer pendentes (1ª violação) | Marcos corrigiu | `CLAUDE.md:85-87` |
+| 23 | 23/04/2026 | Descartou documento oficial (certidão TRF1) sozinho · processou apenas o ofício | Perda de 5 autoridades disponíveis na certidão | `feedback_nunca_descartar_documento.md:11-22` |
+| 24 | 23-24/04/2026 | Endpoint `/api/v2/analise/:id/extrair` com UPDATE inline silencioso · não gravava advogados/classificação/beneficiarios/metadados | Descoberto só quando Marcos perguntou "revisor rodou?" | `docs/CONTEXT.md:296` |
+| 25 | 23-24/04/2026 | Memória FALSA em MASTER.md ("TRF1/TRF2/TRF5 indisponíveis no DataJud") · bug real era CNJ pontuado vs sem pontuação | Conhecimento errado documentado | `docs/CONTEXT.md:295` |
+| 26 | 23-24/04/2026 | Commit sujo · `git add -A` pegou 947k linhas | Revertido via `git reset --soft` | `docs/CONTEXT.md:294` |
+| 27 | 27/04/2026 manhã | Bug producer `_BR.csv` decimal · locale híbrido (sep `;` + decimal `.`) · leitura 10× errada em Excel BR · 79.156 linhas afetadas · soma R$ 22.306.037.833,00 | Detectado por Marcos na auditoria | `CLAUDE.md:89-91` · `docs/CONTEXT.md:326-328` |
+| 28 | 27/04/2026 tarde | REINCIDÊNCIA `/recursos-recebidos` (UG 71103) · 2ª violação da mesma regra (1ª em 22/04) | Marcos ampliou regra · `feedback_proibido_pagos_para_enriquecimento` criada | `CLAUDE.md:93-95` |
+
+### Padrões recorrentes (síntese)
+1. **Falta de leitura** — agentes "leem" passando os olhos sem aplicar (3, 11, 14, 15, 16, 20)
+2. **Reinventar o que existe** — 5 violações em 3 dias da regra USAR O QUE JÁ EXISTE (13, 14, 17, 18, 19)
+3. **Fabricação/alucinação** — dados inventados sem fonte verificável (1, 2, 6, 7, 8)
+4. **Ações destrutivas sem confirmar** — rm/deploy/pm2 sem listar impacto (5, 10, 21)
+5. **Decidir sozinho por Marcos** — descartar/filtrar dados com critério próprio (23)
+6. **Reincidência da mesma diretriz** — 22/04 → 27/04 (2 violações idênticas) (22, 28)
+
+### Não-execuções deliberadas desta compilação
+- ❌ NÃO commitado · git é decisão humana
+- ❌ NÃO modificadas as 11+ memórias-fonte (preservadas byte-a-byte)
+- ❌ NÃO modificado o `CLAUDE.md` global (`~/.claude/CLAUDE.md`) · escopo é AuraLOA
+
+---
+
+## 2026-05-12 — Triagem dos itens abertos (Fase 1 + Fase 2)
+
+### Contexto
+Sessão de governança de repositório. Após `/session-start`, Marcos pediu para triar 19 itens untracked/modificados acumulados desde 27/04. Fase 1 (inventário read-only) + Fase 2 (ações de higiene) executadas em automode aprovado.
+
+### Fase 1 — Inventário (~15 min · 8 frentes)
+- **Precatórios Ricardo/** — 28 PDFs (não 12), incluindo 24× "Top 200 LOA 2026 _ AuraLOA#XX.pdf" (12 gerados em 07/05, restante em abr). Cliente real: Ricardo Vinicius Maciel Moreira / cagiva.industria@gmail.com.
+- **LOA 2027 LDO Conciliada/** — 4 subpastas (~80MB de material oficial SOF/PLDO 2027 baixado): congresso/, precatorios/, siop/, lista_credor_marcos/ + REFERENCIAS.md + _processar.py.
+- **scripts/eproc_capturar*.cjs** — 2 capturadores eproc com Playwright stealth (Cloudflare Turnstile bypass).
+- **scripts/dev_sonda_datajud_fase0.ts** — sonda exploratória DataJud read-only (57 chamadas, cadeia AuraTRUST). Header: "Aguarda revisão DPO antes de execução".
+- **2× WhatsApp .txt** — mensagens para 4 precatórios SP R$ 113M LOA 2026 (versão draft + final). **NÃO existe script de envio nem integração técnica** — só rascunho copy-paste manual.
+- **Dra. Márcia (AuraLEGAL)** — INCONSISTÊNCIA detectada: memória diz "🔒 estrutura travada · aprovada 30/04" mas skill `/session-start` diz "🟡 provisória aguardando OK". Aguarda decisão Marcos.
+- **Stabia** — apenas leitura. Memória `project_stabia_pendencias_08abr.md` (32 dias) está stale; trabalho continua em **outra máquina via Git**. Não tocar.
+- **Operacionais** — `dashboard_cliente_acessos.log` (PII cliente · LGPD blocker), `dpo_audit.jsonl`, `backups/` (incluindo .tar.gz 2MB de 11/05), `data/AuraLOA.code-workspace`.
+
+### Fase 2 — Ações executadas (automode aprovado)
+
+| Item | Ação | Resultado |
+|---|---|---|
+| 2H | `.gitignore` ampliado com `Precatórios Ricardo/`, `LOA 2027 LDO Conciliada/**/*.pdf`, `*.log`, `*.jsonl`, `backups/`, `*.code-workspace` | Git status caiu de 19 → 11 itens. **PII de Ricardo bloqueada.** |
+| 2A | Decidido gitignore-in-place (não mover) porque `scripts/dev_copy_pdf.ts` hardcoda path `"Precatórios Ricardo"` | Sem regressão de código |
+| 2B | Gitignore só dos .pdf — mantém .md/.py/.txt rastreados | Material de pesquisa preservado |
+| 2C | `scripts/eproc_capturar.cjs` → `server/scripts/due_diligence/eproc_capturar.cjs` · SHA `673ccb19...` preservado | Move OK |
+| 2C | `scripts/eproc_capturar_stealth.cjs` → `server/scripts/due_diligence/eproc_capturar_stealth.cjs` · SHA `fc3b71a9...` preservado | Move OK |
+| 2E | `whatsapp_4_precatorios_sp.txt` → `docs/comerciais/whatsapp/2026-04_4_precatorios_sp_v1.txt` · SHA `942b675c...` preservado | Move OK |
+| 2E | `whatsapp_final_4_precatorios.txt` → `docs/comerciais/whatsapp/2026-04_4_precatorios_sp_v2_final.txt` · SHA `f496a7ac...` preservado | Move OK |
+| 2D | Criado `docs/REVISAO_DPO_SONDA_DATAJUD_2026-05-12.md` — pedido formal de revisão DPO | Aguarda OK de Marcos |
+| 2G | Esta entrada CONTEXT.md registra Stabia (não-mexido, máquina externa) | Append OK |
+
+### Pendências (após Fase 2)
+- **P1** — Decisão sobre os 13 commits ahead na branch `wip/save-2026-05-05` (ahead de `origin/main`)
+- **P1** — Decisão sobre 6 modificados herdados em `server/v2/*` (sessões 23-24/04 sem commit)
+- **P2** — Revisão DPO da sonda DataJud (`docs/REVISAO_DPO_SONDA_DATAJUD_2026-05-12.md`)
+- **P2** — Confirmar Dra. Márcia: estrutura 11 abas já travada 🔒 (30/04) ou ainda 🟡 provisória?
+- **P2** — Decisão Marcos: enviar WhatsApp dos 4 precatórios SP manualmente OU descartar?
+- **P3** — Stabia: nada a fazer aqui · trabalho na outra máquina
+- **P4** — `dev_sonda_datajud_fase0.ts` continua untracked esperando aprovação DPO
+- **P4** — `_deploy_temp.cjs` apareceu como D (deleted) — decidir se commitar a deleção
+
+### Estado de produção
+`loa.auradue.com` **não foi tocada** nesta sessão. Operação 100% sobre higiene de repositório local.
+
+### Não-execuções deliberadas
+- ❌ NÃO commitado · git é decisão humana (norma DPO + Marcos não autorizou commit)
+- ❌ NÃO mexido em Grupo Stabia · trabalho ativo em outra máquina via Git
+- ❌ NÃO mexido em [18+] Check · projeto separado
+- ❌ NÃO executada a sonda DataJud · aguarda revisão DPO formal
+- ❌ NÃO movido `Precatórios Ricardo/` nem `LOA 2027 LDO Conciliada/` · gitignore-in-place atinge mesma higiene sem risco de quebrar `scripts/dev_copy_pdf.ts`
+- ❌ NÃO deletado `dashboard_cliente_acessos.log` (PII) · apenas gitignored · decisão de retenção é DPO
+
+### Fase 3 — Caso "Fernando Guide" (DD AuraLOA → handoff AuraLEGAL)
+
+**Demanda:** Marcos recebeu 6 PDFs em `Documento Entrada/Fernando Guide/` (CNJ `5144966-22.2024.8.13.0024`, TJMG 22ª Vara Cível BH). Fernando = negociador de precatórios, representa o advogado do credor.
+
+**Fase 0 enxuta executada** (leitura Espelho.pdf nativo, ~5 min, custo R$ 0,00):
+
+🚨 **7 sinais críticos detectados** que descaracterizam DD AuraLOA:
+1. Classe = Procedimento Comum Cível sobre **Transação** (não precatório)
+2. Polo passivo = 3 pessoas físicas (**sem Fazenda Pública**)
+3. Polo ativo = "ITA TRUST AND FINANCIAL BANK S.A." (nome de trust/offshore, NÃO consta como instituição financeira Bacen)
+4. Classe original era "Homologação Transação Extrajudicial" (rejeitada → forçada a procedimento comum em 30/01/2026)
+5. Múltiplos "Decorrido prazo de ITA TRUST" (autor deixa prazos passarem sistematicamente)
+6. 3 certidões de erro de migração entre 28-30/01/2026
+7. Inconsistência documental: laudo 114 fls + Despacho RFB + Parecer "Rede Ferrovia" **não batem** com classe declarada (transação privada entre 4 pessoas)
+
+**HIPÓTESE FORTE não confirmada:** 4 dos 6 PDFs podem pertencer a OUTRO processo, sendo "emprestados" para construir aparência de lastro. Padrão clássico de cessão de crédito de origem incerta.
+
+**Decisão Marcos 12/05/2026:** caminho C (handoff para AuraLEGAL).
+
+**Entregáveis Fase 3:**
+- `.gitignore` atualizado com `Documento Entrada/` (PII de 3 réus + advogado · LGPD)
+- SHA-256 dos 6 PDFs selados em handoff (preservação cadeia custódia)
+- Dossiê `docs/handoffs/auralegal/2026-05-12_fernando_guide.md` (~12 KB) com:
+  - Identificação completa do processo
+  - Análise forense preliminar (7 sinais)
+  - Plano sugerido para próxima sessão AuraLEGAL (validações DOC1/DOC2/DOC3 + análise multidisciplinar)
+  - 4 cenários técnicos probabilizados (crédito real + cessão legítima / crédito real + cessão indevida / fraude / prescrição)
+
+**NÃO executado (deliberado):**
+- ❌ OCR dos 5 PDFs restantes (não justificado antes de saber se documentos são do CNJ correto)
+- ❌ Consulta DataJud TJMG (one-liner falhou por syntax — refazer em sessão AuraLEGAL)
+- ❌ Contato com Fernando (decisão de Marcos)
+- ❌ Movimento dos PDFs (ficam em `Documento Entrada/Fernando Guide/` já gitignored)
+
+**Estado:** caso DORMENTE no AuraLOA, ATIVO no roadmap AuraLEGAL. Marcos define quando inicia sessão lá.
 
