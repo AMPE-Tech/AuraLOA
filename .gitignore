@@ -19,3 +19,23 @@ Saida/
 # Relatórios de cliente — dados mutáveis, não versionar
 client/public/relatorios-cliente/
 server/public/relatorios-cliente/
+
+# ─── Adicionado 2026-05-12 — triagem Fase 2 ──────────────────────────
+# Pasta de cliente Ricardo — entregáveis + PII (LGPD)
+Precatórios Ricardo/
+
+# Documentos de entrada para análise — PII de processos reais (LGPD)
+Documento Entrada/
+
+# LOA 2027 LDO Conciliada — só PDFs (mantém .md/.py/.txt rastreados)
+LOA 2027 LDO Conciliada/**/*.pdf
+
+# Logs operacionais — PII de cliente em dashboard_cliente_acessos.log
+*.log
+*.jsonl
+
+# Backups locais
+backups/
+
+# VSCode workspaces
+*.code-workspace
