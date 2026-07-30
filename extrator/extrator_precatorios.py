@@ -52,6 +52,28 @@ from typing import Any, Iterable
 # Configuracao
 # --------------------------------------------------------------------------
 
+def carregar_env() -> None:
+    """Le o .env ao lado do script, para reaproveitar a chave ja configurada
+    no projeto sem exigir `$env:OPENAI_API_KEY` a cada sessao do PowerShell.
+
+    Uma variavel ja definida no ambiente sempre vence o arquivo.
+    """
+    arquivo = Path(__file__).parent / ".env"
+    if not arquivo.exists():
+        return
+    for linha in arquivo.read_text(encoding="utf-8", errors="ignore").splitlines():
+        linha = linha.strip()
+        if not linha or linha.startswith("#") or "=" not in linha:
+            continue
+        chave, _, valor = linha.partition("=")
+        chave = chave.strip()
+        valor = valor.strip().strip("'\"")
+        if chave and chave not in os.environ:
+            os.environ[chave] = valor
+
+
+carregar_env()
+
 MODELO_PADRAO = os.getenv("OPENAI_MODEL", "gpt-4o")
 TAMANHO_BLOCO = int(os.getenv("EXTRATOR_TAMANHO_BLOCO", "12000"))
 SOBREPOSICAO_BLOCO = int(os.getenv("EXTRATOR_SOBREPOSICAO", "800"))
