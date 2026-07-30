@@ -1,0 +1,265 @@
+{
+  "arquivo": "precatorios_diversor.pdf",
+  "titulo_inferido": "Ofício Requisitório Definitivo 2025.06413/OFREQ e Precatório 2025.04839-9 — Espólio de Paulo Eduardo Merhi Maya x Estado do Rio de Janeiro",
+  "tipo_documento": "Dossiê de precatório (ofício requisitório definitivo, despacho, procuração, cálculos PGE, demonstrativos de acordo direto)",
+  "dados_processuais": {
+    "numero_processo_cnj": "0060506-95.2004.8.19.0001",
+    "numero_processo_antigo": "2004.001.061573-4",
+    "numero_precatorio": "2025.04839-9",
+    "numero_oficio_requisitorio": "2025.06413/OFREQ",
+    "tribunal": "TJRJ",
+    "vara_orgao_julgador": "Cartório da 9ª Vara da Fazenda Pública",
+    "unidade_origem": "Comarca da Capital — Rio de Janeiro/RJ",
+    "classe_processual": "Procedimento Comum",
+    "assunto": "Dano Moral / Responsabilidade da Administração — Indenização Por Dano Moral - Outros",
+    "fase_processual": "Precatório autuado e incluído na ordem cronológica (Portaria 670/2023); período de graça desde 02/04/2025; chamada para acordo direto Edital 1/2025",
+    "natureza_credito": "ALIMENTÍCIA",
+    "tipo_requisicao": "Originária",
+    "data_ajuizamento": "26/05/2004",
+    "data_base_calculo": "10/03/2022",
+    "data_expedicao": "25/03/2025",
+    "data_assinatura": "25/03/2025",
+    "data_transito_julgado": "26/08/2010",
+    "data_decurso_prazo": "07/06/2023",
+    "ano_loa": "",
+    "status_processual": "Aguardando pagamento — autuado em 25/03/2025, publicado no DJe em 27/03/2025",
+    "periodo_conta_liquidacao": "05/1999 a 07/2008"
+  },
+  "partes": {
+    "credor_beneficiario": ["ESPÓLIO DE PAULO EDUARDO MERHI MAYA"],
+    "devedor_executado": ["ESTADO DO RIO DE JANEIRO"],
+    "advogados": [
+      "RENAN LOUREIRO LABORNE BORGES — OAB/RJ 145.324",
+      "ALLAN JAMMEL SOARES DA SILVA — OAB/RJ 160.894",
+      "RENAN MIGUEL SAAD — OAB/RJ 070.918"
+    ],
+    "inventariante": "ILEUZA DE CÁSSIA ANTÔNIO MAYA (CPF 869.730.027-49)",
+    "cessionarios": [],
+    "habilitados": [],
+    "cpf_cnpj_identificados": [
+      "816.521.437-34", "869.730.027-49", "094.464.997-12", "094.321.657-52",
+      "42.498.600/0001-71", "03.066.219/0001-81"
+    ],
+    "oab_identificadas": ["OAB/RJ145324", "OAB/RJ160894", "OAB/RJ070918"]
+  },
+  "beneficiarios": [
+    {
+      "nome": "ESPÓLIO DE PAULO EDUARDO MERHI MAYA",
+      "papel": "titular",
+      "documento": "816.521.437-34",
+      "oab": "",
+      "percentual": "",
+      "valor_principal": "R$ 1.827.486,36",
+      "valor_juros": "R$ 1.640.117,49",
+      "valor_total": "R$ 3.467.603,85",
+      "valor_atualizado": "R$ 3.253.014,70",
+      "desagio_percentual": "40%",
+      "valor_liquido_acordo": "R$ 1.951.808,82",
+      "banco": "", "agencia": "", "conta": ""
+    },
+    {
+      "nome": "RENAN LOUREIRO LABORNE BORGES",
+      "papel": "advogado — reserva de honorários",
+      "documento": "094.464.997-12",
+      "oab": "OAB/RJ 145.324",
+      "percentual": "12,50%",
+      "valor_principal": "R$ 232.131,75",
+      "valor_juros": "R$ 208.331,70",
+      "valor_total": "R$ 440.463,45",
+      "valor_atualizado": "R$ 603.961,89",
+      "desagio_percentual": "40%",
+      "valor_liquido_acordo": "R$ 362.377,13",
+      "banco": "001 - BCO DO BRASIL S.A.", "agencia": "3788-5", "conta": "106.595-5"
+    },
+    {
+      "nome": "ALLAN JAMMEL SOARES DA SILVA",
+      "papel": "advogado — reserva de honorários",
+      "documento": "094.321.657-52",
+      "oab": "OAB/RJ 160.894",
+      "percentual": "12,50%",
+      "valor_principal": "R$ 232.131,75",
+      "valor_juros": "R$ 208.331,70",
+      "valor_total": "R$ 440.463,45",
+      "valor_atualizado": "R$ 603.961,89",
+      "desagio_percentual": "40%",
+      "valor_liquido_acordo": "R$ 362.377,13",
+      "banco": "237 - BCO BRADESCO S.A.", "agencia": "3199", "conta": "45904-6"
+    }
+  ],
+  "valores": {
+    "valor_bruto_requisicao": "R$ 3.523.707,62",
+    "valor_principal": "R$ 1.857.054,00",
+    "juros": "R$ 1.666.653,62",
+    "correcao_monetaria": "Fator 1,35690000 (10/03/2022 a 01/03/2025); fator 1,01053606 (01/03/2025 a 25/07/2025); fator 1,37119638 (10/03/2022 a 25/07/2025). Metodologia PGE: IPCA-E de jun/2009 a nov/2021 e após SELIC",
+    "honorarios": "R$ 880.926,90",
+    "descontos_retencoes": "Desconto previdenciário R$ 56.103,77 (Rio Previdência); incide IR; reserva CEJUR/PGE R$ 290.763,86; deságio de acordo direto 40%",
+    "desconto_previdenciario": "R$ 56.103,77",
+    "valor_total": "R$ 3.523.707,62",
+    "moeda": "BRL",
+    "fatores_correcao": ["1,35690000", "1,01053606", "1,37119638"],
+    "observacoes_valores": "Três demonstrativos de cálculo independentes. Cessões registradas: R$ 880.926,90 em 10/03/2022 (honorários 25%) e R$ 290.763,86 em 01/03/2025 (CEJUR/PGE, 10% sobre excesso de R$ 2.907.638,62). Retificação de 08/05/2025 por Ester Freire da Silva (Mat. T57428) ajustou o total de Allan Jammel de R$ 440.463,46 para R$ 440.463,45."
+  },
+  "acordo_direto": {
+    "edital": "Edital n. 1/2025 da Presidência do TJRJ",
+    "data_publicacao": "23/07/2025",
+    "prazo_adesao": "25/08/2025",
+    "desagio_percentual": "40%",
+    "pagamento_ate": "31/12/2025",
+    "valor_final_acordo": "R$ 2.676.563,08"
+  },
+  "superpreferencia": {
+    "doente_grave": false,
+    "pessoa_com_deficiencia": false,
+    "idoso": false
+  },
+  "decisao_sentenca": {
+    "tipo": "Despacho de expedição de precatório definitivo",
+    "data": "24/03/2025",
+    "resumo": "O Juiz em Exercício Wladimir Hungria determinou a expedição do precatório definitivo a partir da prévia de id. 2394, com reserva de honorários sucumbenciais em favor do executado, diante da expressa concordância do exequente firmada em id. 2353.",
+    "comando_judicial": "Expeça-se o precatório definitivo da prévia de id. 2394. Autue-se. Inclua-se na ordem cronológica de pagamento de precatórios, nos termos da Portaria n° 670/2023.",
+    "efeito_pratico": "Geração do precatório 2025.04839-9 em 25/03/2025 a partir do ofício 2025.06413/OFREQ (análise 00004938/2025), com reserva de R$ 290.763,86 ao CEJUR/PGE."
+  },
+  "acesso_fontes": {
+    "links_web": [
+      "https://portaltj.tjrj.jus.br/web/precatorios",
+      "www.tjrj.jus.br",
+      "https://www.pge.rj.gov.br",
+      "acordoprecatorio@pge.rj.gov.br",
+      "cap09vfaz@tjrj.jus.br"
+    ],
+    "codigo_acesso": [
+      "46SH.NHZQ.FXRM.X874", "4R2W.DASA.7JLK.T774",
+      "819202513463097", "819202513463098", "819202513463099",
+      "819202513463100", "819202513463101", "819202513463102"
+    ],
+    "fonte_documental": [
+      "Ofício Requisitório Definitivo 2025.06413/OFREQ — 25/03/2025",
+      "Ato Ordinatório — DEPJU, 25/03/2025",
+      "Certidão de publicação DJe fls. 19/39, 27/03/2025",
+      "Ofício DEPRE/DEPJU/HOLOS nº AUT.2025.004780",
+      "Ofício nº 234/2025/OF",
+      "Petição PGE (PA PGE/006.034433/2020) de 20/03/2025",
+      "Cálculos de Honorários PGE/ACPC de 19/03/2025",
+      "Despacho de 24/03/2025",
+      "Procuração ad judicia et extra de 11/12/2024",
+      "Demonstrativos de Cálculo de 25/07/2025 (três beneficiários)"
+    ],
+    "evento_movimento_relevante": [
+      "26/05/2004 — distribuição", "26/08/2010 — trânsito em julgado",
+      "07/06/2023 — decurso do prazo recursal", "24/03/2025 — despacho de expedição",
+      "25/03/2025 — expedição e autuação", "27/03/2025 — publicação no DJe",
+      "02/04/2025 — início do período de graça", "08/05/2025 — retificação de valores",
+      "23/07/2025 — Edital 1/2025", "25/07/2025 — demonstrativos com deságio"
+    ]
+  },
+  "resumo_executivo": "Precatório alimentício 2025.04839-9 do TJRJ contra o Estado do Rio de Janeiro, expedido em 25/03/2025 no processo 0060506-95.2004.8.19.0001 (indenização por dano moral, ajuizada em 2004 e transitada em julgado em 2010). Valor bruto de R$ 3.523.707,62 na data-base de 10/03/2022, repartido entre o Espólio de Paulo Eduardo Merhi Maya e dois advogados com reserva de 12,5% cada, além de R$ 290.763,86 reservados ao CEJUR/PGE. Atualizado para 25/07/2025 o conjunto soma R$ 4.460.938,48; com o deságio de 40% do Edital 1/2025, R$ 2.676.563,08, com adesão até 25/08/2025 e pagamento até 31/12/2025.",
+  "prazos": [
+    "25/08/2025 — manifestação de interesse no acordo direto e juntada do demonstrativo com deságio (item 5.1.4 do Edital 1/2025)",
+    "31/12/2025 — pagamento em caso de acordo homologado"
+  ],
+  "obrigacoes": [
+    "Protocolo do requerimento de acordo exclusivamente por meio eletrônico no sítio da PGE-RJ (item 4.3 do edital)",
+    "Juntada do demonstrativo de cálculo com deságio",
+    "Retenção de IR na fonte sobre o pagamento",
+    "Recolhimento previdenciário de R$ 56.103,77 ao Rio Previdência",
+    "Reserva de R$ 290.763,86 ao CEJUR/PGE antes do pagamento ao exequente"
+  ],
+  "riscos": [
+    "Deságio de 40% no acordo direto representa perda nominal de R$ 1.784.375,40 frente ao valor atualizado",
+    "Beneficiário é espólio em inventário extrajudicial: levantamento depende da regularidade da representação e de alvará ou formal de partilha",
+    "Certidão de 07/03/2025 registra que NÃO foram juntados os documentos do art. 2º do Ato Normativo TJ nº 06/2023 nem o comprovante de regularidade do CPF",
+    "Elegibilidade ao acordo exige ausência de penhora e de compensação tributária — condição não comprovada no dossiê",
+    "Crédito paralelo no mesmo processo (herdeiros de THERESA IDALINA DE SOUZA MARQUES) ainda não requisitado por falta de trânsito em julgado da decisão Id 2176"
+  ],
+  "oportunidades": [
+    "Liquidez imediata: R$ 2.676.563,08 com pagamento garantido até 31/12/2025",
+    "Natureza alimentícia confere preferência constitucional sobre precatórios comuns",
+    "Valor homologado pela própria PGE após análise da ACPC, reduzindo risco de impugnação",
+    "Honorários dos dois advogados são créditos autônomos, negociáveis separadamente",
+    "Crédito adicional futuro dos herdeiros de Theresa Idalina no mesmo processo"
+  ],
+  "decisoes_necessarias": [
+    "Aderir ou não ao acordo direto até 25/08/2025 — 40% de deságio contra tempo de espera na fila",
+    "Definir se a adesão será conjunta ou individual por beneficiário",
+    "Regularizar a pendência documental da certidão de 07/03/2025",
+    "Avaliar a representação do espólio para fins de levantamento"
+  ],
+  "acoes_sugeridas": [
+    "Confirmar no Portal de Precatórios do TJRJ a posição na ordem cronológica e o exercício orçamentário",
+    "Verificar penhora, cessão a terceiros ou compensação tributária sobre o crédito",
+    "Consultar o inteiro teor do Edital 1/2025 na aba Consultas - Acordo Direto",
+    "Sanar a pendência documental junto à 9ª Vara da Fazenda Pública",
+    "Validar os códigos 46SH.NHZQ.FXRM.X874 e 4R2W.DASA.7JLK.T774 em www.tjrj.jus.br",
+    "Acompanhar o trânsito em julgado da decisão Id 2176"
+  ],
+  "dados_ausentes_ou_duvidosos": [
+    "ano_loa não consta em nenhuma página do documento",
+    "Data de nascimento do beneficiário em branco — impede aferir superpreferência por idade",
+    "Divergência de R$ 29.567,64 entre o principal do ofício (R$ 1.857.054,00) e o do demonstrativo (R$ 1.827.486,36), sem memória de rateio explícita",
+    "Dados bancários constam apenas dos dois advogados; não há conta informada para o espólio",
+    "Não há indicação de conta de pagamento do CEJUR/PGE",
+    "Códigos de autenticação não validados junto ao portal do TJRJ"
+  ],
+  "conflitos_detectados": [
+    {
+      "campo": "beneficiarios.valor_total (ALLAN JAMMEL SOARES DA SILVA)",
+      "escolhido": "R$ 440.463,45",
+      "alternativas": [
+        {"valor": "R$ 440.463,46", "paginas": "2-2"},
+        {"valor": "R$ 440.463,45", "paginas": "26-26"}
+      ]
+    },
+    {
+      "campo": "valores.valor_principal",
+      "escolhido": "R$ 1.857.054,00",
+      "alternativas": [
+        {"valor": "R$ 1.857.054,00", "paginas": "2-2"},
+        {"valor": "R$ 1.827.486,36", "paginas": "28-28"}
+      ]
+    }
+  ],
+  "consistencia": [
+    {"checagem": "Principal + juros = bruto", "formula": "1.857.054,00 + 1.666.653,62 = 3.523.707,62", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Bruto - previdenciário = cálculo inicial", "formula": "3.523.707,62 - 56.103,77 = 3.467.603,85", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Honorários 25% = cessão de 10/03/2022", "formula": "3.523.707,62 x 25% = 880.926,90", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Valor após cessão de honorários", "formula": "3.467.603,85 - 880.926,90 = 2.586.676,95", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Valor após cessão CEJUR/PGE", "formula": "3.509.861,95 - 290.763,86 = 3.219.098,09", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Deságio de ESPÓLIO DE PAULO EDUARDO MERHI", "formula": "valor_atualizado x (1 - deságio) = valor_liquido_acordo", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Deságio de RENAN LOUREIRO LABORNE BORGES", "formula": "valor_atualizado x (1 - deságio) = valor_liquido_acordo", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Deságio de ALLAN JAMMEL SOARES DA SILVA", "formula": "valor_atualizado x (1 - deságio) = valor_liquido_acordo", "situacao": "OK", "diferenca": 0, "observacao": ""},
+    {"checagem": "Soma dos beneficiários = bruto", "formula": "SOMA(beneficiarios.valor_total) = valor_bruto_requisicao", "situacao": "DIVERGENTE", "diferenca": -56103.75, "observacao": "diferença = desconto previdenciário; esperado neste tipo de documento"}
+  ],
+  "controle_extracao": {
+    "blocos_analisados": 4,
+    "blocos_disponiveis": 4,
+    "paginas_lidas": 34,
+    "campos_essenciais_encontrados": 16,
+    "campos_essenciais_total": 16,
+    "cobertura_campos_essenciais": "100%",
+    "cobertura_campos_essenciais_num": 1.0,
+    "campos_tardios_encontrados": 4,
+    "campos_tardios_total": 4,
+    "leitura_integral": true,
+    "leitura_interrompida_por_suficiencia": false,
+    "bloco_em_que_a_parada_de_80pct_teria_ocorrido": 1,
+    "campos_que_a_parada_de_80pct_teria_perdido": [
+      "acordo_direto.desagio_percentual",
+      "acordo_direto.prazo_adesao",
+      "acordo_direto.valor_final_acordo",
+      "valores.descontos_retencoes"
+    ],
+    "ocr_necessario": false,
+    "ocr_aplicado": false,
+    "segundos": 0.0,
+    "extraido_em": "2026-07-30T00:00:00"
+  },
+  "triagem": {
+    "notas": {"valor": 8.92, "maturidade": 7.0, "preferencia": 7.0, "liquidez": 6.0, "completude": 10.0},
+    "pesos": {"valor": 30, "maturidade": 25, "preferencia": 15, "liquidez": 15, "completude": 15},
+    "score": 78.3,
+    "classificacao_sugerida": "APROVAR",
+    "valor_base_score": 4460938.48,
+    "pendencias_contadas": 6,
+    "riscos_contados": 5
+  }
+}
