@@ -52,24 +52,52 @@ from typing import Any, Iterable
 # Configuracao
 # --------------------------------------------------------------------------
 
+def locais_de_env() -> list[Path]:
+    """Onde procurar o .env, em ordem de prioridade.
+
+    A pasta do script vem primeiro, mas o arquivo costuma viver na raiz do
+    projeto — no Extrator ele pode estar tanto em 01_APLICACAO quanto um ou
+    dois niveis acima. Tambem cobre a pasta de onde o comando foi disparado.
+    """
+    candidatos: list[Path] = []
+    base_script = Path(__file__).resolve().parent
+    candidatos.extend([base_script, *base_script.parents[:2]])
+    base_atual = Path.cwd()
+    candidatos.extend([base_atual, *base_atual.parents[:2]])
+
+    vistos: set[Path] = set()
+    unicos: list[Path] = []
+    for pasta in candidatos:
+        if pasta not in vistos:
+            vistos.add(pasta)
+            unicos.append(pasta / ".env")
+    return unicos
+
+
+ENV_CARREGADO: Path | None = None
+
+
 def carregar_env() -> None:
-    """Le o .env ao lado do script, para reaproveitar a chave ja configurada
+    """Le o primeiro .env encontrado, para reaproveitar a chave ja configurada
     no projeto sem exigir `$env:OPENAI_API_KEY` a cada sessao do PowerShell.
 
     Uma variavel ja definida no ambiente sempre vence o arquivo.
     """
-    arquivo = Path(__file__).parent / ".env"
-    if not arquivo.exists():
-        return
-    for linha in arquivo.read_text(encoding="utf-8", errors="ignore").splitlines():
-        linha = linha.strip()
-        if not linha or linha.startswith("#") or "=" not in linha:
+    global ENV_CARREGADO
+    for arquivo in locais_de_env():
+        if not arquivo.is_file():
             continue
-        chave, _, valor = linha.partition("=")
-        chave = chave.strip()
-        valor = valor.strip().strip("'\"")
-        if chave and chave not in os.environ:
-            os.environ[chave] = valor
+        for linha in arquivo.read_text(encoding="utf-8", errors="ignore").splitlines():
+            linha = linha.strip()
+            if not linha or linha.startswith("#") or "=" not in linha:
+                continue
+            chave, _, valor = linha.partition("=")
+            chave = chave.strip().lstrip("﻿")
+            valor = valor.strip().strip("'\"")
+            if chave and chave not in os.environ:
+                os.environ[chave] = valor
+        ENV_CARREGADO = arquivo
+        return
 
 
 carregar_env()
@@ -1045,6 +1073,28 @@ def main() -> None:
         )
     else:
         arquivos = [argumentos.entrada]
+
+    # Credencial conferida antes de ler qualquer PDF: sem isso o erro so
+    # aparecia depois do parse das 34 paginas, uma vez por documento.
+    if not argumentos.sem_modelo and not os.getenv("OPENAI_API_KEY"):
+        print("OPENAI_API_KEY nao encontrada.\n", file=sys.stderr)
+        if ENV_CARREGADO:
+            print(f"Um .env foi lido em {ENV_CARREGADO}, mas sem essa chave.",
+                  file=sys.stderr)
+        else:
+            print("Nenhum .env encontrado. Procurei em:", file=sys.stderr)
+            for arquivo in locais_de_env():
+                print(f"  {arquivo}", file=sys.stderr)
+        print(
+            "\nResolva de uma destas formas:\n"
+            "  1. crie um .env em uma das pastas acima com a linha:\n"
+            "       OPENAI_API_KEY=sk-...\n"
+            "  2. defina na sessao atual do PowerShell:\n"
+            '       $env:OPENAI_API_KEY = "sk-..."\n'
+            "  3. rode com --sem-modelo (so a camada deterministica, sem custo).",
+            file=sys.stderr,
+        )
+        raise SystemExit(1)
 
     if not arquivos:
         subpastas = (
