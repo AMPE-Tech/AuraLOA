@@ -30,16 +30,45 @@ exatamente o que teria sido descartado, documento a documento.
 | Texto escasso | `raise` interrompia | segue e marca `ocr_necessario` |
 | Seleção | inexistente | score por dimensão + planilha de triagem |
 
+## Provedores
+
+Funciona com Claude (Anthropic) ou GPT (OpenAI). O padrão é a Anthropic — com
+`--provedor auto` (o default) ele escolhe pela chave que estiver configurada.
+
+| | Anthropic | OpenAI |
+|---|---|---|
+| Chave | `ANTHROPIC_API_KEY` | `OPENAI_API_KEY` |
+| Modelo padrão | `claude-opus-5` | `gpt-4o` |
+| Pacote | `anthropic` | `openai` |
+| Saída JSON | structured outputs (`json_schema`) | `response_format: json_object` |
+
+Na Anthropic a resposta é presa ao schema pela própria API — não há cerca de
+markdown nem texto ao redor do JSON, então o bloco nunca é descartado por falha
+de parse. O `ANTHROPIC_EFFORT` (padrão `medium`) controla profundidade e custo.
+
+Preços por milhão de tokens, entrada/saída: Claude Opus 5 US$ 5/25 · Claude
+Sonnet 5 US$ 3/15 · Claude Haiku 4.5 US$ 1/5. Para extração em volume,
+`ANTHROPIC_MODEL=claude-sonnet-5` costuma ser o melhor custo-benefício — vale
+comparar a cobertura num documento antes de adotar no lote.
+
 ## Uso
 
 ```bash
-pip install pypdf pdfplumber openai openpyxl
+pip install pypdf pdfplumber openpyxl
+pip install anthropic          # ou: pip install openai
 # OCR opcional para PDFs digitalizados:
 pip install pytesseract pdf2image
 
-export OPENAI_API_KEY=...
+export ANTHROPIC_API_KEY=...   # ou OPENAI_API_KEY
 
 python extrator_precatorios.py "Documento Entrada" -s saida --planilha
+```
+
+Para escolher explicitamente:
+
+```bash
+python extrator_precatorios.py entrada -s saida --provedor anthropic
+python extrator_precatorios.py entrada -s saida --provedor openai -m gpt-4o-mini
 ```
 
 Sem chave de API, a camada determinística sozinha já preenche identificadores,
@@ -59,8 +88,12 @@ python gerar_planilha_triagem.py saida/*.json -s saida/triagem_precatorios.xlsx
 
 | Variável | Padrão | Efeito |
 |---|---|---|
-| `OPENAI_API_KEY` | — | obrigatória, exceto com `--sem-modelo` |
-| `OPENAI_MODEL` | `gpt-4o` | modelo usado por bloco |
+| `EXTRATOR_PROVEDOR` | `auto` | `anthropic`, `openai` ou `auto` |
+| `ANTHROPIC_API_KEY` | — | obrigatória no provedor Anthropic |
+| `ANTHROPIC_MODEL` | `claude-opus-5` | modelo Claude usado por bloco |
+| `ANTHROPIC_EFFORT` | `medium` | `low`/`medium`/`high`/`xhigh`/`max` |
+| `OPENAI_API_KEY` | — | obrigatória no provedor OpenAI |
+| `OPENAI_MODEL` | `gpt-4o` | modelo OpenAI usado por bloco |
 | `OPENAI_BASE_URL` | — | endpoint alternativo compatível |
 | `EXTRATOR_TAMANHO_BLOCO` | `12000` | caracteres por bloco |
 | `EXTRATOR_SOBREPOSICAO` | `800` | sobreposição entre blocos |

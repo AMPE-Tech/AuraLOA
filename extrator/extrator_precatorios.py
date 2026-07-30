@@ -102,7 +102,30 @@ def carregar_env() -> None:
 
 carregar_env()
 
-MODELO_PADRAO = os.getenv("OPENAI_MODEL", "gpt-4o")
+# Provedor do modelo: "anthropic", "openai" ou "auto" (usa a chave disponivel).
+PROVEDOR_PADRAO = os.getenv("EXTRATOR_PROVEDOR", "auto").strip().lower()
+MODELO_ANTHROPIC = os.getenv("ANTHROPIC_MODEL", "claude-opus-5")
+MODELO_OPENAI = os.getenv("OPENAI_MODEL", "gpt-4o")
+ESFORCO_ANTHROPIC = os.getenv("ANTHROPIC_EFFORT", "medium")
+
+CHAVE_POR_PROVEDOR = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+}
+
+
+def resolver_provedor(escolhido: str = PROVEDOR_PADRAO) -> str:
+    """`auto` escolhe pelo que estiver configurado, com a Anthropic na frente."""
+    if escolhido in CHAVE_POR_PROVEDOR:
+        return escolhido
+    for provedor, variavel in CHAVE_POR_PROVEDOR.items():
+        if os.getenv(variavel):
+            return provedor
+    return "anthropic"
+
+
+def modelo_padrao_de(provedor: str) -> str:
+    return MODELO_ANTHROPIC if provedor == "anthropic" else MODELO_OPENAI
 TAMANHO_BLOCO = int(os.getenv("EXTRATOR_TAMANHO_BLOCO", "12000"))
 SOBREPOSICAO_BLOCO = int(os.getenv("EXTRATOR_SOBREPOSICAO", "800"))
 PAUSA_ENTRE_BLOCOS = float(os.getenv("EXTRATOR_PAUSA", "0.2"))
@@ -561,8 +584,145 @@ ESQUEMA_PARCIAL = """
 """
 
 
-def chamar_modelo(prompt: str, modelo: str) -> str:
-    """Adaptador do LLM. Mantido compativel com o app.py existente."""
+def _objeto(propriedades: dict[str, Any]) -> dict[str, Any]:
+    """Objeto no formato que os structured outputs exigem.
+
+    Toda propriedade entra em `required` e `additionalProperties` e sempre
+    `false` — sem isso o schema e rejeitado.
+    """
+    return {
+        "type": "object",
+        "properties": propriedades,
+        "required": list(propriedades),
+        "additionalProperties": False,
+    }
+
+
+TEXTO = {"type": "string"}
+LISTA_TEXTO = {"type": "array", "items": {"type": "string"}}
+
+ESQUEMA_JSON = _objeto(
+    {
+        "titulo_inferido": TEXTO,
+        "tipo_documento": TEXTO,
+        "dados_processuais": _objeto(
+            {
+                chave: TEXTO
+                for chave in [
+                    "numero_processo_cnj", "numero_processo_antigo", "numero_precatorio",
+                    "numero_oficio_requisitorio", "tribunal", "vara_orgao_julgador",
+                    "unidade_origem", "classe_processual", "assunto", "fase_processual",
+                    "natureza_credito", "tipo_requisicao", "data_ajuizamento",
+                    "data_base_calculo", "data_expedicao", "data_assinatura",
+                    "data_transito_julgado", "data_decurso_prazo", "ano_loa",
+                    "status_processual", "periodo_conta_liquidacao",
+                ]
+            }
+        ),
+        "partes": _objeto(
+            {
+                "credor_beneficiario": LISTA_TEXTO,
+                "devedor_executado": LISTA_TEXTO,
+                "advogados": LISTA_TEXTO,
+                "inventariante": TEXTO,
+                "cessionarios": LISTA_TEXTO,
+                "habilitados": LISTA_TEXTO,
+                "cpf_cnpj_identificados": LISTA_TEXTO,
+                "oab_identificadas": LISTA_TEXTO,
+            }
+        ),
+        "beneficiarios": {
+            "type": "array",
+            "items": _objeto(
+                {
+                    chave: TEXTO
+                    for chave in [
+                        "nome", "papel", "documento", "oab", "percentual",
+                        "valor_principal", "valor_juros", "valor_total",
+                        "valor_atualizado", "desagio_percentual", "valor_liquido_acordo",
+                        "banco", "agencia", "conta",
+                    ]
+                }
+            ),
+        },
+        "valores": _objeto(
+            {
+                "valor_bruto_requisicao": TEXTO, "valor_principal": TEXTO,
+                "juros": TEXTO, "correcao_monetaria": TEXTO, "honorarios": TEXTO,
+                "descontos_retencoes": TEXTO, "desconto_previdenciario": TEXTO,
+                "valor_total": TEXTO, "moeda": TEXTO,
+                "fatores_correcao": LISTA_TEXTO, "observacoes_valores": TEXTO,
+            }
+        ),
+        "acordo_direto": _objeto(
+            {
+                chave: TEXTO
+                for chave in [
+                    "edital", "data_publicacao", "prazo_adesao",
+                    "desagio_percentual", "pagamento_ate", "valor_final_acordo",
+                ]
+            }
+        ),
+        "decisao_sentenca": _objeto(
+            {
+                chave: TEXTO
+                for chave in ["tipo", "data", "resumo", "comando_judicial", "efeito_pratico"]
+            }
+        ),
+        "acesso_fontes": _objeto(
+            {
+                "links_web": LISTA_TEXTO, "codigo_acesso": LISTA_TEXTO,
+                "fonte_documental": LISTA_TEXTO, "evento_movimento_relevante": LISTA_TEXTO,
+            }
+        ),
+        "resumo_parcial": TEXTO,
+        "prazos": LISTA_TEXTO,
+        "obrigacoes": LISTA_TEXTO,
+        "riscos": LISTA_TEXTO,
+        "oportunidades": LISTA_TEXTO,
+        "decisoes_necessarias": LISTA_TEXTO,
+        "acoes_sugeridas": LISTA_TEXTO,
+        "dados_ausentes_ou_duvidosos": LISTA_TEXTO,
+    }
+)
+
+
+def chamar_modelo(prompt: str, modelo: str, provedor: str = "anthropic") -> str:
+    """Adaptador do LLM. Aceita Anthropic (Claude) ou OpenAI."""
+    if provedor == "anthropic":
+        return _chamar_anthropic(prompt, modelo)
+    return _chamar_openai(prompt, modelo)
+
+
+def _chamar_anthropic(prompt: str, modelo: str) -> str:
+    """Structured outputs prendem a resposta ao ESQUEMA_JSON, entao o retorno
+    ja e JSON valido — sem cerca de markdown e sem texto ao redor."""
+    from anthropic import Anthropic
+
+    cliente = Anthropic()  # le ANTHROPIC_API_KEY do ambiente
+    resposta = cliente.messages.create(
+        model=modelo,
+        max_tokens=16000,
+        output_config={
+            "effort": ESFORCO_ANTHROPIC,
+            "format": {"type": "json_schema", "schema": ESQUEMA_JSON},
+        },
+        messages=[{"role": "user", "content": prompt}],
+    )
+
+    if resposta.stop_reason == "refusal":
+        detalhe = getattr(resposta, "stop_details", None)
+        categoria = getattr(detalhe, "category", None) if detalhe else None
+        print(f"  [aviso] bloco recusado pelo modelo (categoria: {categoria})", file=sys.stderr)
+        return "{}"
+    if resposta.stop_reason == "max_tokens":
+        print("  [aviso] resposta truncada em max_tokens; bloco pode sair incompleto",
+              file=sys.stderr)
+
+    return next((b.text for b in resposta.content if b.type == "text"), "{}")
+
+
+def _chamar_openai(prompt: str, modelo: str) -> str:
     from openai import OpenAI
 
     cliente = OpenAI(
@@ -800,9 +960,12 @@ def pontuar_triagem(dados: dict[str, Any]) -> dict[str, Any]:
 def extrair_documento(
     caminho: Path,
     contexto: dict[str, str] | None = None,
-    modelo: str = MODELO_PADRAO,
+    modelo: str | None = None,
     usar_modelo: bool = True,
+    provedor: str = PROVEDOR_PADRAO,
 ) -> dict[str, Any]:
+    provedor = resolver_provedor(provedor)
+    modelo = modelo or modelo_padrao_de(provedor)
     inicio = time.time()
     print(f"[{caminho.name}] lendo...")
 
@@ -843,7 +1006,7 @@ CONTEXTO EXTERNO:
 CONTEUDO:
 {bloco.texto}
 """
-            parcial = json_do_modelo(chamar_modelo(prompt, modelo))
+            parcial = json_do_modelo(chamar_modelo(prompt, modelo, provedor))
             acumulador.absorver(parcial, bloco)
             blocos_processados = bloco.indice
 
@@ -1047,7 +1210,14 @@ def main() -> None:
     )
     analisador.add_argument("entrada", type=Path, help="PDF ou pasta com PDFs")
     analisador.add_argument("-s", "--saida", type=Path, default=Path("saida"))
-    analisador.add_argument("-m", "--modelo", default=MODELO_PADRAO)
+    analisador.add_argument(
+        "-p", "--provedor", choices=["auto", "anthropic", "openai"], default=PROVEDOR_PADRAO,
+        help="Qual LLM usar. 'auto' escolhe pela chave configurada.",
+    )
+    analisador.add_argument(
+        "-m", "--modelo", default=None,
+        help="Modelo do provedor escolhido. Sem isto usa o padrao de cada um.",
+    )
     analisador.add_argument(
         "--sem-modelo", action="store_true",
         help="Roda apenas a camada deterministica (sem chamadas ao LLM).",
@@ -1074,10 +1244,14 @@ def main() -> None:
     else:
         arquivos = [argumentos.entrada]
 
+    provedor = resolver_provedor(argumentos.provedor)
+    modelo = argumentos.modelo or modelo_padrao_de(provedor)
+    variavel = CHAVE_POR_PROVEDOR[provedor]
+
     # Credencial conferida antes de ler qualquer PDF: sem isso o erro so
     # aparecia depois do parse das 34 paginas, uma vez por documento.
-    if not argumentos.sem_modelo and not os.getenv("OPENAI_API_KEY"):
-        print("OPENAI_API_KEY nao encontrada.\n", file=sys.stderr)
+    if not argumentos.sem_modelo and not os.getenv(variavel):
+        print(f"{variavel} nao encontrada (provedor: {provedor}).\n", file=sys.stderr)
         if ENV_CARREGADO:
             print(f"Um .env foi lido em {ENV_CARREGADO}, mas sem essa chave.",
                   file=sys.stderr)
@@ -1085,16 +1259,22 @@ def main() -> None:
             print("Nenhum .env encontrado. Procurei em:", file=sys.stderr)
             for arquivo in locais_de_env():
                 print(f"  {arquivo}", file=sys.stderr)
+
+        outro = "openai" if provedor == "anthropic" else "anthropic"
         print(
             "\nResolva de uma destas formas:\n"
-            "  1. crie um .env em uma das pastas acima com a linha:\n"
-            "       OPENAI_API_KEY=sk-...\n"
-            "  2. defina na sessao atual do PowerShell:\n"
-            '       $env:OPENAI_API_KEY = "sk-..."\n'
-            "  3. rode com --sem-modelo (so a camada deterministica, sem custo).",
+            f"  1. crie um .env em uma das pastas acima com a linha:\n"
+            f"       {variavel}=...\n"
+            f"  2. defina na sessao atual do PowerShell:\n"
+            f'       $env:{variavel} = "..."\n'
+            f"  3. use o outro provedor:  --provedor {outro}\n"
+            "  4. rode com --sem-modelo (so a camada deterministica, sem custo).",
             file=sys.stderr,
         )
         raise SystemExit(1)
+
+    if not argumentos.sem_modelo:
+        print(f"Provedor: {provedor} | modelo: {modelo}\n")
 
     if not arquivos:
         subpastas = (
@@ -1118,7 +1298,10 @@ def main() -> None:
     for arquivo in arquivos:
         try:
             dados = extrair_documento(
-                arquivo, modelo=argumentos.modelo, usar_modelo=not argumentos.sem_modelo
+                arquivo,
+                modelo=modelo,
+                usar_modelo=not argumentos.sem_modelo,
+                provedor=provedor,
             )
         except Exception as erro:  # noqa: BLE001
             print(f"[{arquivo.name}] ERRO: {erro}", file=sys.stderr)
