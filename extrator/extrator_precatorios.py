@@ -1006,16 +1006,39 @@ def main() -> None:
         "--planilha", action="store_true",
         help="Gera a planilha de triagem ao final.",
     )
+    analisador.add_argument(
+        "-r", "--recursivo", action="store_true",
+        help="Procura PDFs tambem nas subpastas da entrada.",
+    )
     argumentos = analisador.parse_args()
 
-    arquivos = (
-        sorted(argumentos.entrada.glob("*.pdf"))
-        if argumentos.entrada.is_dir()
-        else [argumentos.entrada]
-    )
-    if not arquivos:
-        print("Nenhum PDF encontrado.", file=sys.stderr)
+    if not argumentos.entrada.exists():
+        print(f"Caminho nao encontrado: {argumentos.entrada}", file=sys.stderr)
         raise SystemExit(1)
+
+    if argumentos.entrada.is_dir():
+        padrao = "**/*.pdf" if argumentos.recursivo else "*.pdf"
+        arquivos = sorted(
+            caminho for caminho in argumentos.entrada.glob(padrao) if caminho.is_file()
+        )
+    else:
+        arquivos = [argumentos.entrada]
+
+    if not arquivos:
+        subpastas = (
+            [p.name for p in argumentos.entrada.iterdir() if p.is_dir()]
+            if argumentos.entrada.is_dir() else []
+        )
+        print(f"Nenhum PDF encontrado em {argumentos.entrada}.", file=sys.stderr)
+        if subpastas:
+            print(
+                f"Ha subpastas ({', '.join(subpastas[:5])}). "
+                "Use -r para procurar dentro delas.",
+                file=sys.stderr,
+            )
+        raise SystemExit(1)
+
+    print(f"{len(arquivos)} PDF(s) encontrado(s).\n")
 
     argumentos.saida.mkdir(parents=True, exist_ok=True)
     resultados = []
