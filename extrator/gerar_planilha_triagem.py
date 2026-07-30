@@ -639,21 +639,56 @@ def gerar_planilha(documentos: list[dict], destino: Path) -> Path:
     return destino
 
 
+def expandir_entradas(caminhos: list[Path]) -> list[Path]:
+    """Aceita arquivo, pasta ou curinga.
+
+    O PowerShell nao expande `*` para programas externos: o Python recebe
+    'saida/*.json' como texto literal. No bash o curinga ja chega expandido.
+    Resolver aqui faz o mesmo comando funcionar nos dois sistemas.
+    """
+    resolvidos: list[Path] = []
+    for caminho in caminhos:
+        texto = str(caminho)
+        if any(curinga in texto for curinga in "*?["):
+            base = Path(texto).parent
+            resolvidos.extend(sorted(base.glob(Path(texto).name)))
+        elif caminho.is_dir():
+            resolvidos.extend(sorted(caminho.glob("*.json")))
+        else:
+            resolvidos.append(caminho)
+
+    unicos: list[Path] = []
+    vistos: set[Path] = set()
+    for caminho in resolvidos:
+        chave = caminho.resolve()
+        if chave not in vistos:
+            vistos.add(chave)
+            unicos.append(caminho)
+    return unicos
+
+
 def main() -> None:
     analisador = argparse.ArgumentParser(description="Monta a planilha de triagem.")
-    analisador.add_argument("jsons", nargs="+", type=Path)
+    analisador.add_argument(
+        "jsons", nargs="+", type=Path,
+        help="Arquivos .json, uma pasta, ou um curinga como saida/*.json",
+    )
     analisador.add_argument("-s", "--saida", type=Path, default=Path("triagem_precatorios.xlsx"))
     argumentos = analisador.parse_args()
 
     documentos = []
-    for caminho in argumentos.jsons:
+    for caminho in expandir_entradas(argumentos.jsons):
         try:
             documentos.append(json.loads(caminho.read_text(encoding="utf-8")))
         except Exception as erro:  # noqa: BLE001
             print(f"[{caminho.name}] ignorado: {erro}", file=sys.stderr)
 
     if not documentos:
-        print("Nenhum JSON valido.", file=sys.stderr)
+        print(
+            "Nenhum JSON valido encontrado nos caminhos informados.\n"
+            "Confira se a pasta de saida existe e contem os .json do extrator.",
+            file=sys.stderr,
+        )
         raise SystemExit(1)
 
     destino = gerar_planilha(documentos, argumentos.saida)
